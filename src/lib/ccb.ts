@@ -4,20 +4,20 @@ export type CcbInputs = {
   age6to17: number;
 };
 
-// July 2025 to June 2026 maximum annual amounts (CRA).
+// July 2025 to June 2026 maximum annual amounts (CRA published).
 export const CCB_MAX_UNDER6 = 7997;
 export const CCB_MAX_6TO17 = 6748;
 
-// Thresholds (CRA)
 export const THRESHOLD_1 = 37487;
 export const THRESHOLD_2 = 81222;
 
 function phaseRates(children: number) {
-  // Rates from CRA examples / tables for Phase 1 and Phase 2
+  // Per CRA: reduction rates depend on number of children.
   // 1 child: 7% then 3.2%
   // 2 children: 13.5% then 5.7%
   // 3 children: 19% then 8%
   // 4+ children: 23% then 9.5%
+  // base2 is the phase-2 base reduction amount at THRESHOLD_2.
   if (children <= 1) return { r1: 0.07, r2: 0.032, base2: 3061 };
   if (children === 2) return { r1: 0.135, r2: 0.057, base2: 5904 };
   if (children === 3) return { r1: 0.19, r2: 0.08, base2: 8310 };

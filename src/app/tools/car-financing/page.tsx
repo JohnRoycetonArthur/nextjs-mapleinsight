@@ -35,7 +35,7 @@ export default function CarFinancingPage() {
       <div className="py-12">
         <h1 className="text-2xl font-semibold text-ink-900 md:text-3xl">Car Financing Comparison Tool</h1>
         <p className="mt-2 max-w-3xl text-ink-700">
-          Compare two loan options for the same car price. This is a math tool (not advice) — always confirm your lender’s true APR and fees.
+          Compare two loan options for the same car price (math-only). Confirm your lender’s true APR and fees.
         </p>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -64,41 +64,21 @@ export default function CarFinancingPage() {
           </div>
 
           <div className="space-y-4">
-            <ResultPanel
-              title="Loan amount"
-              items={[{ label: "Principal (price - down - trade)", value: money2(calc.principal) }]}
-              note="Principal excludes fees, taxes, warranties, insurance, and add-ons."
-            />
-            <ResultPanel
-              title="Option A"
-              items={[
-                { label: "Monthly payment", value: money2(calc.a.payment) },
-                { label: "Total interest", value: money2(calc.a.interest) },
-                { label: "Total paid", value: money2(calc.a.totalPaid) },
-              ]}
-            />
-            <ResultPanel
-              title="Option B"
-              items={[
-                { label: "Monthly payment", value: money2(calc.b.payment) },
-                { label: "Total interest", value: money2(calc.b.interest) },
-                { label: "Total paid", value: money2(calc.b.totalPaid) },
-              ]}
-            />
-            <ResultPanel
-              title="Quick takeaway"
-              items={[
-                {
-                  label: "Cheaper total cost",
-                  value: calc.a.totalPaid <= calc.b.totalPaid ? "Option A" : "Option B",
-                },
-                {
-                  label: "Lower monthly payment",
-                  value: calc.a.payment <= calc.b.payment ? "Option A" : "Option B",
-                },
-              ]}
-              note="Longer terms often lower monthly payments but can increase total interest."
-            />
+            <ResultPanel title="Loan amount" items={[{ label: "Principal (price - down - trade)", value: money2(calc.principal) }]} />
+            <ResultPanel title="Option A" items={[
+              { label: "Monthly payment", value: money2(calc.a.payment) },
+              { label: "Total interest", value: money2(calc.a.interest) },
+              { label: "Total paid", value: money2(calc.a.totalPaid) },
+            ]} />
+            <ResultPanel title="Option B" items={[
+              { label: "Monthly payment", value: money2(calc.b.payment) },
+              { label: "Total interest", value: money2(calc.b.interest) },
+              { label: "Total paid", value: money2(calc.b.totalPaid) },
+            ]} />
+            <ResultPanel title="Quick takeaway" items={[
+              { label: "Cheaper total cost", value: calc.a.totalPaid <= calc.b.totalPaid ? "Option A" : "Option B" },
+              { label: "Lower monthly payment", value: calc.a.payment <= calc.b.payment ? "Option A" : "Option B" },
+            ]} note="Longer terms often lower monthly payments but can increase total interest." />
           </div>
         </div>
       </div>

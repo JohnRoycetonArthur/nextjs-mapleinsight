@@ -42,7 +42,7 @@ export default function HomePage() {
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               <Card
                 title="RRSP Refund Calculator"
-                description="Estimate how an RRSP deduction could change your tax bill (Ontario 2025 brackets)."
+                description="Estimate how an RRSP deduction could change your tax bill (Ontario 2025 simplified)."
                 href="/tools/rrsp-refund"
               />
               <Card
@@ -65,18 +65,9 @@ export default function HomePage() {
           <div className="py-12">
             <h2 className="text-xl font-semibold text-ink-900">How Maple Insight works</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-3">
-              <Card
-                title="1) Start with a calculator"
-                description="Get a quick, understandable estimate that you can sanity-check."
-              />
-              <Card
-                title="2) Read the plain-English guide"
-                description="Learn what matters, what doesn’t, and where assumptions live."
-              />
-              <Card
-                title="3) Verify with official sources"
-                description="We link to CRA and other primary sources, so you can confirm details."
-              />
+              <Card title="1) Start with a calculator" description="Get a quick estimate you can sanity-check." />
+              <Card title="2) Read the plain-English guide" description="Learn what matters and where assumptions live." />
+              <Card title="3) Verify with official sources" description="Confirm details with primary sources like CRA." />
             </div>
           </div>
         </Container>

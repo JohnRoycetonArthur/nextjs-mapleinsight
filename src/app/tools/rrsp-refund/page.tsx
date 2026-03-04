@@ -41,7 +41,7 @@ export default function RrspRefundPage() {
         <h1 className="text-2xl font-semibold text-ink-900 md:text-3xl">RRSP Refund Calculator</h1>
         <p className="mt-2 max-w-3xl text-ink-700">
           Educational estimate using <span className="font-semibold">Ontario + federal 2025 marginal brackets</span>.
-          This is simplified (doesn’t model credits, surtaxes, CPP/EI, deductions other than RRSP).
+          Simplified (doesn’t model credits, surtaxes, CPP/EI, or other deductions).
         </p>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -53,7 +53,7 @@ export default function RrspRefundPage() {
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 <li>RRSP contributions reduce taxable income for the year you claim them.</li>
                 <li>The value depends heavily on your marginal tax rate.</li>
-                <li>This tool estimates the tax difference before vs after the deduction.</li>
+                <li>This tool estimates tax before vs after the deduction.</li>
               </ul>
             </div>
           </div>
@@ -69,7 +69,7 @@ export default function RrspRefundPage() {
               { label: "Marginal rate (approx.)", value: pct(results.impliedMarginal, 1) },
               { label: "Effective rate (approx.)", value: pct(results.effectiveRate, 1) },
             ]}
-            note="Refunds in real life can differ because of credits, surtaxes, CPP/EI, other deductions, and employer withholding."
+            note="Real refunds can differ due to credits, surtaxes, CPP/EI, other deductions, and withholding."
           />
         </div>
       </div>

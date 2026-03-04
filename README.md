@@ -1,7 +1,7 @@
 # Maple Insight (Next.js)
 
-A calm, clean, Canada-focused site with built-in calculators:
-- RRSP Refund (Ontario + Federal 2025 simplified marginal brackets)
+A calm, Canada-focused site with built-in calculators:
+- RRSP Refund (Ontario + Federal 2025 simplified brackets)
 - Mortgage Comparison
 - CCB Impact (Federal CCB, Jul 2025–Jun 2026)
 - Car Financing Comparison
@@ -13,7 +13,4 @@ npm run dev
 ```
 
 ## Deploy
-Push to GitHub and import into Vercel. Domain is configured in Vercel.
-
-## Notes
-These calculators are educational estimates only (not tax/financial/legal advice).
+Push to GitHub and Vercel will deploy automatically (repo is connected).

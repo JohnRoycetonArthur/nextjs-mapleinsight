@@ -1,9 +1,6 @@
 import { Container } from "@/components/Container";
 
-export const metadata = {
-  title: "About",
-  description: "About Maple Insight — calm, confident, clean, educational tools for Canada."
-};
+export const metadata = { title: "About", description: "About Maple Insight." };
 
 export default function AboutPage() {
   return (

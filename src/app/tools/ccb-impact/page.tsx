@@ -24,9 +24,9 @@ export default function CcbImpactPage() {
       <div className="py-12">
         <h1 className="text-2xl font-semibold text-ink-900 md:text-3xl">CCB Impact Calculator</h1>
         <p className="mt-2 max-w-3xl text-ink-700">
-          Estimate the <span className="font-semibold">federal</span> Canada Child Benefit (CCB) for the
+          Estimate the <span className="font-semibold">federal</span> Canada Child Benefit for the
           <span className="font-semibold"> July 2025 – June 2026</span> benefit year.
-          Uses CRA thresholds and maximum amounts. Provincial add-ons are not included.
+          Provincial add-ons are not included.
         </p>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -46,12 +46,12 @@ export default function CcbImpactPage() {
             </div>
 
             <div className="rounded-2xl border border-ink-200 bg-white p-5 text-sm text-ink-700">
-              <div className="font-semibold text-ink-900">Official parameters used</div>
+              <div className="font-semibold text-ink-900">Parameters used</div>
               <ul className="mt-2 list-disc space-y-1 pl-5">
-                <li>Max annual per child: under 6 = ${CCB_MAX_UNDER6.toLocaleString("en-CA")}; age 6–17 = ${CCB_MAX_6TO17.toLocaleString("en-CA")}.</li>
-                <li>Phase 1 threshold: ${THRESHOLD_1.toLocaleString("en-CA")}.</li>
-                <li>Phase 2 threshold: ${THRESHOLD_2.toLocaleString("en-CA")}.</li>
-                <li>Reduction rates depend on number of children (per CRA).</li>
+                <li>Max annual per child: under 6 = {CCB_MAX_UNDER6.toLocaleString("en-CA")}; age 6–17 = {CCB_MAX_6TO17.toLocaleString("en-CA")}.</li>
+                <li>Threshold 1: {THRESHOLD_1.toLocaleString("en-CA")}.</li>
+                <li>Threshold 2: {THRESHOLD_2.toLocaleString("en-CA")}.</li>
+                <li>Reduction rates depend on number of children.</li>
               </ul>
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function CcbImpactPage() {
               { label: "Estimated annual CCB", value: money2(result.annual) },
               { label: "Estimated monthly CCB", value: money2(result.monthly) },
             ]}
-            note="This is an estimate based on AFNI + child counts/ages. CRA calculates exact amounts and may include provincial benefits separately."
+            note="CRA calculates exact amounts. This estimate is for education and planning only."
           />
         </div>
       </div>

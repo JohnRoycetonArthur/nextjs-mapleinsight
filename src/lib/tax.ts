@@ -1,9 +1,5 @@
 export type Bracket = { upTo: number | null; rate: number };
 
-/**
- * Simplified combined tax estimate using marginal brackets only (does not model non-refundable credits, surtaxes, EI/CPP, etc.)
- * Intended for educational comparisons, not exact filing outcomes.
- */
 export function taxFromBrackets(income: number, brackets: Bracket[]): number {
   let remaining = Math.max(0, income);
   let prevCap = 0;
@@ -21,18 +17,15 @@ export function taxFromBrackets(income: number, brackets: Bracket[]): number {
 }
 
 export function marginalRateAtIncome(income: number, brackets: Bracket[]): number {
-  let prevCap = 0;
   for (const b of brackets) {
     const cap = b.upTo ?? Infinity;
     if (income <= cap) return b.rate;
-    prevCap = cap;
   }
   return brackets[brackets.length - 1]?.rate ?? 0;
 }
 
-// 2025 Federal brackets (lowest bracket effectively 14.5% due to mid-year change), and Ontario 2025.
-// Sources used when building this repo: CRA + reputable tax reference summaries.
-// Update yearly.
+// Simplified 2025 marginal brackets (Ontario + Federal).
+// Educational estimate only; does not model credits, surtaxes, CPP/EI, etc.
 export const FEDERAL_2025: Bracket[] = [
   { upTo: 57375, rate: 0.145 },
   { upTo: 114750, rate: 0.205 },

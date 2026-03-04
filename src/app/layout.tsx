@@ -5,10 +5,7 @@ import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mapleinsight.ca"),
-  title: {
-    default: "Maple Insight",
-    template: "%s | Maple Insight",
-  },
+  title: { default: "Maple Insight", template: "%s | Maple Insight" },
   description: "Calm, clean, educational tools and guides for Canada — finance, immigration, and tech.",
   openGraph: {
     title: "Maple Insight",
@@ -18,13 +15,8 @@ export const metadata: Metadata = {
     locale: "en_CA",
     type: "website",
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  icons: {
-    icon: "/icon.png",
-  },
+  robots: { index: true, follow: true },
+  icons: { icon: "/icon.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -6,9 +6,9 @@ export function monthlyLoanPayment(principal: number, annualRate: number, years:
 }
 
 export function amortizationSummary(principal: number, annualRate: number, years: number) {
-  const pmt = monthlyLoanPayment(principal, annualRate, years);
-  const n = Math.max(1, Math.round(years * 12));
-  const totalPaid = pmt * n;
+  const payment = monthlyLoanPayment(principal, annualRate, years);
+  const months = Math.max(1, Math.round(years * 12));
+  const totalPaid = payment * months;
   const interest = totalPaid - principal;
-  return { payment: pmt, totalPaid, interest, months: n };
+  return { payment, totalPaid, interest, months };
 }

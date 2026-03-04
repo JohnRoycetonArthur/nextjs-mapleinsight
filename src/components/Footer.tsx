@@ -9,10 +9,10 @@ export function Footer() {
           <div>
             <div className="text-sm font-semibold text-ink-900">Maple Insight</div>
             <div className="mt-1 text-xs text-ink-600">
-              Educational tools and explanations for Canada—finance, immigration, and tech.
+              Educational tools and explanations for Canada — finance, immigration, and tech.
             </div>
             <div className="mt-3 text-xs text-ink-600">
-              Not financial, legal, or tax advice. Use for education and double‑check with official sources.
+              Not financial, legal, or tax advice. Use for education and double-check official sources.
             </div>
           </div>
 
