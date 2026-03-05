@@ -1,5 +1,73 @@
 import fs from "fs";
 import path from "path";
+
+const projectRoot = process.cwd();
+
+function exists(p) {
+  return fs.existsSync(p);
+}
+
+function read(p) {
+  return fs.readFileSync(p, "utf8");
+}
+
+function write(p, content) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, content, "utf8");
+}
+
+function backupFile(p) {
+  const bak = `${p}.bak`;
+  if (!exists(bak)) fs.copyFileSync(p, bak);
+}
+
+function updateFileInPlace(filePath, transformFn) {
+  if (!exists(filePath)) return { changed: false, reason: "missing" };
+
+  const before = read(filePath);
+  const after = transformFn(before);
+
+  if (after === before) return { changed: false, reason: "no-change" };
+
+  backupFile(filePath);
+  write(filePath, after);
+  return { changed: true, reason: "updated" };
+}
+
+function findFilesRecursively(dir, maxDepth = 6, depth = 0) {
+  if (!exists(dir) || depth > maxDepth) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const out = [];
+
+  for (const e of entries) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      // skip node_modules and .next
+      if (e.name === "node_modules" || e.name === ".next") continue;
+      out.push(...findFilesRecursively(full, maxDepth, depth + 1));
+    } else if (e.isFile()) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+function isLikelyNavFile(filePath) {
+  const name = filePath.toLowerCase();
+  return (
+    name.includes("layout.tsx") ||
+    name.includes("header") ||
+    name.includes("nav") ||
+    name.includes("navbar") ||
+    name.includes("menu")
+  );
+}
+
+const homepagePath = path.join(projectRoot, "src", "app", "page.tsx");
+
+// ---- 1) HOMEPAGE REPLACEMENT ----
+const newHomepage = `import fs from "fs";
+import path from "path";
 import matter from "gray-matter";
 import Link from "next/link";
 
@@ -23,9 +91,9 @@ function getFeaturedArticles(limit = 4): ArticleCard[] {
     const { data } = matter(raw);
 
     return {
-      title: (data.title as string) ?? filename.replace(/\.md$/, ""),
+      title: (data.title as string) ?? filename.replace(/\\.md$/, ""),
       description: (data.description as string) ?? "",
-      slug: (data.slug as string) ?? filename.replace(/\.md$/, ""),
+      slug: (data.slug as string) ?? filename.replace(/\\.md$/, ""),
       updated: (data.updated as string) ?? (data.date as string) ?? "",
       category: (data.category as string) ?? "",
     };
@@ -99,11 +167,11 @@ export default function HomePage() {
             {featured.map((a) => (
               <Link
                 key={a.slug}
-                href={`/articles/${a.slug}`}
+                href={\`/articles/\${a.slug}\`}
                 className="rounded-2xl border bg-white p-5 shadow-sm hover:bg-gray-50"
               >
                 <div className="text-xs font-medium text-gray-500">
-                  {a.category || "Article"} {a.updated ? `• ${a.updated}` : ""}
+                  {a.category || "Article"} {a.updated ? \`• \${a.updated}\` : ""}
                 </div>
                 <div className="mt-2 text-lg font-semibold leading-snug">
                   {a.title}
@@ -149,3 +217,68 @@ export default function HomePage() {
     </main>
   );
 }
+`;
+
+console.log("== Updating homepage ==");
+if (exists(homepagePath)) {
+  backupFile(homepagePath);
+}
+write(homepagePath, newHomepage);
+console.log(`✅ Updated: ${path.relative(projectRoot, homepagePath)}`);
+console.log(`   Backup: ${path.relative(projectRoot, homepagePath)}.bak (if it existed)`);
+
+// ---- 2) NAV UPDATES ----
+console.log("\n== Updating navigation text/links (Guides -> Articles) ==");
+
+// Search common folders for nav-like files
+const searchDirs = [
+  path.join(projectRoot, "src", "app"),
+  path.join(projectRoot, "src", "components"),
+  path.join(projectRoot, "components"),
+];
+
+const candidates = new Set();
+for (const d of searchDirs) {
+  for (const f of findFilesRecursively(d)) {
+    if (!f.endsWith(".tsx") && !f.endsWith(".ts") && !f.endsWith(".jsx") && !f.endsWith(".js")) continue;
+    if (isLikelyNavFile(f)) candidates.add(f);
+  }
+}
+
+// Transform: label and href updates
+const navTransform = (s) => {
+  let out = s;
+
+  // Replace visible label "Guides" -> "Articles"
+  out = out.replace(/\bGuides\b/g, "Articles");
+
+  // Replace common hrefs: /guides -> /articles (also handles "guides" in Link href strings)
+  out = out.replace(/["'`]\/guides["'`]/g, (m) => m.replace("/guides", "/articles"));
+  out = out.replace(/href=\{["'`]\/guides["'`]\}/g, (m) => m.replace("/guides", "/articles"));
+  out = out.replace(/href=["']\/guides["']/g, (m) => m.replace("/guides", "/articles"));
+
+  return out;
+};
+
+let changedCount = 0;
+let scannedCount = 0;
+
+for (const filePath of candidates) {
+  scannedCount++;
+  const result = updateFileInPlace(filePath, navTransform);
+  if (result.changed) {
+    changedCount++;
+    console.log(`✅ Updated nav: ${path.relative(projectRoot, filePath)}`);
+  }
+}
+
+console.log(`\nScanned nav-like files: ${scannedCount}`);
+console.log(`Changed files: ${changedCount}`);
+
+console.log("\nDone. Now run:");
+console.log("  npm run dev");
+console.log("\nThen verify:");
+console.log("  /  (homepage)");
+console.log("  /articles");
+console.log("  Nav shows Articles (not Guides)");
+console.log("\nNote: Update featured calculator hrefs in src/app/page.tsx if your routes differ.");

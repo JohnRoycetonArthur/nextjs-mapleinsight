@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maple Insight">
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
+  <!-- Maple leaf (simple, modern) -->
+  <path d="M24 12
+           L27 18
+           L34 16
+           L30.5 22
+           L36 25
+           L29.5 26.5
+           L31 33
+           L24 29.5
+           L17 33
+           L18.5 26.5
+           L12 25
+           L17.5 22
+           L14 16
+           L21 18
+           L24 12Z"
+        fill="#D62828"/>
+  <!-- Insight dot -->
+  <circle cx="35.5" cy="14.5" r="3" fill="#1B4332"/>
+</svg>

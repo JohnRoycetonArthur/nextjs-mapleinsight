@@ -1,3 +1,4 @@
+import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/Header";
@@ -19,10 +20,12 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.png" },
 };
 
+const inter = Inter({ subsets: ["latin"], display: "swap" });
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body className={`${inter.className} bg-white text-[color:#495057]`}>
         <Header />
         <main className="min-h-[70vh]">{children}</main>
         <Footer />
