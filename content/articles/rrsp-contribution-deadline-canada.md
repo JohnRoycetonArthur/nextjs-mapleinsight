@@ -4,7 +4,7 @@ description: "Learn the RRSP contribution deadline in Canada, how it affects you
 slug: "rrsp-contribution-deadline-canada"
 date: "2026-03-04"
 updated: "2026-03-04"
-category: "RRSP"
+category: "Taxes"
 tags: ["rrsp", "tax refund", "canada taxes"]
 readingTime: 7
 ---

@@ -4,7 +4,7 @@ description: "Learn the difference between RRSP and TFSA accounts and how Canadi
 slug: "rrsp-vs-tfsa-canada"
 date: "2026-03-04"
 updated: "2026-03-04"
-category: "RRSP"
+category: "Taxes"
 tags: ["rrsp","tfsa","canada taxes"]
 readingTime: 7
 ---

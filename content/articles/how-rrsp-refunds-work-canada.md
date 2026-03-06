@@ -4,7 +4,7 @@ description: "Understand how RRSP contributions generate tax refunds and how Can
 slug: "how-rrsp-refunds-work-canada"
 date: "2026-03-04"
 updated: "2026-03-04"
-category: "RRSP"
+category: "Taxes"
 tags: ["rrsp refund","tax refund","canada taxes"]
 readingTime: 6
 ---
@@ -48,9 +48,3 @@ Many Canadians:
 
 - RRSP contribution limits
 - RRSP vs TFSA comparison
-
-## Related Guides
-
-- [RRSP Contribution Deadline in Canada](/articles/rrsp-contribution-deadline-canada)
-- [RRSP Contribution Limits Explained](/articles/rrsp-contribution-limits-canada)
-- [RRSP vs TFSA in Canada](/articles/rrsp-vs-tfsa-canada)

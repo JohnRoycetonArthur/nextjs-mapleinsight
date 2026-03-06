@@ -4,7 +4,7 @@ description: "Learn how RRSP contribution room is calculated and how Canadians c
 slug: "rrsp-contribution-limits-canada"
 date: "2026-03-04"
 updated: "2026-03-04"
-category: "RRSP"
+category: "Taxes"
 tags: ["rrsp limits","canada tax"]
 readingTime: 6
 ---

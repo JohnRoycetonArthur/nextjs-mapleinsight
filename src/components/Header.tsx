@@ -16,7 +16,7 @@ export function Header() {
           <Link href="/" className="flex items-center gap-3">
 
           <img
-            src="/logo-mark.svg"
+            src="/maple-insight-logo.png"
             alt="Maple Insight"
             className="h-10 w-10"
           />

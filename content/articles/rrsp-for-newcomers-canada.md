@@ -4,7 +4,7 @@ description: "How new immigrants to Canada can start using RRSP accounts for tax
 slug: "rrsp-for-newcomers-canada"
 date: "2026-03-04"
 updated: "2026-03-04"
-category: "Immigration Finance"
+category: "Taxes"
 tags: ["rrsp newcomers"]
 readingTime: 6
 ---
