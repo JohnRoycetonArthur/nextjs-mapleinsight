@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getFeaturedArticles } from "@/sanity/queries";
+import { FounderBio } from "@/components/FounderBio";
 
 const featuredCalculators = [
   {
@@ -51,6 +52,9 @@ export default async function HomePage() {
             </Link>
           </div>
         </section>
+
+        {/* Founder Bio */}
+        <FounderBio />
 
         {/* Featured Articles */}
         <section className="mt-10">
