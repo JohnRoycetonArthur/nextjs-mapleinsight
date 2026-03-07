@@ -22,3 +22,6 @@ Thumbs.db
 
 # sanity cache
 .sanity
+
+# typescript build cache
+tsconfig.tsbuildinfo

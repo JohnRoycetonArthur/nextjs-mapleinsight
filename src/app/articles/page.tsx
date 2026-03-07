@@ -1,33 +1,8 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
 import Link from "next/link";
+import { getAllArticles } from "@/sanity/queries";
 
-const CONTENT_DIR = path.join(process.cwd(), "content", "articles");
-
-function getAllArticles() {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
-
-  const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith(".md"));
-
-  return files
-    .map((filename) => {
-      const file = fs.readFileSync(path.join(CONTENT_DIR, filename), "utf8");
-      const { data } = matter(file);
-
-      return {
-        title: (data.title as string) ?? filename.replace(/\.md$/, ""),
-        description: (data.description as string) ?? "",
-        slug: (data.slug as string) ?? filename.replace(/\.md$/, ""),
-        date: (data.date as string) ?? "",
-        category: (data.category as string) ?? "",
-      };
-    })
-    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
-}
-
-export default function ArticlesIndex() {
-  const articles = getAllArticles();
+export default async function ArticlesIndex() {
+  const articles = await getAllArticles();
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
@@ -37,7 +12,7 @@ export default function ArticlesIndex() {
         {articles.map((a) => (
           <div key={a.slug} className="rounded-xl border p-5">
             <div className="text-sm text-gray-500">
-              {a.category} {a.date ? `• ${a.date}` : ""}
+              {a.category} {a.publishedAt ? `• ${a.publishedAt.slice(0, 10)}` : ""}
             </div>
 
             <h2 className="mt-2 text-xl font-semibold">
@@ -46,12 +21,12 @@ export default function ArticlesIndex() {
               </Link>
             </h2>
 
-            {a.description ? <p className="mt-2 text-gray-600">{a.description}</p> : null}
+            {a.summary ? <p className="mt-2 text-gray-600">{a.summary}</p> : null}
           </div>
         ))}
 
         {articles.length === 0 ? (
-          <p className="text-gray-600">No articles found in /content/articles yet.</p>
+          <p className="text-gray-600">No published articles found. Publish articles in the Sanity Studio to see them here.</p>
         ) : null}
       </div>
     </main>

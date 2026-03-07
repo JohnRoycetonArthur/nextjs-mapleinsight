@@ -1,53 +1,18 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-import { remark } from "remark";
-import html from "remark-html";
+import { PortableText } from "@portabletext/react";
 import { notFound } from "next/navigation";
-
-const CONTENT_DIR = path.join(process.cwd(), "content", "articles");
-
-async function getArticleBySlug(slug: string) {
-  // We will match by frontmatter slug first, fallback to filename
-  if (!fs.existsSync(CONTENT_DIR)) return null;
-
-  const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith(".md"));
-
-  // Try to find a file whose frontmatter slug matches
-  for (const filename of files) {
-    const filePath = path.join(CONTENT_DIR, filename);
-    const file = fs.readFileSync(filePath, "utf8");
-    const { data, content } = matter(file);
-
-    const fmSlug = (data.slug as string) ?? filename.replace(/\.md$/, "");
-    if (fmSlug === slug) {
-      const processed = await remark().use(html).process(content);
-      return { data, contentHtml: processed.toString() };
-    }
-  }
-
-  return null;
-}
+import { getArticleBySlug, getAllArticleSlugs } from "@/sanity/queries";
 
 export async function generateStaticParams() {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
-  const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith(".md"));
-
-  // Build params from frontmatter slug (fallback to filename)
-  return files.map((filename) => {
-    const file = fs.readFileSync(path.join(CONTENT_DIR, filename), "utf8");
-    const { data } = matter(file);
-    const slug = (data.slug as string) ?? filename.replace(/\.md$/, "");
-    return { slug };
-  });
+  const slugs = await getAllArticleSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const article = await getArticleBySlug(params.slug);
   if (!article) return {};
   return {
-    title: (article.data.title as string) ?? "Article",
-    description: (article.data.description as string) ?? "",
+    title: article.seoTitle ?? article.title,
+    description: article.seoDescription ?? article.summary ?? "",
   };
 }
 
@@ -61,7 +26,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       <div className="mb-6 text-sm text-gray-500">
         <a className="hover:underline" href="/articles">Articles</a>
         <span className="mx-2">/</span>
-        <span>{(article.data.category as string) ?? "Article"}</span>
+        <span>{article.category ?? "Article"}</span>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
@@ -69,23 +34,23 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         <section className="lg:col-span-4">
           <div className="rounded-2xl border bg-white p-6 shadow-soft">
             <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
-              {article.data.title}
+              {article.title}
             </h1>
 
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600">
-              {article.data.updated ? <span>Updated: {article.data.updated}</span> : null}
-              {article.data.readingTime ? <span>• {article.data.readingTime} min read</span> : null}
+              {article.publishedAt ? <span>Published: {article.publishedAt.slice(0, 10)}</span> : null}
             </div>
 
-            <article
+            <div
               className="prose prose-lg prose-slate mt-8 max-w-none
               prose-p:leading-7 prose-p:my-5
               prose-headings:font-semibold prose-headings:tracking-tight
               prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4
               prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
               prose-a:text-maple-red hover:prose-a:underline"
-              dangerouslySetInnerHTML={{ __html: article.contentHtml }}
-            />
+            >
+              <PortableText value={article.content as Parameters<typeof PortableText>[0]["value"]} />
+            </div>
           </div>
 
           {/* Related guides section (white background) */}

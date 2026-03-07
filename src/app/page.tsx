@@ -1,39 +1,5 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
 import Link from "next/link";
-
-const CONTENT_DIR = path.join(process.cwd(), "content", "articles");
-
-type ArticleCard = {
-  title: string;
-  description: string;
-  slug: string;
-  updated?: string;
-  category?: string;
-};
-
-function getFeaturedArticles(limit = 4): ArticleCard[] {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
-
-  const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith(".md"));
-
-  const articles = files.map((filename) => {
-    const raw = fs.readFileSync(path.join(CONTENT_DIR, filename), "utf8");
-    const { data } = matter(raw);
-
-    return {
-      title: (data.title as string) ?? filename.replace(/\.md$/, ""),
-      description: (data.description as string) ?? "",
-      slug: (data.slug as string) ?? filename.replace(/\.md$/, ""),
-      updated: (data.updated as string) ?? (data.date as string) ?? "",
-      category: (data.category as string) ?? "",
-    };
-  });
-
-  articles.sort((a, b) => (b.updated ?? "").localeCompare(a.updated ?? ""));
-  return articles.slice(0, limit);
-}
+import { getFeaturedArticles } from "@/sanity/queries";
 
 const featuredCalculators = [
   {
@@ -53,8 +19,8 @@ const featuredCalculators = [
   },
 ];
 
-export default function HomePage() {
-  const featured = getFeaturedArticles(4);
+export default async function HomePage() {
+  const featured = await getFeaturedArticles(4);
 
   return (
     <main className="bg-gray-50">
@@ -103,20 +69,20 @@ export default function HomePage() {
                 className="rounded-2xl border bg-white p-5 shadow-sm hover:bg-gray-50"
               >
                 <div className="text-xs font-medium text-gray-500">
-                  {a.category || "Article"} {a.updated ? `• ${a.updated}` : ""}
+                  {a.category || "Article"} {a.publishedAt ? `• ${a.publishedAt.slice(0, 10)}` : ""}
                 </div>
                 <div className="mt-2 text-lg font-semibold leading-snug">
                   {a.title}
                 </div>
                 <p className="mt-2 text-sm text-gray-600 line-clamp-3">
-                  {a.description}
+                  {a.summary}
                 </p>
               </Link>
             ))}
 
             {featured.length === 0 ? (
               <div className="rounded-2xl border bg-white p-5 text-gray-600">
-                No articles found yet. Add markdown files to <code>/content/articles</code>.
+                No published articles found yet.
               </div>
             ) : null}
           </div>
