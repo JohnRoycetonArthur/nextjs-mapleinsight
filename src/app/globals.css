@@ -67,3 +67,103 @@
     font-style: normal;
   }
 }
+
+/* Start Here page — focus-visible and print rules (from design comp) */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media print {
+  nav, footer, .no-print, [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Checklist: force accordion panels open for print */
+  .checklist-accordion-panel {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Checklist: show resource link href for print */
+  .checklist-resource-link::after {
+    content: " (" attr(href) ")";
+    font-size: 11px;
+    color: #6B7280;
+  }
+
+  /* Checklist: clean card borders for print */
+  .checklist-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
+
+/* Range input thumb — TFSA vs RRSP Calculator sliders */
+input[type="range"] {
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #1B7A4A;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #1B7A4A;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+/* Tip fade-in animation — Budget Calculator */
+@keyframes tipFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Confetti fall animation */
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Visually hidden utility for screen reader text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

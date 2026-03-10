@@ -1,7 +1,8 @@
 import {articleType} from './articleType'
+import {authorType} from './authorType'
 import {calculatorType} from './calculatorType'
 import {categoryType} from './categoryType'
 
 export const schema = {
-  types: [categoryType, articleType, calculatorType],
+  types: [categoryType, authorType, articleType, calculatorType],
 }

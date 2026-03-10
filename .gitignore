@@ -25,3 +25,9 @@ Thumbs.db
 
 # typescript build cache
 tsconfig.tsbuildinfo
+
+# implementation specs and design docs (dev-only)
+docs/
+
+# compiled output
+dist/

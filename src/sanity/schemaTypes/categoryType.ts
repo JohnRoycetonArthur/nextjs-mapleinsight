@@ -26,5 +26,11 @@ export const categoryType = defineType({
       title: 'Description',
       type: 'text',
     }),
+    defineField({
+      name: 'color',
+      title: 'Color',
+      type: 'string',
+      description: 'Hex color code used for category badge styling (e.g. #1B7A4A)',
+    }),
   ],
 })

@@ -1,0 +1,12 @@
+interface MapleLeafProps {
+  size?: number;
+  color?: string;
+}
+
+export function MapleLeaf({ size = 18, color = "#C41E3A" }: MapleLeafProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true">
+      <path d="M12 0L13.5 6.5L17 4L15.5 8.5L22 9L17 12L20 16L14 14L12 24L10 14L4 16L7 12L2 9L8.5 8.5L7 4L10.5 6.5Z" />
+    </svg>
+  );
+}
