@@ -35,6 +35,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${inter.className} ${dmSans.variable} ${dmSerif.variable} bg-white text-[color:#495057]`}>
+      {/* ── Google Tag Manager (noscript) ── */}
+      <noscript>
+        <iframe
+          src="https://www.googletagmanager.com/ns.html?id=GTM-W7K97ZC2"
+          height="0"
+          width="0"
+          style={{ display: 'none', visibility: 'hidden' }}
+        />
+      </noscript>
+      {/* ── End Google Tag Manager (noscript) ── */}
         <Header />
         <main className="min-h-[70vh]">{children}</main>
         <Footer />
