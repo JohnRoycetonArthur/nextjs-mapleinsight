@@ -790,9 +790,9 @@ export function ArticleContent({ article, sections, readingTime }: ArticleConten
           maxWidth: 1100,
           margin: "0 auto",
           padding: isMobile ? "32px 16px 64px" : "48px 24px 64px",
-          display: "flex",
-          gap: 48,
-          alignItems: "flex-start",
+          display: isMobile ? "block" : "flex",
+          gap: isMobile ? 0 : 48,
+          alignItems: isMobile ? undefined : "flex-start",
         }}
       >
         {/* Main content */}
@@ -800,6 +800,7 @@ export function ArticleContent({ article, sections, readingTime }: ArticleConten
           style={{
             flex: 1,
             maxWidth: 720,
+            minWidth: 0,
             fontFamily: "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)",
           }}
         >

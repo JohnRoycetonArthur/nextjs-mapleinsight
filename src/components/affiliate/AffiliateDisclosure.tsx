@@ -42,7 +42,7 @@ export function AffiliateDisclosure({ isMobile }: AffiliateDisclosureProps) {
       }}
     >
       <InfoIcon />
-      <div>
+      <div style={{ minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "#92400E" }}>
           This article contains affiliate links. If you sign up through our links, we may earn a
           commission at no extra cost to you.{" "}
