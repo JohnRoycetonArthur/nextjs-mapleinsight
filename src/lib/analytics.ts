@@ -1,28 +1,39 @@
 /**
- * Analytics event tracking utility for Maple Insight.
- * Fires events via gtag (Google Analytics 4) or Plausible if available.
- * All events respect the site's cookie/privacy consent mechanism.
+ * Shared analytics utility for Maple Insight.
+ * Events are pushed into window.dataLayer and forwarded to GA4 through GTM.
  */
-type WindowWithAnalytics = Window & {
-  gtag?: (...args: unknown[]) => void;
-  plausible?: (name: string, options?: { props?: Record<string, unknown> }) => void;
-};
+type AnalyticsValue = string | number | boolean | null | undefined;
 
-export function trackEvent(
-  name: string,
-  props: Record<string, string | number> = {}
-) {
-  if (typeof window === "undefined") return;
+type AnalyticsProps = Record<string, AnalyticsValue>;
 
-  const w = window as WindowWithAnalytics;
+type DataLayerEvent = {
+  event: string;
+} & Record<string, string | number | boolean | null>;
 
-  // Google Analytics 4
-  if (typeof w.gtag === "function") {
-    w.gtag("event", name, props);
+declare global {
+  interface Window {
+    dataLayer?: DataLayerEvent[];
+  }
+}
+
+function sanitizeProps(props: AnalyticsProps): Record<string, string | number | boolean | null> {
+  return Object.fromEntries(
+    Object.entries(props).filter(([, value]) => value !== undefined)
+  ) as Record<string, string | number | boolean | null>;
+}
+
+export function pushToDataLayer(event: DataLayerEvent) {
+  if (typeof window === "undefined") {
+    return;
   }
 
-  // Plausible Analytics
-  if (typeof w.plausible === "function") {
-    w.plausible(name, { props });
-  }
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(event);
+}
+
+export function trackEvent(name: string, props: AnalyticsProps = {}) {
+  pushToDataLayer({
+    event: name,
+    ...sanitizeProps(props),
+  });
 }
