@@ -31,3 +31,7 @@ docs/
 
 # compiled output
 dist/
+
+# local analytics setup artifacts
+.analytics-setup-progress.json
+*.gtm-backup
