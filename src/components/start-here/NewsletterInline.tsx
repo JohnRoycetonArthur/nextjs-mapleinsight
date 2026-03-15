@@ -49,7 +49,7 @@ export function NewsletterInline() {
             fontFamily: "var(--font-dm-sans), Helvetica, sans-serif",
           }}
         >
-          Subscribe to Maple Insight and receive our free PDF checklist
+          Subscribe to Maple Insight Canada and receive our free PDF checklist
           covering every financial step for your first year in Canada.
         </p>
 

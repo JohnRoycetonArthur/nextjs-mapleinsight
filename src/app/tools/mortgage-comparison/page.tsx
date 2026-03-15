@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Compare two mortgage scenarios side-by-side with Canadian CMHC rules applied automatically.",
     url: PAGE_URL,
-    siteName: "Maple Insight",
+    siteName: "Maple Insight Canada",
     locale: "en_CA",
     type: "website",
     images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Mortgage Comparison Calculator" }],

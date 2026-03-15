@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Compare two car loan options side-by-side — monthly payments, total interest, and true cost of financing.",
     url: PAGE_URL,
-    siteName: "Maple Insight",
+    siteName: "Maple Insight Canada",
     locale: "en_CA",
     type: "website",
     images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Car Financing Comparison Calculator" }],

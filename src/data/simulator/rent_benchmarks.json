@@ -1,0 +1,337 @@
+{
+  "metadata": {
+    "data_version": "2026.1",
+    "source_url": "https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-data/data-tables/rental-market/rental-market-report-data-tables",
+    "last_updated": "2025-11-01",
+    "tax_year": 2026,
+    "license": "Open Government Licence – Canada"
+  },
+  "notes": "Average monthly rents (CAD) from CMHC Rental Market Survey 2024. Figures represent purpose-built and condominium rental apartments combined. Market rents for new listings may be higher.",
+  "data": [
+    {
+      "cma_code": "535",
+      "city_name": "Toronto",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1380, "median_monthly": 1350},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1780, "median_monthly": 1750},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 2080, "median_monthly": 2000},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2450, "median_monthly": 2350}
+      ]
+    },
+    {
+      "cma_code": "933",
+      "city_name": "Vancouver",
+      "province_code": "BC",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1550, "median_monthly": 1500},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1950, "median_monthly": 1900},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 2350, "median_monthly": 2280},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2800, "median_monthly": 2700}
+      ]
+    },
+    {
+      "cma_code": "462",
+      "city_name": "Montréal",
+      "province_code": "QC",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 980,  "median_monthly": 950},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1250, "median_monthly": 1200},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1520, "median_monthly": 1480},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1850, "median_monthly": 1800}
+      ]
+    },
+    {
+      "cma_code": "825",
+      "city_name": "Calgary",
+      "province_code": "AB",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1250, "median_monthly": 1200},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1600, "median_monthly": 1550},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1950, "median_monthly": 1900},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2350, "median_monthly": 2250}
+      ]
+    },
+    {
+      "cma_code": "835",
+      "city_name": "Edmonton",
+      "province_code": "AB",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1050, "median_monthly": 1000},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1320, "median_monthly": 1280},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1600, "median_monthly": 1550},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1950, "median_monthly": 1900}
+      ]
+    },
+    {
+      "cma_code": "505",
+      "city_name": "Ottawa–Gatineau",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1180, "median_monthly": 1150},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1520, "median_monthly": 1480},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1850, "median_monthly": 1800},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2200, "median_monthly": 2100}
+      ]
+    },
+    {
+      "cma_code": "602",
+      "city_name": "Winnipeg",
+      "province_code": "MB",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 900,  "median_monthly": 880},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1150, "median_monthly": 1120},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1380, "median_monthly": 1340},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1650, "median_monthly": 1600}
+      ]
+    },
+    {
+      "cma_code": "205",
+      "city_name": "Halifax",
+      "province_code": "NS",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1100, "median_monthly": 1075},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1400, "median_monthly": 1380},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1720, "median_monthly": 1680},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2050, "median_monthly": 1980}
+      ]
+    },
+    {
+      "cma_code": "935",
+      "city_name": "Victoria",
+      "province_code": "BC",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1280, "median_monthly": 1250},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1650, "median_monthly": 1600},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 2050, "median_monthly": 2000},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2500, "median_monthly": 2400}
+      ]
+    },
+    {
+      "cma_code": "537",
+      "city_name": "Hamilton",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1150, "median_monthly": 1100},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1450, "median_monthly": 1400},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1750, "median_monthly": 1700},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2100, "median_monthly": 2000}
+      ]
+    },
+    {
+      "cma_code": "541",
+      "city_name": "Kitchener–Cambridge–Waterloo",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1200, "median_monthly": 1150},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1500, "median_monthly": 1450},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1820, "median_monthly": 1780},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2200, "median_monthly": 2100}
+      ]
+    },
+    {
+      "cma_code": "555",
+      "city_name": "London",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1050, "median_monthly": 1020},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1350, "median_monthly": 1300},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1620, "median_monthly": 1580},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1950, "median_monthly": 1880}
+      ]
+    },
+    {
+      "cma_code": "421",
+      "city_name": "Québec City",
+      "province_code": "QC",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 820,  "median_monthly": 800},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1050, "median_monthly": 1020},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1280, "median_monthly": 1250},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1550, "median_monthly": 1500}
+      ]
+    },
+    {
+      "cma_code": "725",
+      "city_name": "Saskatoon",
+      "province_code": "SK",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 900,  "median_monthly": 880},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1150, "median_monthly": 1120},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1380, "median_monthly": 1350},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1650, "median_monthly": 1600}
+      ]
+    },
+    {
+      "cma_code": "705",
+      "city_name": "Regina",
+      "province_code": "SK",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 880,  "median_monthly": 860},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1120, "median_monthly": 1100},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1350, "median_monthly": 1320},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1600, "median_monthly": 1560}
+      ]
+    },
+    {
+      "cma_code": "539",
+      "city_name": "St. Catharines–Niagara",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1000, "median_monthly": 980},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1280, "median_monthly": 1250},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1550, "median_monthly": 1500},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1850, "median_monthly": 1800}
+      ]
+    },
+    {
+      "cma_code": "532",
+      "city_name": "Oshawa",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1200, "median_monthly": 1180},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1520, "median_monthly": 1480},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1820, "median_monthly": 1780},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2180, "median_monthly": 2100}
+      ]
+    },
+    {
+      "cma_code": "559",
+      "city_name": "Windsor",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 900,  "median_monthly": 880},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1150, "median_monthly": 1120},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1400, "median_monthly": 1360},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1680, "median_monthly": 1620}
+      ]
+    },
+    {
+      "cma_code": "305",
+      "city_name": "Moncton",
+      "province_code": "NB",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 850,  "median_monthly": 820},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1100, "median_monthly": 1070},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1320, "median_monthly": 1280},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1580, "median_monthly": 1520}
+      ]
+    },
+    {
+      "cma_code": "915",
+      "city_name": "Kelowna",
+      "province_code": "BC",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1300, "median_monthly": 1270},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1620, "median_monthly": 1580},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1980, "median_monthly": 1930},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2380, "median_monthly": 2300}
+      ]
+    },
+    {
+      "cma_code": "932",
+      "city_name": "Abbotsford–Mission",
+      "province_code": "BC",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1200, "median_monthly": 1170},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1520, "median_monthly": 1480},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1850, "median_monthly": 1800},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2200, "median_monthly": 2120}
+      ]
+    },
+    {
+      "cma_code": "568",
+      "city_name": "Barrie",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1150, "median_monthly": 1120},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1450, "median_monthly": 1420},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1750, "median_monthly": 1710},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 2080, "median_monthly": 2000}
+      ]
+    },
+    {
+      "cma_code": "521",
+      "city_name": "Kingston",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 1050, "median_monthly": 1020},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1350, "median_monthly": 1320},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1620, "median_monthly": 1580},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1950, "median_monthly": 1880}
+      ]
+    },
+    {
+      "cma_code": "580",
+      "city_name": "Greater Sudbury",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 900,  "median_monthly": 880},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1100, "median_monthly": 1080},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1320, "median_monthly": 1280},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1580, "median_monthly": 1520}
+      ]
+    },
+    {
+      "cma_code": "595",
+      "city_name": "Thunder Bay",
+      "province_code": "ON",
+      "survey_year": 2024,
+      "source": "CMHC Rental Market Survey",
+      "rents": [
+        {"bedrooms": 0, "bedroom_label": "Bachelor",   "average_monthly": 800,  "median_monthly": 780},
+        {"bedrooms": 1, "bedroom_label": "1 Bedroom",  "average_monthly": 1020, "median_monthly": 1000},
+        {"bedrooms": 2, "bedroom_label": "2 Bedroom",  "average_monthly": 1230, "median_monthly": 1200},
+        {"bedrooms": 3, "bedroom_label": "3+ Bedroom", "average_monthly": 1450, "median_monthly": 1400}
+      ]
+    }
+  ]
+}

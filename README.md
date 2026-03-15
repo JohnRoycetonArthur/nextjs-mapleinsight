@@ -1,4 +1,4 @@
-# Maple Insight (Next.js)
+# Maple Insight Canada (Next.js)
 
 A calm, Canada-focused site with built-in calculators:
 - RRSP Refund (Ontario + Federal 2025 simplified brackets)

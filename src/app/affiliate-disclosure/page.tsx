@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { AFFILIATE_PRODUCTS } from "@/data/affiliateProducts";
 
 export const metadata: Metadata = {
-  title: "Affiliate Disclosure | Maple Insight",
+  title: "Affiliate Disclosure | Maple Insight Canada",
   description:
-    "Learn how Maple Insight uses affiliate links and how we maintain editorial independence while earning commissions on recommended products.",
+    "Learn how Maple Insight Canada uses affiliate links and how we maintain editorial independence while earning commissions on recommended products.",
   alternates: {
     canonical: "https://mapleinsight.ca/affiliate-disclosure",
   },
@@ -19,7 +19,6 @@ export default function AffiliateDisclosurePage() {
         fontFamily: "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)",
       }}
     >
-      {/* ─── Hero ─── */}
       <header
         style={{
           background: "linear-gradient(165deg, #0F3D3A 0%, #1B5E58 40%, #1B7A4A 100%)",
@@ -67,7 +66,7 @@ export default function AffiliateDisclosurePage() {
                 letterSpacing: 1,
               }}
             >
-              📋 Transparency
+              Transparency
             </span>
           </div>
           <h1
@@ -96,7 +95,6 @@ export default function AffiliateDisclosurePage() {
         </div>
       </header>
 
-      {/* ─── Content ─── */}
       <main
         style={{
           maxWidth: 720,
@@ -104,7 +102,6 @@ export default function AffiliateDisclosurePage() {
           padding: "48px 24px 80px",
         }}
       >
-        {/* How We Make Money */}
         <section style={{ marginBottom: 48 }}>
           <h2
             style={{
@@ -118,7 +115,7 @@ export default function AffiliateDisclosurePage() {
             How We Make Money
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.75, color: "#374151", margin: "0 0 16px" }}>
-            Maple Insight is a free educational resource for newcomers to Canada. To keep the site
+            Maple Insight Canada is a free educational resource for newcomers to Canada. To keep the site
             running, we participate in affiliate marketing programs. This means that when you click
             a link on our site and sign up for a product or service, we may earn a small commission
             — at no extra cost to you.
@@ -139,13 +136,12 @@ export default function AffiliateDisclosurePage() {
               color: "#92400E",
             }}
           >
-            <strong>Important:</strong> Affiliate links on Maple Insight are clearly labelled with
+            <strong>Important:</strong> Affiliate links on Maple Insight Canada are clearly labelled with
             an &quot;Affiliate&quot; marker or an affiliate disclosure banner. You will always know
             when a link may earn us a commission.
           </div>
         </section>
 
-        {/* Editorial Independence */}
         <section style={{ marginBottom: 48 }}>
           <h2
             style={{
@@ -175,7 +171,6 @@ export default function AffiliateDisclosurePage() {
           </p>
         </section>
 
-        {/* Affiliate Partners */}
         <section style={{ marginBottom: 48 }}>
           <h2
             style={{
@@ -253,7 +248,6 @@ export default function AffiliateDisclosurePage() {
           </div>
         </section>
 
-        {/* Questions */}
         <section>
           <h2
             style={{

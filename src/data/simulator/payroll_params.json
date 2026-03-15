@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "data_version": "2026.1",
+    "source_url": "https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/canada-pension-plan-cpp/cpp-contribution-rates-maximums-exemptions.html",
+    "last_updated": "2025-11-15",
+    "tax_year": 2026,
+    "license": "Open Government Licence – Canada"
+  },
+  "data": {
+    "tax_year": 2026,
+    "cpp": {
+      "ympe": 73200,
+      "basic_exemption": 3500,
+      "employee_rate": 0.0595,
+      "max_employee_contribution": 4147.15,
+      "employer_rate": 0.0595,
+      "max_employer_contribution": 4147.15
+    },
+    "cpp2": {
+      "yampe": 81900,
+      "employee_rate": 0.04,
+      "max_employee_contribution": 348.00,
+      "employer_rate": 0.04,
+      "max_employer_contribution": 348.00
+    },
+    "ei": {
+      "mie": 65700,
+      "employee_rate": 0.0164,
+      "max_employee_premium": 1077.48,
+      "employer_rate": 0.02296,
+      "max_employer_premium": 1508.46
+    },
+    "qpp": {
+      "ympe": 73200,
+      "basic_exemption": 3500,
+      "employee_rate": 0.064,
+      "max_employee_contribution": 4460.80,
+      "employer_rate": 0.064,
+      "max_employer_contribution": 4460.80
+    },
+    "qpp2": {
+      "yampe": 81900,
+      "employee_rate": 0.04,
+      "max_employee_contribution": 348.00,
+      "employer_rate": 0.04,
+      "max_employer_contribution": 348.00
+    },
+    "qpip": {
+      "max_insurable_earnings": 98000,
+      "employee_rate": 0.00494,
+      "max_employee_premium": 484.12,
+      "employer_rate": 0.00692,
+      "max_employer_premium": 678.16
+    },
+    "ei_quebec": {
+      "mie": 65700,
+      "employee_rate": 0.0131,
+      "max_employee_premium": 860.67,
+      "employer_rate": 0.01834,
+      "max_employer_premium": 1204.93
+    }
+  }
+}

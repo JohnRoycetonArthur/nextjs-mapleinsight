@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Estimate how much tax you save with an RRSP contribution. Enter your income and contribution, choose your province, and see your estimated refund instantly.",
     url: PAGE_URL,
-    siteName: "Maple Insight",
+    siteName: "Maple Insight Canada",
     locale: "en_CA",
     type: "website",
     images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "RRSP Refund Calculator" }],

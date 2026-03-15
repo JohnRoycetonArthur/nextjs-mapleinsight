@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "data_version": "2026.1",
+    "last_updated": "2025-11-15",
+    "notes": "Each rule fires when its condition matches the simulation context. include_tasks are added to the roadmap; exclude_tasks are removed. Rules are evaluated in order. Op values: eq, ne, in, gt, lt, gte."
+  },
+  "rules": [
+    {
+      "rule_id": "planning-to-move-pre-arrival",
+      "description": "Include all Pre-Arrival tasks for users who haven't moved yet",
+      "condition": { "field": "migration_stage", "op": "eq", "value": "planning_to_move" },
+      "include_tasks": [
+        "pre-research-cost-of-living",
+        "pre-compare-provinces",
+        "pre-understand-tax-system",
+        "pre-build-pre-move-savings",
+        "pre-organize-documents",
+        "pre-research-banking"
+      ],
+      "exclude_tasks": []
+    },
+    {
+      "rule_id": "recently-arrived-no-pre-arrival",
+      "description": "Remove Pre-Arrival tasks for users who have already arrived",
+      "condition": { "field": "migration_stage", "op": "in", "value": ["recently_arrived", "established"] },
+      "include_tasks": [],
+      "exclude_tasks": [
+        "pre-research-cost-of-living",
+        "pre-compare-provinces",
+        "pre-understand-tax-system",
+        "pre-build-pre-move-savings",
+        "pre-organize-documents",
+        "pre-research-banking"
+      ]
+    },
+    {
+      "rule_id": "housing-at-risk",
+      "description": "AC-6: Prominently add budget review and affordable housing tasks when shelter costs exceed 30% of income",
+      "condition": { "field": "housing_affordability_flag", "op": "in", "value": ["at_risk", "unaffordable"] },
+      "include_tasks": ["budget-review-housing", "explore-affordable-areas"],
+      "exclude_tasks": []
+    },
+    {
+      "rule_id": "housing-affordable-homebuying",
+      "description": "AC-5 complement: When housing is affordable and income supports it, surface homebuying research",
+      "condition": { "field": "housing_affordability_flag", "op": "eq", "value": "affordable" },
+      "include_tasks": ["explore-homebuying", "research-mortgage"],
+      "exclude_tasks": []
+    },
+    {
+      "rule_id": "has-children-family-tasks",
+      "description": "AC-7: Include CCB, childcare, school registration, and RESP for households with children",
+      "condition": { "field": "has_children", "op": "eq", "value": true },
+      "include_tasks": [
+        "apply-for-ccb",
+        "research-childcare",
+        "register-school-children",
+        "open-resp"
+      ],
+      "exclude_tasks": []
+    },
+    {
+      "rule_id": "positive-surplus-investment",
+      "description": "Surface investment and savings maximization tasks when monthly surplus is positive",
+      "condition": { "field": "monthly_surplus", "op": "gt", "value": 0 },
+      "include_tasks": [
+        "explore-investments",
+        "increase-savings-rate"
+      ],
+      "exclude_tasks": []
+    },
+    {
+      "rule_id": "established-advanced-planning",
+      "description": "Established residents skip basic arrival tasks; surface more advanced financial planning",
+      "condition": { "field": "migration_stage", "op": "eq", "value": "established" },
+      "include_tasks": ["explore-investments", "maximize-tfsa", "explore-homebuying"],
+      "exclude_tasks": ["get-sin", "get-health-card", "set-up-direct-deposit"]
+    }
+  ]
+}

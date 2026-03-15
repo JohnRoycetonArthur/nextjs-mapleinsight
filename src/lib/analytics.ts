@@ -1,5 +1,5 @@
 /**
- * Shared analytics utility for Maple Insight.
+ * Shared analytics utility for Maple Insight Canada.
  * Events are pushed into window.dataLayer and forwarded to GA4 through GTM.
  */
 type AnalyticsValue = string | number | boolean | null | undefined;

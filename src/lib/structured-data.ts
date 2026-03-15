@@ -1,7 +1,7 @@
-// Reusable JSON-LD schema generators for Maple Insight pages.
+// Reusable JSON-LD schema generators for Maple Insight Canada pages.
 
 const SITE_URL = "https://mapleinsight.ca";
-const SITE_NAME = "Maple Insight";
+const SITE_NAME = "Maple Insight Canada";
 const AUTHOR_URL = `${SITE_URL}/about`;
 const OG_IMAGE = `${SITE_URL}/og-default.png`;
 

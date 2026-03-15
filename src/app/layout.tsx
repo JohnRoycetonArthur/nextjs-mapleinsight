@@ -7,25 +7,25 @@ import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mapleinsight.ca"),
-  title: { default: "Maple Insight", template: "%s | Maple Insight" },
+  title: { default: "Maple Insight Canada", template: "%s | Maple Insight Canada" },
   description: "Calm, clean, educational tools and guides for Canada - finance, immigration, and tech.",
   openGraph: {
-    title: "Maple Insight",
+    title: "Maple Insight Canada",
     description: "Calm, clean, educational tools and guides for Canada - finance, immigration, and tech.",
     url: "https://mapleinsight.ca",
-    siteName: "Maple Insight",
+    siteName: "Maple Insight Canada",
     locale: "en_CA",
     type: "website",
-    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Maple Insight" }],
+    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Maple Insight Canada" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Maple Insight",
+    title: "Maple Insight Canada",
     description: "Calm, clean, educational tools and guides for Canada - finance, immigration, and tech.",
     images: ["/og-default.png"],
   },
   robots: { index: true, follow: true },
-  icons: { icon: "/icon.png" },
+  icons: { icon: "/brand-mark.svg" },
 };
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });

@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "validate:simulator": "ts-node --project tsconfig.scripts.json scripts/validate-simulator-data.ts",
+    "test:simulator": "node --require ./scripts/test-register.js --test \"__tests__/simulator/*.test.ts\"",
+    "sync:wages": "node scripts/sync-wage-facts.mjs"
   },
   "dependencies": {
     "@portabletext/react": "^6.0.3",

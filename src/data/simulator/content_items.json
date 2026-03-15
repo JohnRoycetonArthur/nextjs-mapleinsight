@@ -1,0 +1,233 @@
+{
+  "metadata": {
+    "data_version": "2026.1",
+    "last_updated": "2025-11-15",
+    "notes": "MVP content catalogue. Article slugs use the /articles/[slug] dynamic route. Static tool/calculator paths are exact."
+  },
+  "items": [
+    {
+      "content_id": "checklist",
+      "type": "guide",
+      "title": "Newcomer Financial Checklist",
+      "slug": "/checklist",
+      "tags": ["newcomer-basics", "checklist", "getting-started"]
+    },
+    {
+      "content_id": "start-here",
+      "type": "guide",
+      "title": "Start Here: Canada Financial Guide",
+      "slug": "/start-here",
+      "tags": ["newcomer-basics", "getting-started", "overview"]
+    },
+    {
+      "content_id": "glossary",
+      "type": "guide",
+      "title": "Canadian Financial Glossary",
+      "slug": "/glossary",
+      "tags": ["newcomer-basics", "tax", "banking", "savings"]
+    },
+    {
+      "content_id": "recommended-tools",
+      "type": "guide",
+      "title": "Recommended Financial Tools",
+      "slug": "/recommended-tools",
+      "tags": ["tools", "getting-started", "savings", "banking"]
+    },
+    {
+      "content_id": "calc-tfsa-rrsp",
+      "type": "calculator",
+      "title": "TFSA vs RRSP Calculator",
+      "slug": "/calculators/tfsa-vs-rrsp",
+      "tags": ["savings", "tfsa", "rrsp", "tax", "investment"]
+    },
+    {
+      "content_id": "calc-newcomer-budget",
+      "type": "calculator",
+      "title": "Newcomer Budget Calculator",
+      "slug": "/calculators/newcomer-budget",
+      "tags": ["budget", "newcomer-basics", "cost-of-living"]
+    },
+    {
+      "content_id": "tool-rrsp-refund",
+      "type": "tool",
+      "title": "RRSP Tax Refund Estimator",
+      "slug": "/tools/rrsp-refund",
+      "tags": ["rrsp", "tax", "savings", "refund"]
+    },
+    {
+      "content_id": "tool-mortgage-comparison",
+      "type": "tool",
+      "title": "Mortgage Comparison Calculator",
+      "slug": "/tools/mortgage-comparison",
+      "tags": ["housing", "mortgage", "homebuying"]
+    },
+    {
+      "content_id": "tool-ccb-impact",
+      "type": "tool",
+      "title": "Canada Child Benefit Calculator",
+      "slug": "/tools/ccb-impact",
+      "tags": ["children", "ccb", "government-benefits", "family"]
+    },
+    {
+      "content_id": "tool-car-financing",
+      "type": "tool",
+      "title": "Car Financing Calculator",
+      "slug": "/tools/car-financing",
+      "tags": ["transportation", "car", "loan"]
+    },
+    {
+      "content_id": "article-canadian-banking-newcomers",
+      "type": "article",
+      "title": "Opening a Newcomer Bank Account in Canada",
+      "slug": "/articles/opening-a-newcomer-bank-account",
+      "tags": ["banking", "newcomer-basics", "getting-started"]
+    },
+    {
+      "content_id": "article-sin-guide",
+      "type": "article",
+      "title": "Getting a Social Insurance Number (SIN) as a Newcomer to Canada",
+      "slug": "/articles/getting-a-social-insurance-number-sin",
+      "tags": ["newcomer-basics", "sin", "getting-started"]
+    },
+    {
+      "content_id": "article-provincial-health-cards",
+      "type": "article",
+      "title": "Provincial Health Insurance for Newcomers to Canada",
+      "slug": "/articles/provincial-health-insurance",
+      "tags": ["newcomer-basics", "health", "provincial"]
+    },
+    {
+      "content_id": "article-how-taxes-work",
+      "type": "article",
+      "title": "How Canadian Income Tax Works",
+      "slug": "/articles/how-canadian-income-tax-works",
+      "tags": ["tax", "income-tax", "newcomer-basics", "federal"]
+    },
+    {
+      "content_id": "article-cpp-ei-explained",
+      "type": "article",
+      "title": "CPP and EI Deductions Explained for Newcomers",
+      "slug": "/articles/cpp-ei-deductions-explained-newcomers",
+      "tags": ["tax", "cpp", "ei", "payroll", "newcomer-basics"]
+    },
+    {
+      "content_id": "article-cra-my-account",
+      "type": "article",
+      "title": "How to Register for CRA My Account",
+      "slug": "/articles/how-to-register-for-cra-my-account",
+      "tags": ["tax", "cra", "newcomer-basics", "online-services"]
+    },
+    {
+      "content_id": "article-build-credit-canada",
+      "type": "article",
+      "title": "Understanding Canadian Credit Scores: A Newcomer's Guide",
+      "slug": "/articles/understanding-canadian-credit-scores",
+      "tags": ["credit", "banking", "newcomer-basics"]
+    },
+    {
+      "content_id": "article-tfsa-guide",
+      "type": "article",
+      "title": "TFSA Explained for Newcomers to Canada",
+      "slug": "/articles/tfsa-explained-for-newcomers",
+      "tags": ["tfsa", "savings", "investment", "tax"]
+    },
+    {
+      "content_id": "article-rrsp-guide",
+      "type": "article",
+      "title": "RRSP for Newcomers to Canada",
+      "slug": "/articles/rrsp-for-newcomers-canada",
+      "tags": ["rrsp", "savings", "tax", "investment"]
+    },
+    {
+      "content_id": "article-renting-canada",
+      "type": "article",
+      "title": "Renting vs Buying in Canada: What Newcomers Need to Know",
+      "slug": "/articles/renting-vs-buying-in-canada",
+      "tags": ["housing", "renting", "newcomer-basics"]
+    },
+    {
+      "content_id": "article-affordable-housing",
+      "type": "article",
+      "title": "Finding Affordable Housing in Canada",
+      "slug": "/articles/finding-affordable-housing-canada",
+      "tags": ["housing", "budget", "cost-of-living", "renting"]
+    },
+    {
+      "content_id": "article-ccb-guide",
+      "type": "article",
+      "title": "Canada Child Benefit: Complete Application Guide",
+      "slug": "/articles/canada-child-benefit-application-guide",
+      "tags": ["children", "ccb", "government-benefits", "family"]
+    },
+    {
+      "content_id": "article-childcare-canada",
+      "type": "article",
+      "title": "Childcare Options in Canada for Newcomer Families",
+      "slug": "/articles/childcare-options-canada-newcomer-families",
+      "tags": ["children", "childcare", "family", "newcomer-basics"]
+    },
+    {
+      "content_id": "article-resp-guide",
+      "type": "article",
+      "title": "RESP: Saving for Your Child's Education in Canada",
+      "slug": "/articles/resp-education-savings-canada-guide",
+      "tags": ["children", "resp", "education", "savings", "family"]
+    },
+    {
+      "content_id": "article-mortgage-guide",
+      "type": "article",
+      "title": "Buying a Home in Canada: Mortgage Requirements",
+      "slug": "/articles/buying-home-canada-mortgage-requirements",
+      "tags": ["housing", "mortgage", "homebuying", "credit"]
+    },
+    {
+      "content_id": "article-emergency-fund",
+      "type": "article",
+      "title": "Why Every Newcomer Needs an Emergency Fund",
+      "slug": "/articles/emergency-fund-guide-newcomers-canada",
+      "tags": ["savings", "budget", "emergency", "financial-planning"]
+    },
+    {
+      "content_id": "article-employer-benefits",
+      "type": "article",
+      "title": "Understanding Your Canadian Employer Benefits Package",
+      "slug": "/articles/understanding-canadian-employer-benefits",
+      "tags": ["employment", "benefits", "insurance", "rrsp"]
+    },
+    {
+      "content_id": "article-file-taxes-first-time",
+      "type": "article",
+      "title": "Filing Your First Canadian Tax Return",
+      "slug": "/articles/filing-first-canadian-tax-return",
+      "tags": ["tax", "tax-return", "newcomer-basics", "cra"]
+    },
+    {
+      "content_id": "article-government-benefits-newcomers",
+      "type": "article",
+      "title": "Government Benefits Available to Newcomers in Canada",
+      "slug": "/articles/government-benefits-newcomers-canada",
+      "tags": ["government-benefits", "newcomer-basics", "ccb", "gst-credit"]
+    },
+    {
+      "content_id": "article-cost-of-living-canada",
+      "type": "article",
+      "title": "Cost of Living in Canada: City-by-City Comparison",
+      "slug": "/articles/cost-of-living-canada-city-comparison",
+      "tags": ["cost-of-living", "budget", "newcomer-basics", "city-comparison"]
+    },
+    {
+      "content_id": "article-compare-provinces",
+      "type": "article",
+      "title": "Comparing Canadian Provinces for Newcomers",
+      "slug": "/articles/comparing-canadian-provinces-newcomers",
+      "tags": ["newcomer-basics", "provincial", "city-comparison", "getting-started"]
+    },
+    {
+      "content_id": "article-investment-beginners",
+      "type": "article",
+      "title": "Beginner's Guide to Investing in Canada",
+      "slug": "/articles/beginners-guide-investing-canada",
+      "tags": ["investment", "savings", "tfsa", "rrsp", "financial-planning"]
+    }
+  ]
+}

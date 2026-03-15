@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title,
       description,
       url,
-      siteName: "Maple Insight",
+      siteName: "Maple Insight Canada",
       locale: "en_CA",
       type: "article",
       publishedTime: article.publishedAt ?? undefined,

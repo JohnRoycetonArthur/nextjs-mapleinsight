@@ -72,7 +72,7 @@ export const articleType = defineType({
       title: 'Author',
       type: 'string',
       group: 'content',
-      initialValue: 'Maple Insight',
+      initialValue: 'Maple Insight Canada',
     }),
     defineField({
       name: 'publishedAt',

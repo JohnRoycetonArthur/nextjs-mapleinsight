@@ -3,7 +3,7 @@ import { GlossaryPage } from "./GlossaryPage";
 import { GLOSSARY_TERMS } from "@/data/glossaryTerms";
 
 export const metadata: Metadata = {
-  title: "Canadian Financial Glossary for Newcomers | Maple Insight",
+  title: "Canadian Financial Glossary for Newcomers | Maple Insight Canada",
   description:
     "Plain-language definitions of 35 Canadian financial terms — RRSP, TFSA, FHSA, CCB, CRA, NOA, SIN, and more. No financial background required.",
   alternates: {

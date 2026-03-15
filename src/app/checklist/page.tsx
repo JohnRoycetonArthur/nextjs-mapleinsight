@@ -3,7 +3,7 @@ import { CHECKLIST_DATA } from "@/data/checklist-data";
 import { ChecklistPage } from "./ChecklistPage";
 
 export const metadata: Metadata = {
-  title: "Newcomer Financial Checklist for Canada | Maple Insight",
+  title: "Newcomer Financial Checklist for Canada | Maple Insight Canada",
   description:
     "Track your financial progress in Canada with our interactive checklist. 16 essential tasks organized by month to guide your first year as a newcomer.",
   openGraph: {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     description:
       "Track your financial progress in Canada with our interactive checklist. 16 essential tasks organized by month to guide your first year as a newcomer.",
     url: "https://mapleinsight.ca/checklist",
-    siteName: "Maple Insight",
+    siteName: "Maple Insight Canada",
     locale: "en_CA",
     type: "website",
   },

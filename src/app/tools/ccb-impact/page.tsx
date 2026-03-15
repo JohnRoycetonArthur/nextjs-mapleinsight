@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Estimate your federal Canada Child Benefit for 2025–2026 based on your income and number of children.",
     url: PAGE_URL,
-    siteName: "Maple Insight",
+    siteName: "Maple Insight Canada",
     locale: "en_CA",
     type: "website",
     images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Canada Child Benefit Calculator" }],

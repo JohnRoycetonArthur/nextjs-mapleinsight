@@ -1,6 +1,6 @@
 import { Container } from "@/components/Container";
 
-export const metadata = { title: "Contact", description: "Contact Maple Insight." };
+export const metadata = { title: "Contact", description: "Contact Maple Insight Canada." };
 
 export default function ContactPage() {
   return (

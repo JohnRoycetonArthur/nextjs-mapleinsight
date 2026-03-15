@@ -3,7 +3,7 @@ import { webApplicationSchema } from "@/lib/structured-data";
 import { TfsaVsRrspCalculator } from "./TfsaVsRrspCalculator";
 
 export const metadata: Metadata = {
-  title: "TFSA vs RRSP Calculator — Compare Side-by-Side | Maple Insight",
+  title: "TFSA vs RRSP Calculator — Compare Side-by-Side | Maple Insight Canada",
   description:
     "Compare TFSA and RRSP side-by-side with our free calculator. See which account gives you more after-tax value based on your income, province, and retirement plans. Updated for 2026 tax brackets.",
   openGraph: {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     description:
       "Compare TFSA and RRSP side-by-side with our free calculator. See which account gives you more after-tax value based on your income, province, and retirement plans. Updated for 2026 tax brackets.",
     url: "https://mapleinsight.ca/calculators/tfsa-vs-rrsp",
-    siteName: "Maple Insight",
+    siteName: "Maple Insight Canada",
     locale: "en_CA",
     type: "website",
     images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "TFSA vs RRSP Calculator" }],

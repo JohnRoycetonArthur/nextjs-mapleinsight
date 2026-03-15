@@ -1,0 +1,236 @@
+{
+  "metadata": {
+    "data_version": "2026.1",
+    "source_url": "https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/az/Definition-eng.cfm?ID=geo009",
+    "last_updated": "2025-11-01",
+    "tax_year": 2026,
+    "license": "Open Government Licence – Canada"
+  },
+  "data": [
+    {
+      "city_id": "toronto-on",
+      "name": "Toronto",
+      "province_code": "ON",
+      "cma_code": "535",
+      "mbm_region": "toronto",
+      "latitude": 43.6532,
+      "longitude": -79.3832
+    },
+    {
+      "city_id": "vancouver-bc",
+      "name": "Vancouver",
+      "province_code": "BC",
+      "cma_code": "933",
+      "mbm_region": "vancouver",
+      "latitude": 49.2827,
+      "longitude": -123.1207
+    },
+    {
+      "city_id": "montreal-qc",
+      "name": "Montréal",
+      "province_code": "QC",
+      "cma_code": "462",
+      "mbm_region": "montreal",
+      "latitude": 45.5017,
+      "longitude": -73.5673
+    },
+    {
+      "city_id": "calgary-ab",
+      "name": "Calgary",
+      "province_code": "AB",
+      "cma_code": "825",
+      "mbm_region": "calgary",
+      "latitude": 51.0447,
+      "longitude": -114.0719
+    },
+    {
+      "city_id": "edmonton-ab",
+      "name": "Edmonton",
+      "province_code": "AB",
+      "cma_code": "835",
+      "mbm_region": "edmonton",
+      "latitude": 53.5461,
+      "longitude": -113.4938
+    },
+    {
+      "city_id": "ottawa-on",
+      "name": "Ottawa–Gatineau",
+      "province_code": "ON",
+      "cma_code": "505",
+      "mbm_region": "ottawa",
+      "latitude": 45.4215,
+      "longitude": -75.6972
+    },
+    {
+      "city_id": "winnipeg-mb",
+      "name": "Winnipeg",
+      "province_code": "MB",
+      "cma_code": "602",
+      "mbm_region": "winnipeg",
+      "latitude": 49.8951,
+      "longitude": -97.1384
+    },
+    {
+      "city_id": "halifax-ns",
+      "name": "Halifax",
+      "province_code": "NS",
+      "cma_code": "205",
+      "mbm_region": "halifax",
+      "latitude": 44.6488,
+      "longitude": -63.5752
+    },
+    {
+      "city_id": "victoria-bc",
+      "name": "Victoria",
+      "province_code": "BC",
+      "cma_code": "935",
+      "mbm_region": "victoria",
+      "latitude": 48.4284,
+      "longitude": -123.3656
+    },
+    {
+      "city_id": "hamilton-on",
+      "name": "Hamilton",
+      "province_code": "ON",
+      "cma_code": "537",
+      "mbm_region": "hamilton",
+      "latitude": 43.2557,
+      "longitude": -79.8711
+    },
+    {
+      "city_id": "kitchener-on",
+      "name": "Kitchener–Cambridge–Waterloo",
+      "province_code": "ON",
+      "cma_code": "541",
+      "mbm_region": "kitchener",
+      "latitude": 43.4516,
+      "longitude": -80.4925
+    },
+    {
+      "city_id": "london-on",
+      "name": "London",
+      "province_code": "ON",
+      "cma_code": "555",
+      "mbm_region": "london-on",
+      "latitude": 42.9849,
+      "longitude": -81.2453
+    },
+    {
+      "city_id": "quebec-city-qc",
+      "name": "Québec City",
+      "province_code": "QC",
+      "cma_code": "421",
+      "mbm_region": "quebec-city",
+      "latitude": 46.8139,
+      "longitude": -71.2082
+    },
+    {
+      "city_id": "st-catharines-on",
+      "name": "St. Catharines–Niagara",
+      "province_code": "ON",
+      "cma_code": "539",
+      "mbm_region": "st-catharines",
+      "latitude": 43.1594,
+      "longitude": -79.2469
+    },
+    {
+      "city_id": "oshawa-on",
+      "name": "Oshawa",
+      "province_code": "ON",
+      "cma_code": "532",
+      "mbm_region": "oshawa",
+      "latitude": 43.8971,
+      "longitude": -78.8658
+    },
+    {
+      "city_id": "windsor-on",
+      "name": "Windsor",
+      "province_code": "ON",
+      "cma_code": "559",
+      "mbm_region": "windsor-on",
+      "latitude": 42.3149,
+      "longitude": -83.0364
+    },
+    {
+      "city_id": "saskatoon-sk",
+      "name": "Saskatoon",
+      "province_code": "SK",
+      "cma_code": "725",
+      "mbm_region": "saskatoon",
+      "latitude": 52.1579,
+      "longitude": -106.6702
+    },
+    {
+      "city_id": "regina-sk",
+      "name": "Regina",
+      "province_code": "SK",
+      "cma_code": "705",
+      "mbm_region": "regina",
+      "latitude": 50.4452,
+      "longitude": -104.6189
+    },
+    {
+      "city_id": "kelowna-bc",
+      "name": "Kelowna",
+      "province_code": "BC",
+      "cma_code": "915",
+      "mbm_region": "kelowna",
+      "latitude": 49.8880,
+      "longitude": -119.4960
+    },
+    {
+      "city_id": "abbotsford-bc",
+      "name": "Abbotsford–Mission",
+      "province_code": "BC",
+      "cma_code": "932",
+      "mbm_region": "abbotsford",
+      "latitude": 49.0504,
+      "longitude": -122.3045
+    },
+    {
+      "city_id": "barrie-on",
+      "name": "Barrie",
+      "province_code": "ON",
+      "cma_code": "568",
+      "mbm_region": "barrie",
+      "latitude": 44.3894,
+      "longitude": -79.6903
+    },
+    {
+      "city_id": "kingston-on",
+      "name": "Kingston",
+      "province_code": "ON",
+      "cma_code": "521",
+      "mbm_region": "kingston-on",
+      "latitude": 44.2312,
+      "longitude": -76.4860
+    },
+    {
+      "city_id": "moncton-nb",
+      "name": "Moncton",
+      "province_code": "NB",
+      "cma_code": "305",
+      "mbm_region": "moncton",
+      "latitude": 46.0878,
+      "longitude": -64.7782
+    },
+    {
+      "city_id": "sudbury-on",
+      "name": "Greater Sudbury",
+      "province_code": "ON",
+      "cma_code": "580",
+      "mbm_region": "sudbury",
+      "latitude": 46.4917,
+      "longitude": -80.9930
+    },
+    {
+      "city_id": "thunder-bay-on",
+      "name": "Thunder Bay",
+      "province_code": "ON",
+      "cma_code": "595",
+      "mbm_region": "thunder-bay",
+      "latitude": 48.3809,
+      "longitude": -89.2477
+    }
+  ]
+}

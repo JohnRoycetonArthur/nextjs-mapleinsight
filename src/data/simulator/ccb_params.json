@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "data_version": "2026.1",
+    "source_url": "https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-child-benefit-overview/canada-child-benefit-we-calculate-your-payment.html",
+    "last_updated": "2025-11-15",
+    "benefit_period": "July 2025 – June 2026",
+    "license": "Open Government Licence – Canada",
+    "notes": "Maximum annual amounts and phase-out thresholds per CRA July 2025–June 2026 benefit year. base2 is the accumulated phase-1 reduction at threshold_2, used to continue the benefit calculation smoothly into phase 2."
+  },
+  "data": {
+    "benefit_year": "2025-2026",
+    "max_per_child_under_6": 7997,
+    "max_per_child_6_to_17": 6748,
+    "threshold_1": 37487,
+    "threshold_2": 81222,
+    "phase_rates": {
+      "children_1":    { "r1": 0.07,  "r2": 0.032, "base2": 3061  },
+      "children_2":    { "r1": 0.135, "r2": 0.057, "base2": 5904  },
+      "children_3":    { "r1": 0.19,  "r2": 0.08,  "base2": 8310  },
+      "children_4plus":{ "r1": 0.23,  "r2": 0.095, "base2": 10059 }
+    }
+  }
+}

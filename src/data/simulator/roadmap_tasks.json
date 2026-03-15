@@ -1,0 +1,405 @@
+{
+  "metadata": {
+    "data_version": "2026.1",
+    "last_updated": "2025-11-15",
+    "notes": "Task definitions for the personalized roadmap engine. always_include=true tasks appear for every user. Conditional tasks are added by roadmap_rules.json. content_tags are matched against content_items.json tags to resolve links."
+  },
+  "tasks": [
+    {
+      "task_id": "pre-research-cost-of-living",
+      "stage": "pre_arrival",
+      "title": "Research cost of living in your target city",
+      "description": "Compare monthly living costs across Canadian cities. Understanding rent, groceries, transit, and taxes before you arrive helps you set realistic financial expectations and choose the right city.",
+      "priority": "do_now",
+      "content_tags": ["cost-of-living", "budget", "city-comparison"],
+      "always_include": false
+    },
+    {
+      "task_id": "pre-compare-provinces",
+      "stage": "pre_arrival",
+      "title": "Compare provinces for settlement",
+      "description": "Different provinces have different income tax rates, healthcare wait times, job markets, and settlement resources. Comparing your options before arrival can significantly impact your finances.",
+      "priority": "do_now",
+      "content_tags": ["newcomer-basics", "provincial", "city-comparison"],
+      "always_include": false
+    },
+    {
+      "task_id": "pre-understand-tax-system",
+      "stage": "pre_arrival",
+      "title": "Learn how the Canadian tax system works",
+      "description": "Canada has federal and provincial income taxes, plus CPP and EI payroll deductions. Understanding the basics before you start working helps you plan for your actual take-home pay.",
+      "priority": "do_now",
+      "content_tags": ["tax", "income-tax", "newcomer-basics"],
+      "always_include": false
+    },
+    {
+      "task_id": "pre-build-pre-move-savings",
+      "stage": "pre_arrival",
+      "title": "Build a pre-move emergency fund",
+      "description": "Aim to arrive with 3–6 months of living expenses saved. Settlement costs — first and last month's rent, phone plans, essentials — add up quickly in the first few weeks.",
+      "priority": "do_now",
+      "content_tags": ["savings", "budget", "emergency"],
+      "always_include": false
+    },
+    {
+      "task_id": "pre-organize-documents",
+      "stage": "pre_arrival",
+      "title": "Organize your financial and immigration documents",
+      "description": "Gather proof of employment, education credentials, foreign bank statements, and immigration documents. You'll need these to open a bank account and start credit history in Canada.",
+      "priority": "do_now",
+      "content_tags": ["newcomer-basics", "getting-started"],
+      "always_include": false
+    },
+    {
+      "task_id": "pre-research-banking",
+      "stage": "pre_arrival",
+      "title": "Research Canadian banking options before you arrive",
+      "description": "Some major Canadian banks (TD, Scotiabank, CIBC) offer newcomer banking packages with reduced or waived fees for the first year. Comparing options before arrival saves time on day one.",
+      "priority": "do_soon",
+      "content_tags": ["banking", "newcomer-basics"],
+      "always_include": false
+    },
+    {
+      "task_id": "get-sin",
+      "stage": "first_30_days",
+      "title": "Apply for your Social Insurance Number (SIN)",
+      "description": "Your SIN is required before you can work or file taxes in Canada. Apply at a Service Canada office with your immigration documents — you'll receive it on the same day.",
+      "priority": "do_now",
+      "content_tags": ["newcomer-basics", "sin", "getting-started"],
+      "always_include": true
+    },
+    {
+      "task_id": "get-health-card",
+      "stage": "first_30_days",
+      "title": "Apply for your provincial health card",
+      "description": "Each province has a waiting period (typically 3 months) before healthcare coverage begins. Apply on day one to minimize the gap. In the interim, consider private health insurance.",
+      "priority": "do_now",
+      "content_tags": ["newcomer-basics", "health", "provincial"],
+      "always_include": true
+    },
+    {
+      "task_id": "open-bank-account",
+      "stage": "first_30_days",
+      "title": "Open a Canadian bank account",
+      "description": "A Canadian bank account is essential for receiving your pay, setting up direct deposit, and building credit history. Many major banks offer newcomer accounts with waived fees.",
+      "priority": "do_now",
+      "content_tags": ["banking", "newcomer-basics", "getting-started"],
+      "always_include": true
+    },
+    {
+      "task_id": "set-up-direct-deposit",
+      "stage": "first_30_days",
+      "title": "Set up direct deposit with your employer",
+      "description": "Provide your void cheque or bank transit/account numbers to HR or payroll. Direct deposit ensures your pay arrives on time and avoids cheque-cashing fees.",
+      "priority": "do_now",
+      "content_tags": ["banking", "employment", "newcomer-basics"],
+      "always_include": true
+    },
+    {
+      "task_id": "register-cra",
+      "stage": "first_30_days",
+      "title": "Register for CRA My Account",
+      "description": "CRA My Account gives you online access to your tax records, benefit entitlements, RRSP contribution room, and TFSA limit. Register using your SIN as soon as you receive your first T4.",
+      "priority": "do_now",
+      "content_tags": ["tax", "cra", "newcomer-basics"],
+      "always_include": true
+    },
+    {
+      "task_id": "create-first-budget",
+      "stage": "first_30_days",
+      "title": "Create your first monthly Canadian budget",
+      "description": "Map your estimated take-home pay against rent, groceries, transit, phone, and other fixed costs. Knowing your baseline spending immediately helps you avoid month-one financial stress.",
+      "priority": "do_now",
+      "content_tags": ["budget", "newcomer-basics", "cost-of-living"],
+      "always_include": true
+    },
+    {
+      "task_id": "find-permanent-housing",
+      "stage": "first_30_days",
+      "title": "Begin your search for permanent housing",
+      "description": "Start researching neighbourhoods, commute times, and rental costs. Factor in utilities, parking, and transit access. Aim to sign a lease within your first month to lock in stable housing costs.",
+      "priority": "do_soon",
+      "content_tags": ["housing", "renting", "newcomer-basics"],
+      "always_include": true
+    },
+    {
+      "task_id": "understand-cpp-ei",
+      "stage": "first_30_days",
+      "title": "Understand your CPP and EI payroll deductions",
+      "description": "Check your first pay stub to confirm CPP and EI deductions are correct. These are mandatory contributions — CPP builds your retirement pension, EI protects you if you lose your job.",
+      "priority": "do_soon",
+      "content_tags": ["tax", "cpp", "ei", "payroll"],
+      "always_include": true
+    },
+    {
+      "task_id": "budget-review-housing",
+      "stage": "first_30_days",
+      "title": "Review your housing costs — they exceed the 30% threshold",
+      "description": "Your estimated rent is above 30% of your gross income, which puts financial pressure on other goals. Review your budget to find areas to reduce spending, or explore more affordable areas of the city.",
+      "priority": "do_now",
+      "content_tags": ["housing", "budget", "cost-of-living"],
+      "always_include": false
+    },
+    {
+      "task_id": "explore-affordable-areas",
+      "stage": "first_30_days",
+      "title": "Explore more affordable neighbourhoods in your city",
+      "description": "Many Canadian cities have significantly lower rents just outside the core. Research transit-accessible neighbourhoods where rent-to-income ratio is healthier — you can save hundreds monthly.",
+      "priority": "do_now",
+      "content_tags": ["housing", "budget", "renting"],
+      "always_include": false
+    },
+    {
+      "task_id": "build-credit-history",
+      "stage": "month_2_3",
+      "title": "Start building Canadian credit history",
+      "description": "Foreign credit history does not transfer to Canada. Apply for a secured credit card or a newcomer credit card, use it for small purchases, and pay the full balance every month to build your score.",
+      "priority": "do_now",
+      "content_tags": ["credit", "banking", "newcomer-basics"],
+      "always_include": true
+    },
+    {
+      "task_id": "find-family-doctor",
+      "stage": "month_2_3",
+      "title": "Register with a family doctor or walk-in clinic",
+      "description": "Once your provincial health card arrives, find a family doctor who is accepting new patients. Many newcomers use walk-in clinics while on a doctor's waiting list — add yourself to lists early.",
+      "priority": "do_soon",
+      "content_tags": ["newcomer-basics", "health", "provincial"],
+      "always_include": true
+    },
+    {
+      "task_id": "apply-for-ccb",
+      "stage": "month_2_3",
+      "title": "Apply for the Canada Child Benefit (CCB)",
+      "description": "The CCB provides tax-free monthly payments to eligible families with children under 18. Apply through CRA My Account or mail RC66. Payments can be significant — up to $7,787/year per child under 6.",
+      "priority": "do_now",
+      "content_tags": ["children", "ccb", "government-benefits", "family"],
+      "always_include": false
+    },
+    {
+      "task_id": "research-childcare",
+      "stage": "month_2_3",
+      "title": "Research childcare and daycare options",
+      "description": "Childcare in Canada can be expensive, but federally-regulated $10/day childcare is being rolled out in most provinces. Register on wait lists early — demand exceeds supply in most cities.",
+      "priority": "do_soon",
+      "content_tags": ["children", "childcare", "family", "newcomer-basics"],
+      "always_include": false
+    },
+    {
+      "task_id": "open-tfsa",
+      "stage": "month_2_3",
+      "title": "Open a Tax-Free Savings Account (TFSA)",
+      "description": "A TFSA lets your money grow tax-free. You accumulate $7,000/year in contribution room (2025 rate) and growth and withdrawals are never taxed. Open one as soon as you become a Canadian resident.",
+      "priority": "do_now",
+      "content_tags": ["tfsa", "savings", "tax", "investment"],
+      "always_include": true
+    },
+    {
+      "task_id": "open-rrsp",
+      "stage": "month_2_3",
+      "title": "Open an RRSP account",
+      "description": "RRSP contributions reduce your taxable income for the year. You can contribute up to 18% of your prior year's earned income. Opening an RRSP now means you're ready to contribute before the deadline.",
+      "priority": "do_soon",
+      "content_tags": ["rrsp", "savings", "tax", "investment"],
+      "always_include": true
+    },
+    {
+      "task_id": "review-employer-benefits",
+      "stage": "month_2_3",
+      "title": "Review your employer benefits package",
+      "description": "Most Canadian employers offer health/dental insurance, a group RRSP with employer match, and possibly a pension. Review your benefits carefully — especially whether your employer matches RRSP contributions.",
+      "priority": "do_soon",
+      "content_tags": ["employment", "benefits", "rrsp", "insurance"],
+      "always_include": true
+    },
+    {
+      "task_id": "understand-tax-filing",
+      "stage": "month_2_3",
+      "title": "Learn how to file your first Canadian tax return",
+      "description": "Canadian tax returns are due by April 30 each year. As a newcomer, you file for the portion of the year you were a resident. Filing even with low income unlocks GST credits, TFSA room, and benefit eligibility.",
+      "priority": "do_now",
+      "content_tags": ["tax", "tax-return", "newcomer-basics", "cra"],
+      "always_include": true
+    },
+    {
+      "task_id": "explore-public-transit",
+      "stage": "month_2_3",
+      "title": "Set up transit and explore your city's transportation",
+      "description": "Monthly transit passes are more cost-effective than single fares. Many cities offer presto/compass cards. If you plan to drive, research car insurance costs — they vary widely by province.",
+      "priority": "do_later",
+      "content_tags": ["transportation", "cost-of-living", "newcomer-basics"],
+      "always_include": true
+    },
+    {
+      "task_id": "file-change-of-address",
+      "stage": "month_2_3",
+      "title": "Update your address with CRA and all institutions",
+      "description": "Once you have a permanent address, notify CRA, your employer, bank, and any government service providers. An outdated address means missed benefit cheques, T4s, and important correspondence.",
+      "priority": "do_soon",
+      "content_tags": ["newcomer-basics", "cra", "getting-started"],
+      "always_include": true
+    },
+    {
+      "task_id": "start-tfsa-contributions",
+      "stage": "month_4_6",
+      "title": "Start contributing to your TFSA regularly",
+      "description": "Set up automatic monthly transfers to your TFSA. Even small contributions grow tax-free over time. Prioritize TFSA over RRSP if your income is lower (under ~$50k) — the tax-free growth is more valuable.",
+      "priority": "do_now",
+      "content_tags": ["tfsa", "savings", "investment", "tax"],
+      "always_include": true
+    },
+    {
+      "task_id": "plan-rrsp-contributions",
+      "stage": "month_4_6",
+      "title": "Plan your annual RRSP contribution strategy",
+      "description": "Calculate how much to contribute before the March 1 deadline to maximize your tax refund. If your employer matches RRSP contributions, contribute at least enough to get the full match — it's free money.",
+      "priority": "do_soon",
+      "content_tags": ["rrsp", "savings", "tax", "investment"],
+      "always_include": true
+    },
+    {
+      "task_id": "register-school-children",
+      "stage": "month_4_6",
+      "title": "Register your children in school",
+      "description": "Canadian public school is free for children from kindergarten through grade 12. Contact your local school board or school directly. Bring immunization records, proof of address, and your child's birth certificate.",
+      "priority": "do_now",
+      "content_tags": ["children", "education", "family", "newcomer-basics"],
+      "always_include": false
+    },
+    {
+      "task_id": "optimize-monthly-budget",
+      "stage": "month_4_6",
+      "title": "Review and optimize your monthly budget",
+      "description": "After 3+ months in Canada, you have real spending data. Review your budget against your simulation estimates. Identify subscriptions, dining, or shopping you can trim to increase savings.",
+      "priority": "do_now",
+      "content_tags": ["budget", "cost-of-living", "savings"],
+      "always_include": true
+    },
+    {
+      "task_id": "build-3month-emergency-fund",
+      "stage": "month_4_6",
+      "title": "Build a 3-month emergency fund",
+      "description": "Aim to save 3 months of essential expenses in a high-interest savings account or TFSA. This cushion protects you from unexpected job loss, medical costs, or emergency travel — critical in your first year.",
+      "priority": "do_now",
+      "content_tags": ["savings", "emergency", "budget", "financial-planning"],
+      "always_include": true
+    },
+    {
+      "task_id": "explore-homebuying",
+      "stage": "month_4_6",
+      "title": "Start researching the homebuying process",
+      "description": "Canada's housing market has unique rules: minimum 5% down payment, CMHC mortgage insurance, and stress tests. Researching now means you'll be ready when your finances align for a purchase.",
+      "priority": "do_soon",
+      "content_tags": ["housing", "mortgage", "homebuying", "credit"],
+      "always_include": false
+    },
+    {
+      "task_id": "research-mortgage",
+      "stage": "month_4_6",
+      "title": "Research mortgage qualification requirements",
+      "description": "Canadian lenders require 2 years of Canadian credit history, proof of stable income, and a minimum down payment. Use the mortgage comparison tool to model different scenarios for your situation.",
+      "priority": "do_soon",
+      "content_tags": ["housing", "mortgage", "homebuying"],
+      "always_include": false
+    },
+    {
+      "task_id": "career-development-canada",
+      "stage": "month_4_6",
+      "title": "Plan your Canadian career development",
+      "description": "Review whether your foreign credentials are recognized, identify professional associations in your field, and consider upgrading certifications if needed. A higher Canadian salary tier has compounding financial benefits.",
+      "priority": "do_later",
+      "content_tags": ["employment", "newcomer-basics"],
+      "always_include": true
+    },
+    {
+      "task_id": "review-tax-situation",
+      "stage": "month_4_6",
+      "title": "Review your year-to-date tax situation",
+      "description": "Mid-year is a good time to check your payroll deductions, RRSP room, and any benefit changes (e.g. CCB). Making adjustments now prevents surprises at tax time.",
+      "priority": "do_later",
+      "content_tags": ["tax", "cra", "budget"],
+      "always_include": true
+    },
+    {
+      "task_id": "file-first-tax-return",
+      "stage": "month_7_12",
+      "title": "File your first Canadian tax return",
+      "description": "File by April 30 for the previous tax year (June 15 if self-employed). Filing unlocks benefit credits (GST/HST credit, CCB, provincial credits) and establishes your RRSP contribution room for the following year.",
+      "priority": "do_now",
+      "content_tags": ["tax", "tax-return", "newcomer-basics", "cra"],
+      "always_include": true
+    },
+    {
+      "task_id": "maximize-tfsa",
+      "stage": "month_7_12",
+      "title": "Plan to maximize TFSA contributions",
+      "description": "Each year you're a Canadian resident, you earn $7,000 in TFSA contribution room (2025 rate). Unused room carries forward indefinitely. Your TFSA can hold stocks, ETFs, GICs, or savings accounts.",
+      "priority": "do_soon",
+      "content_tags": ["tfsa", "savings", "investment", "tax"],
+      "always_include": true
+    },
+    {
+      "task_id": "review-insurance-needs",
+      "stage": "month_7_12",
+      "title": "Review your life and disability insurance needs",
+      "description": "If your employer provides group benefits, review the coverage amounts. Consider whether additional personal life insurance is warranted, especially if you have dependants or a mortgage.",
+      "priority": "do_soon",
+      "content_tags": ["insurance", "employment", "benefits", "family"],
+      "always_include": true
+    },
+    {
+      "task_id": "open-resp",
+      "stage": "month_7_12",
+      "title": "Open a Registered Education Savings Plan (RESP)",
+      "description": "The RESP gives you the Canada Education Savings Grant (CESG) — the government matches 20% of contributions up to $2,500/year per child, free. Open one as soon as possible to maximize CESG accumulation.",
+      "priority": "do_now",
+      "content_tags": ["children", "resp", "education", "savings", "family"],
+      "always_include": false
+    },
+    {
+      "task_id": "annual-financial-review",
+      "stage": "month_7_12",
+      "title": "Complete your first annual financial review",
+      "description": "After your first full year in Canada, review your net worth, savings rate, TFSA/RRSP balances, credit score, and insurance coverage. Set clear financial goals for year two.",
+      "priority": "do_now",
+      "content_tags": ["financial-planning", "budget", "savings", "investment"],
+      "always_include": true
+    },
+    {
+      "task_id": "explore-additional-benefits",
+      "stage": "month_7_12",
+      "title": "Explore all government benefits you may be entitled to",
+      "description": "Beyond CCB, newcomers may be eligible for the GST/HST credit, Ontario/provincial trillium benefit, climate action incentive, and various provincial programs. Use CRA My Account to see your entitlements.",
+      "priority": "do_soon",
+      "content_tags": ["government-benefits", "newcomer-basics", "tax"],
+      "always_include": true
+    },
+    {
+      "task_id": "increase-savings-rate",
+      "stage": "month_7_12",
+      "title": "Increase your savings rate with your growing income",
+      "description": "As you become more established, aim to save 15–20% of your net income. Automate contributions to TFSA and RRSP so savings happen before spending. Every 1% increase in savings rate compounds significantly.",
+      "priority": "do_soon",
+      "content_tags": ["savings", "investment", "financial-planning"],
+      "always_include": false
+    },
+    {
+      "task_id": "explore-investments",
+      "stage": "month_7_12",
+      "title": "Explore investment options beyond savings accounts",
+      "description": "Once your emergency fund is solid, consider investing in low-cost index ETFs inside your TFSA or RRSP. Canadian and global index funds offer diversified growth without high fees.",
+      "priority": "do_later",
+      "content_tags": ["investment", "savings", "tfsa", "rrsp"],
+      "always_include": false
+    },
+    {
+      "task_id": "net-worth-tracking",
+      "stage": "month_7_12",
+      "title": "Start tracking your net worth",
+      "description": "Tracking assets minus liabilities quarterly gives you a clear picture of your financial progress. Use a simple spreadsheet to list bank accounts, investments, and debts. Watching it grow motivates continued good habits.",
+      "priority": "do_later",
+      "content_tags": ["financial-planning", "savings", "budget"],
+      "always_include": true
+    }
+  ]
+}
