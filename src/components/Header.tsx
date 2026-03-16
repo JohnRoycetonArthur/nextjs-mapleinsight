@@ -128,8 +128,10 @@ export function Header() {
                 <BrandMark size={40} />
               </div>
               <div>
-                <div className="font-semibold text-gray-900">Maple Insight Canada</div>
-                <div className="text-xs text-gray-500">Financial clarity for newcomers</div>
+                <div className="font-semibold text-gray-900 leading-tight">
+                  Maple Insight<span className="hidden md:inline"> Canada</span>
+                </div>
+                <div className="hidden md:block text-xs text-gray-500">Financial clarity for newcomers</div>
               </div>
             </Link>
 

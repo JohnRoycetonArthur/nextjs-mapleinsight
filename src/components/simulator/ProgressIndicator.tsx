@@ -10,7 +10,7 @@ interface Props {
 export function ProgressIndicator({ currentStep, onStepClick }: Props) {
   return (
     <nav aria-label="Wizard progress" style={{ padding: '24px 0 8px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+      <div className="hidden sm:flex" style={{ alignItems: 'flex-start', justifyContent: 'center' }}>
         {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
           const isCompleted = i < currentStep;
           const isCurrent   = i === currentStep;

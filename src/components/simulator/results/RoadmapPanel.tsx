@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { RoadmapOutput, RoadmapTask } from '@/lib/simulator/engines/roadmapTypes';
 import { Panel } from './Panel';
+import { trackEvent } from '@/lib/analytics';
 
 interface StageConfig {
   title:      string;
@@ -50,7 +51,14 @@ interface Props {
 export function RoadmapPanel({ roadmap, isMobile }: Props) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
-  function toggle(id: string) {
+  function toggle(id: string, task: RoadmapTask, stageKey: string) {
+    const willCheck = !checked.has(id);
+    trackEvent('roadmap_task_check', {
+      task_id:  id,
+      stage:    stageKey,
+      priority: task.priority,
+      checked:  willCheck,
+    });
     setChecked((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -179,7 +187,7 @@ export function RoadmapPanel({ roadmap, isMobile }: Props) {
                         role="checkbox"
                         aria-checked={isChecked}
                         aria-label={`Mark "${task.title}" as ${isChecked ? 'incomplete' : 'complete'}`}
-                        onClick={() => toggle(task.task_id)}
+                        onClick={() => toggle(task.task_id, task, stageKey)}
                         style={{
                           width: 22, height: 22, minWidth: 22, borderRadius: 6,
                           border: isChecked ? 'none' : '2px solid #E5E7EB',
@@ -233,6 +241,7 @@ export function RoadmapPanel({ roadmap, isMobile }: Props) {
                             <a
                               key={li}
                               href={link.slug}
+                              onClick={() => trackEvent('roadmap_link_click', { task_id: task.task_id, link_type: link.type, link_title: link.title, stage: stageKey })}
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: 4,
                                 padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,

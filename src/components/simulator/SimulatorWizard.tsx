@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { C, F, TOTAL_STEPS } from './tokens';
+import { C, F, STEP_LABELS, TOTAL_STEPS } from './tokens';
 import { ProgressIndicator } from './ProgressIndicator';
 import { WelcomeStep }   from './steps/WelcomeStep';
 import { LocationStep }  from './steps/LocationStep';
@@ -18,6 +18,7 @@ import {
   usePersistSimulatorState,
   clearSimulatorState,
 } from '@/hooks/useSimulatorPersistence';
+import { trackEvent } from '@/lib/analytics';
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,11 @@ export function SimulatorWizard() {
   useRestoreSimulatorState(setState);
   usePersistSimulatorState(state);
 
+  // Fire once on mount — user has reached the wizard
+  useEffect(() => {
+    trackEvent('simulator_start');
+  }, []);
+
   const step = state.step;
   const setStep = useCallback((s: number) => {
     setState((prev) => ({ ...prev, step: s }));
@@ -88,6 +94,7 @@ export function SimulatorWizard() {
     const errs = validate(step, state);
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
+    trackEvent('simulator_step_complete', { step: step + 1, step_name: STEP_LABELS[step] });
     setStep(Math.min(step + 1, TOTAL_STEPS - 1));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -105,6 +112,13 @@ export function SimulatorWizard() {
   const handleRun = () => {
     const errs = validate(4, state); // final validation pass
     if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    trackEvent('simulator_submit', {
+      province:     state.city?.province_code ?? null,
+      noc_code:     state.work.occupation?.noc_code ?? null,
+      family_size:  state.household.adults + state.household.children,
+      stage:        state.stage,
+    });
 
     setIsRunning(true);
     // Persist state so results page can read it, then navigate

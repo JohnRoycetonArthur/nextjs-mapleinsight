@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { REPORT_KEY, dispatchReportChange } from '@/hooks/useSimulatorReport';
+import { trackEvent } from '@/lib/analytics';
 
 // Engine imports
 import { estimateSalary }       from '@/lib/simulator/engines/salaryEngine';
@@ -113,6 +114,12 @@ export function SimulatorResultsClient(props: Props) {
       }));
       dispatchReportChange();
     } catch { /* ignore */ }
+    trackEvent('simulator_results_view', {
+      province:    wizard.city?.province_code ?? null,
+      stage:       wizard.stage,
+      noc_code:    wizard.work.occupation?.noc_code ?? null,
+      family_size: wizard.household.adults + wizard.household.children,
+    });
   }, [wizard]);
 
   // ── Engine: Salary (static) ────────────────────────────────────────────────
@@ -310,7 +317,7 @@ export function SimulatorResultsClient(props: Props) {
         }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
-              onClick={() => window.print()}
+              onClick={() => { trackEvent('simulator_print'); window.print(); }}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '8px 16px', borderRadius: 8,
@@ -403,6 +410,7 @@ export function SimulatorResultsClient(props: Props) {
         <StartOverDialog
           onCancel={() => setShowStartOver(false)}
           onConfirm={() => {
+            trackEvent('simulator_start_over');
             try { sessionStorage.removeItem('maple-simulator-input-v1'); } catch { /* ignore */ }
             try { localStorage.removeItem(REPORT_KEY); } catch { /* ignore */ }
             dispatchReportChange();
