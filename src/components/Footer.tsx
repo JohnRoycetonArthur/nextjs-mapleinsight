@@ -32,33 +32,69 @@ export function Footer() {
         <div
           style={{
             fontSize: 13,
-            color: "rgba(255,255,255,0.45)",
             fontFamily: "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)",
             display: "flex",
-            flexWrap: "wrap",
-            gap: "0 8px",
-            alignItems: "center",
+            flexDirection: "column",
+            gap: 8,
+            alignItems: "flex-end",
           }}
         >
-          <span>© 2026 Maple Insight Canada · Educational content only · Not financial advice</span>
-          <span>·</span>
-          <Link
-            href="/affiliate-disclosure"
-            style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}
+          {/* Nav links row */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0 8px",
+              alignItems: "center",
+              color: "rgba(255,255,255,0.45)",
+            }}
           >
-            Affiliate Disclosure
-          </Link>
-          <span>·</span>
-          <Link
-            href="/recommended-tools"
-            style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}
+            <Link
+              href="/recommended-tools"
+              style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}
+            >
+              Recommended Tools
+            </Link>
+            <span>·</span>
+            <Link href="/about" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
+              About
+            </Link>
+          </div>
+
+          {/* Legal links row */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0 8px",
+              alignItems: "center",
+              color: "rgba(255,255,255,0.45)",
+            }}
           >
-            Recommended Tools
-          </Link>
-          <span>·</span>
-          <Link href="/about" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
-            About
-          </Link>
+            <Link href="/privacy" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
+              Privacy Policy
+            </Link>
+            <span>·</span>
+            <Link href="/terms" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
+              Terms of Use
+            </Link>
+            <span>·</span>
+            <Link href="/disclaimer" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
+              Disclaimer
+            </Link>
+            <span>·</span>
+            <Link
+              href="/affiliate-disclosure"
+              style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}
+            >
+              Affiliate Disclosure
+            </Link>
+          </div>
+
+          {/* Copyright row */}
+          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
+            © 2026 Maple Insight Canada · Educational content only · Not financial advice
+          </span>
         </div>
       </div>
     </footer>
