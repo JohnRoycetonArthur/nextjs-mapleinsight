@@ -56,116 +56,89 @@ function filterContentForAffiliate(content: unknown[]): unknown[] {
 // ─── Glossary annotation helpers ───
 
 /**
- * Split a text string and wrap the first occurrence of each glossary term
- * with a GlossaryTooltip. Subsequent occurrences render as plain text (AC-6).
- * Returns a plain string when there are no matches.
+ * Pre-transform Portable Text blocks to inject custom `glossaryTerm` marks on
+ * the first occurrence of each glossary term. PortableText then renders those
+ * marks natively via `components.marks.glossaryTerm`.
+ *
+ * AC-6: only the first occurrence of each term across the whole content is annotated.
+ * Only `normal` and `blockquote` block styles are annotated.
  */
-function annotateText(
-  text: string,
+function addGlossaryMarks(
+  content: any[],
   glossaryMap: Map<string, GlossaryEntry>,
   glossaryRegex: RegExp | null,
-  seenTerms: Set<string>,
-  spanIdx: number,
-): React.ReactNode {
-  if (!text || !glossaryRegex) return text;
+): any[] {
+  if (!glossaryRegex || !content?.length) return content ?? [];
 
-  // Fresh regex instance per call — global regexes maintain lastIndex state
-  const re = new RegExp(glossaryRegex.source, glossaryRegex.flags);
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let partKey = 0;
+  const seenTerms = new Set<string>();
 
-  while ((match = re.exec(text)) !== null) {
-    const matchedLower = match[1].toLowerCase();
-    if (seenTerms.has(matchedLower)) continue; // AC-6: only first occurrence
-
-    if (match.index > lastIndex) {
-      parts.push(<React.Fragment key={`t-${spanIdx}-${partKey}`}>{text.slice(lastIndex, match.index)}</React.Fragment>);
+  return content.map((block) => {
+    if (
+      block._type !== "block" ||
+      (block.style !== "normal" && block.style !== "blockquote" && block.style != null)
+    ) {
+      return block;
     }
 
-    const entry = glossaryMap.get(matchedLower)!;
-    seenTerms.add(matchedLower);
+    const children: any[] = block.children ?? [];
+    const markDefs: any[] = [...(block.markDefs ?? [])];
+    const newChildren: any[] = [];
+    let blockModified = false;
 
-    parts.push(
-      <GlossaryTooltip
-        key={`g-${spanIdx}-${partKey}`}
-        term={entry.term}
-        definition={entry.definition}
-        slug={entry.id}
-      >
-        {match[1]}
-      </GlossaryTooltip>,
-    );
-
-    lastIndex = match.index + match[1].length;
-    partKey++;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(<React.Fragment key={`t-${spanIdx}-${partKey}`}>{text.slice(lastIndex)}</React.Fragment>);
-  }
-
-  return parts.length > 0 ? <>{parts}</> : text;
-}
-
-/**
- * Manually render a Portable Text block's span children, injecting glossary
- * tooltips into plain text spans and applying mark decorators.
- * Handles: strong, em, code, link annotations.
- */
-function processBlockChildren(
-  value: any,
-  glossaryMap: Map<string, GlossaryEntry>,
-  glossaryRegex: RegExp | null,
-  seenTerms: Set<string>,
-): React.ReactNode[] {
-  const markDefs: any[] = value.markDefs ?? [];
-
-  return (value.children ?? [])
-    .map((child: any, i: number) => {
-      if (child._type !== "span") return null;
-
-      const marks: string[] = child.marks ?? [];
-      const text: string = child.text ?? "";
-
-      let content: React.ReactNode = annotateText(text, glossaryMap, glossaryRegex, seenTerms, i);
-
-      // Apply marks (decorators and annotations) — same styles as default PortableText components below
-      for (const mark of marks) {
-        const markDef = markDefs.find((d: any) => d._key === mark);
-        if (markDef) {
-          if (markDef._type === "link") {
-            const isExternal = markDef.href?.startsWith("http");
-            content = (
-              <a
-                href={markDef.href}
-                target={isExternal ? "_blank" : undefined}
-                rel={isExternal ? "noopener noreferrer" : undefined}
-                style={{ color: "#1B7A4A", textDecoration: "underline", textUnderlineOffset: 2 }}
-              >
-                {content}
-              </a>
-            );
-          }
-        } else {
-          switch (mark) {
-            case "strong":
-              content = <strong style={{ fontWeight: 700, color: "#1B4F4A" }}>{content}</strong>;
-              break;
-            case "em":
-              content = <em>{content}</em>;
-              break;
-            case "code":
-              content = <code style={{ background: "#F3F4F6", borderRadius: 4, padding: "2px 6px", fontSize: 14, color: "#1B4F4A" }}>{content}</code>;
-              break;
-          }
-        }
+    for (const child of children) {
+      if (child._type !== "span" || !child.text) {
+        newChildren.push(child);
+        continue;
       }
 
-      return <React.Fragment key={i}>{content}</React.Fragment>;
-    })
-    .filter(Boolean);
+      const text: string = child.text;
+      const re = new RegExp(glossaryRegex.source, glossaryRegex.flags);
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+      const newSpans: any[] = [];
+      let spanModified = false;
+
+      while ((match = re.exec(text)) !== null) {
+        const matchedLower = match[1].toLowerCase();
+        if (seenTerms.has(matchedLower)) continue;
+
+        // Pre-match text span (inherits original marks)
+        if (match.index > lastIndex) {
+          newSpans.push({ ...child, _key: `${child._key}_pre${match.index}`, text: text.slice(lastIndex, match.index) });
+        }
+
+        // Ensure markDef exists in this block (one per term per block)
+        const markKey = `gl_${matchedLower.replace(/[\s\W]+/g, "_")}`;
+        if (!markDefs.find((d) => d._key === markKey)) {
+          markDefs.push({ _key: markKey, _type: "glossaryTerm", termId: matchedLower });
+        }
+
+        // Annotated span
+        newSpans.push({
+          ...child,
+          _key: `${child._key}_gl${seenTerms.size}`,
+          text: match[1],
+          marks: [...(child.marks ?? []), markKey],
+        });
+
+        seenTerms.add(matchedLower);
+        lastIndex = match.index + match[1].length;
+        spanModified = true;
+      }
+
+      if (!spanModified) {
+        newChildren.push(child);
+      } else {
+        if (lastIndex < text.length) {
+          newSpans.push({ ...child, _key: `${child._key}_post${lastIndex}`, text: text.slice(lastIndex) });
+        }
+        newChildren.push(...newSpans);
+        blockModified = true;
+      }
+    }
+
+    return blockModified ? { ...block, children: newChildren, markDefs } : block;
+  });
 }
 
 // ─── Icons ───
@@ -340,12 +313,7 @@ function KeyTakeawaysCard({ isMobile }: { isMobile: boolean }) {
 
 function makePortableTextComponents(
   glossaryMap: Map<string, GlossaryEntry>,
-  glossaryRegex: RegExp | null,
-  seenTerms: Set<string>,
 ) {
-  // Shorthand: render block children with glossary annotation
-  const gc = (value: any) => processBlockChildren(value, glossaryMap, glossaryRegex, seenTerms);
-
   return {
     block: {
       h2: ({ children, value }: any) => {
@@ -386,8 +354,7 @@ function makePortableTextComponents(
           </h3>
         );
       },
-      // AC-1, AC-2, AC-6: annotate body paragraphs and blockquotes
-      normal: ({ value }: any) => (
+      normal: ({ children }: any) => (
         <p
           style={{
             fontFamily: "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)",
@@ -397,10 +364,10 @@ function makePortableTextComponents(
             margin: "0 0 16px",
           }}
         >
-          {gc(value)}
+          {children}
         </p>
       ),
-      blockquote: ({ value }: any) => (
+      blockquote: ({ children }: any) => (
         <blockquote
           style={{
             borderLeft: "4px solid #1B7A4A",
@@ -412,7 +379,7 @@ function makePortableTextComponents(
             lineHeight: 1.75,
           }}
         >
-          {gc(value)}
+          {children}
         </blockquote>
       ),
     },
@@ -441,8 +408,7 @@ function makePortableTextComponents(
       ),
     },
     listItem: {
-      // AC-1, AC-6: annotate list item text
-      bullet: ({ value }: any) => (
+      bullet: ({ children }: any) => (
         <li
           style={{
             fontSize: 16,
@@ -451,10 +417,10 @@ function makePortableTextComponents(
             marginBottom: 6,
           }}
         >
-          {gc(value)}
+          {children}
         </li>
       ),
-      number: ({ value }: any) => (
+      number: ({ children }: any) => (
         <li
           style={{
             fontSize: 16,
@@ -463,7 +429,7 @@ function makePortableTextComponents(
             marginBottom: 6,
           }}
         >
-          {gc(value)}
+          {children}
         </li>
       ),
     },
@@ -503,6 +469,16 @@ function makePortableTextComponents(
           {children}
         </code>
       ),
+      // AC-1, AC-2: render glossaryTerm marks injected by addGlossaryMarks()
+      glossaryTerm: ({ value, children }: any) => {
+        const entry = glossaryMap.get(value?.termId ?? "");
+        if (!entry) return <>{children}</>;
+        return (
+          <GlossaryTooltip term={entry.term} definition={entry.definition} slug={entry.id}>
+            {children}
+          </GlossaryTooltip>
+        );
+      },
     },
   };
 }
@@ -743,14 +719,17 @@ export function ArticleContent({ article, sections, readingTime }: ArticleConten
 
   const glossaryMap = useMemo(() => buildGlossaryMap(), []);
   const glossaryRegex = useMemo(() => buildGlossaryRegex(glossaryMap), [glossaryMap]);
-  // Per-render Set — tracks first-occurrence-only (AC-6); must be outside useMemo so it resets each render
-  const seenTerms = new Set<string>();
-  const ptComponents = makePortableTextComponents(glossaryMap, glossaryRegex, seenTerms);
+  // Pre-transform content once: inject glossaryTerm marks for first-occurrence terms (AC-6)
+  const glossaryContent = useMemo(
+    () => addGlossaryMarks(article.content as any[], glossaryMap, glossaryRegex),
+    [article.content, glossaryMap, glossaryRegex],
+  );
+  const ptComponents = useMemo(() => makePortableTextComponents(glossaryMap), [glossaryMap]);
 
   // For bank account article, filter out h2 blocks that affiliate sections replace
   const portableTextContent = isBankAccount
-    ? filterContentForAffiliate(article.content as unknown[])
-    : (article.content as unknown[]);
+    ? filterContentForAffiliate(glossaryContent as unknown[])
+    : (glossaryContent as unknown[]);
 
   return (
     <div
