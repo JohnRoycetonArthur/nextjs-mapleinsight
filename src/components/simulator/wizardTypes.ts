@@ -80,7 +80,7 @@ export const MIGRATION_STAGES: Array<{
 }> = [
   { id: 'planning',        label: 'Planning to Move',    icon: '🗺️', description: "I'm researching Canada and haven't moved yet" },
   { id: 'recently_arrived',label: 'Recently Arrived',    icon: '✈️', description: 'I arrived in Canada less than 1 year ago' },
-  { id: 'settled',         label: 'Settled (1+ years)',  icon: '🏡', description: "I've been in Canada for over a year" },
+  { id: 'settled',         label: 'Settled in Canada',  icon: '🏡', description: "I've been in Canada for over a year" },
 ];
 
 export const BEDROOM_OPTIONS: Array<{ value: BedroomOption; label: string }> = [

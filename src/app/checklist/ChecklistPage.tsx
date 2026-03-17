@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   CHECKLIST_DATA,
-  TOTAL_ITEMS,
   STORAGE_KEY,
   ALL_ITEM_IDS,
+  type ChecklistGroupData,
 } from "@/data/checklist-data";
+import { REPORT_KEY } from "@/hooks/useSimulatorReport";
 import { ProgressBar } from "@/components/checklist/ProgressBar";
 import { ChecklistGroup } from "@/components/checklist/ChecklistGroup";
 import { ResetDialog } from "@/components/checklist/ResetDialog";
@@ -70,6 +71,13 @@ function Confetti() {
 // --- Milestone tracking ---
 const MILESTONES = [25, 50, 75, 100];
 
+// Settled persona: show only Month 4–6 and Month 7–12, relabelled
+const SETTLED_PERIODS = new Set(["Month 4–6", "Month 7–12"]);
+const SETTLED_PERIOD_LABELS: Record<string, Pick<ChecklistGroupData, 'period' | 'subtitle'>> = {
+  "Month 4–6":  { period: "Phase 1: Grow & Save", subtitle: "Investing & building wealth" },
+  "Month 7–12": { period: "Phase 2: Plan Ahead",  subtitle: "Big decisions & the future"  },
+};
+
 export function ChecklistPage() {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -77,11 +85,22 @@ export function ChecklistPage() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isSettled, setIsSettled] = useState(false);
   const reachedMilestonesRef = useRef<Set<number>>(new Set());
 
   // Load from localStorage on mount
   useEffect(() => {
     setMounted(true);
+
+    // Detect settled persona from simulator report
+    try {
+      const report = localStorage.getItem(REPORT_KEY);
+      if (report) {
+        const parsed = JSON.parse(report) as { inputs?: { stage?: string } };
+        if (parsed?.inputs?.stage === 'settled') setIsSettled(true);
+      }
+    } catch { /* ignore */ }
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -107,6 +126,14 @@ export function ChecklistPage() {
       trackEvent("checklist_view", {});
     }
   }, [mounted]);
+
+  // Filtered + optionally relabelled groups for settled persona
+  const activeGroups: ChecklistGroupData[] = isSettled
+    ? CHECKLIST_DATA
+        .filter((g) => SETTLED_PERIODS.has(g.period))
+        .map((g) => ({ ...g, ...SETTLED_PERIOD_LABELS[g.period] }))
+    : CHECKLIST_DATA;
+  const activeTotal = activeGroups.reduce((sum, g) => sum + g.items.length, 0);
 
   const saveToStorage = useCallback((nextSet: Set<string>) => {
     try {
@@ -135,7 +162,7 @@ export function ChecklistPage() {
         });
 
         // Milestone tracking
-        const pct = Math.round((totalCompleted / TOTAL_ITEMS) * 100);
+        const pct = Math.round((totalCompleted / activeTotal) * 100);
         for (const milestone of MILESTONES) {
           if (pct >= milestone && !reachedMilestonesRef.current.has(milestone)) {
             reachedMilestonesRef.current.add(milestone);
@@ -147,7 +174,7 @@ export function ChecklistPage() {
         }
 
         // Confetti on 100%
-        if (totalCompleted === TOTAL_ITEMS) {
+        if (totalCompleted === activeTotal) {
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 3000);
         }
@@ -156,7 +183,7 @@ export function ChecklistPage() {
         return next;
       });
     },
-    [saveToStorage]
+    [saveToStorage, activeTotal]
   );
 
   const handleReset = useCallback(() => {
@@ -309,7 +336,7 @@ export function ChecklistPage() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
           }}
         >
-          <ProgressBar completed={completed} total={TOTAL_ITEMS} />
+          <ProgressBar completed={completed} total={activeTotal} />
 
           {/* Action buttons */}
           <div
@@ -386,7 +413,7 @@ export function ChecklistPage() {
 
         {/* Desktop groups */}
         <div className="hidden md:block">
-          {CHECKLIST_DATA.map((group, i) => (
+          {activeGroups.map((group, i) => (
             <ChecklistGroup
               key={group.period}
               group={group}
@@ -400,7 +427,7 @@ export function ChecklistPage() {
 
         {/* Mobile groups */}
         <div className="md:hidden">
-          {CHECKLIST_DATA.map((group) => (
+          {activeGroups.map((group) => (
             <ChecklistGroup
               key={group.period}
               group={group}

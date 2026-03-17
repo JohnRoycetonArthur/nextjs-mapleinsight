@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { PortableText } from "@portabletext/react";
 import { ArticleFull } from "@/sanity/queries";
+import { GlossaryTooltip } from "@/components/article/GlossaryTooltip";
+import { buildGlossaryMap, buildGlossaryRegex, type GlossaryEntry } from "@/lib/glossary-utils";
 import {
   AFFILIATE_PRODUCTS,
   PLACEMENTS,
@@ -49,6 +51,121 @@ function filterContentForAffiliate(content: unknown[]): unknown[] {
     const title = ((b.children as any[]) ?? []).map((c: any) => c.text ?? "").join("");
     return !skipPrefixes.some((p) => title.startsWith(p));
   });
+}
+
+// ─── Glossary annotation helpers ───
+
+/**
+ * Split a text string and wrap the first occurrence of each glossary term
+ * with a GlossaryTooltip. Subsequent occurrences render as plain text (AC-6).
+ * Returns a plain string when there are no matches.
+ */
+function annotateText(
+  text: string,
+  glossaryMap: Map<string, GlossaryEntry>,
+  glossaryRegex: RegExp | null,
+  seenTerms: Set<string>,
+  spanIdx: number,
+): React.ReactNode {
+  if (!text || !glossaryRegex) return text;
+
+  // Fresh regex instance per call — global regexes maintain lastIndex state
+  const re = new RegExp(glossaryRegex.source, glossaryRegex.flags);
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let partKey = 0;
+
+  while ((match = re.exec(text)) !== null) {
+    const matchedLower = match[1].toLowerCase();
+    if (seenTerms.has(matchedLower)) continue; // AC-6: only first occurrence
+
+    if (match.index > lastIndex) {
+      parts.push(<React.Fragment key={`t-${spanIdx}-${partKey}`}>{text.slice(lastIndex, match.index)}</React.Fragment>);
+    }
+
+    const entry = glossaryMap.get(matchedLower)!;
+    seenTerms.add(matchedLower);
+
+    parts.push(
+      <GlossaryTooltip
+        key={`g-${spanIdx}-${partKey}`}
+        term={entry.term}
+        definition={entry.definition}
+        slug={entry.id}
+      >
+        {match[1]}
+      </GlossaryTooltip>,
+    );
+
+    lastIndex = match.index + match[1].length;
+    partKey++;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(<React.Fragment key={`t-${spanIdx}-${partKey}`}>{text.slice(lastIndex)}</React.Fragment>);
+  }
+
+  return parts.length > 0 ? <>{parts}</> : text;
+}
+
+/**
+ * Manually render a Portable Text block's span children, injecting glossary
+ * tooltips into plain text spans and applying mark decorators.
+ * Handles: strong, em, code, link annotations.
+ */
+function processBlockChildren(
+  value: any,
+  glossaryMap: Map<string, GlossaryEntry>,
+  glossaryRegex: RegExp | null,
+  seenTerms: Set<string>,
+): React.ReactNode[] {
+  const markDefs: any[] = value.markDefs ?? [];
+
+  return (value.children ?? [])
+    .map((child: any, i: number) => {
+      if (child._type !== "span") return null;
+
+      const marks: string[] = child.marks ?? [];
+      const text: string = child.text ?? "";
+
+      let content: React.ReactNode = annotateText(text, glossaryMap, glossaryRegex, seenTerms, i);
+
+      // Apply marks (decorators and annotations) — same styles as default PortableText components below
+      for (const mark of marks) {
+        const markDef = markDefs.find((d: any) => d._key === mark);
+        if (markDef) {
+          if (markDef._type === "link") {
+            const isExternal = markDef.href?.startsWith("http");
+            content = (
+              <a
+                href={markDef.href}
+                target={isExternal ? "_blank" : undefined}
+                rel={isExternal ? "noopener noreferrer" : undefined}
+                style={{ color: "#1B7A4A", textDecoration: "underline", textUnderlineOffset: 2 }}
+              >
+                {content}
+              </a>
+            );
+          }
+        } else {
+          switch (mark) {
+            case "strong":
+              content = <strong style={{ fontWeight: 700, color: "#1B4F4A" }}>{content}</strong>;
+              break;
+            case "em":
+              content = <em>{content}</em>;
+              break;
+            case "code":
+              content = <code style={{ background: "#F3F4F6", borderRadius: 4, padding: "2px 6px", fontSize: 14, color: "#1B4F4A" }}>{content}</code>;
+              break;
+          }
+        }
+      }
+
+      return <React.Fragment key={i}>{content}</React.Fragment>;
+    })
+    .filter(Boolean);
 }
 
 // ─── Icons ───
@@ -221,7 +338,14 @@ function KeyTakeawaysCard({ isMobile }: { isMobile: boolean }) {
 
 // ─── Custom PortableText Components ───
 
-function makePortableTextComponents() {
+function makePortableTextComponents(
+  glossaryMap: Map<string, GlossaryEntry>,
+  glossaryRegex: RegExp | null,
+  seenTerms: Set<string>,
+) {
+  // Shorthand: render block children with glossary annotation
+  const gc = (value: any) => processBlockChildren(value, glossaryMap, glossaryRegex, seenTerms);
+
   return {
     block: {
       h2: ({ children, value }: any) => {
@@ -262,7 +386,8 @@ function makePortableTextComponents() {
           </h3>
         );
       },
-      normal: ({ children }: any) => (
+      // AC-1, AC-2, AC-6: annotate body paragraphs and blockquotes
+      normal: ({ value }: any) => (
         <p
           style={{
             fontFamily: "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)",
@@ -272,10 +397,10 @@ function makePortableTextComponents() {
             margin: "0 0 16px",
           }}
         >
-          {children}
+          {gc(value)}
         </p>
       ),
-      blockquote: ({ children }: any) => (
+      blockquote: ({ value }: any) => (
         <blockquote
           style={{
             borderLeft: "4px solid #1B7A4A",
@@ -287,7 +412,7 @@ function makePortableTextComponents() {
             lineHeight: 1.75,
           }}
         >
-          {children}
+          {gc(value)}
         </blockquote>
       ),
     },
@@ -316,7 +441,8 @@ function makePortableTextComponents() {
       ),
     },
     listItem: {
-      bullet: ({ children }: any) => (
+      // AC-1, AC-6: annotate list item text
+      bullet: ({ value }: any) => (
         <li
           style={{
             fontSize: 16,
@@ -325,10 +451,10 @@ function makePortableTextComponents() {
             marginBottom: 6,
           }}
         >
-          {children}
+          {gc(value)}
         </li>
       ),
-      number: ({ children }: any) => (
+      number: ({ value }: any) => (
         <li
           style={{
             fontSize: 16,
@@ -337,7 +463,7 @@ function makePortableTextComponents() {
             marginBottom: 6,
           }}
         >
-          {children}
+          {gc(value)}
         </li>
       ),
     },
@@ -615,7 +741,11 @@ export function ArticleContent({ article, sections, readingTime }: ArticleConten
       })
     : null;
 
-  const ptComponents = makePortableTextComponents();
+  const glossaryMap = useMemo(() => buildGlossaryMap(), []);
+  const glossaryRegex = useMemo(() => buildGlossaryRegex(glossaryMap), [glossaryMap]);
+  // Per-render Set — tracks first-occurrence-only (AC-6); must be outside useMemo so it resets each render
+  const seenTerms = new Set<string>();
+  const ptComponents = makePortableTextComponents(glossaryMap, glossaryRegex, seenTerms);
 
   // For bank account article, filter out h2 blocks that affiliate sections replace
   const portableTextContent = isBankAccount

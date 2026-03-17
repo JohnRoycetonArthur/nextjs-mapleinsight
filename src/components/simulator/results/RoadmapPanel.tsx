@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { RoadmapOutput, RoadmapTask } from '@/lib/simulator/engines/roadmapTypes';
 import { Panel } from './Panel';
 import { trackEvent } from '@/lib/analytics';
+import { deduplicateRoadmapLinks, stageHasNoLinks } from '@/lib/roadmap-utils';
 
 interface StageConfig {
   title:      string;
@@ -43,12 +44,23 @@ const LINK_ICONS: Record<string, string> = {
 // Stage keys in display order (matches STAGE_ORDER in roadmapEngine)
 const STAGE_KEYS = ['pre_arrival', 'first_30_days', 'month_2_3', 'month_4_6', 'month_7_12'] as const;
 
+// Stages shown for settled persona only
+const SETTLED_ONLY_STAGES = new Set(['month_4_6', 'month_7_12']);
+
+// Overridden titles/subtitles for settled persona
+const SETTLED_STAGE_OVERRIDES: Partial<Record<string, Pick<StageConfig, 'title' | 'subtitle'>>> = {
+  month_4_6:  { title: 'Growing Your Money', subtitle: 'Invest & build wealth' },
+  month_7_12: { title: 'Big Decisions',      subtitle: 'Housing, family & future' },
+};
+
 interface Props {
   roadmap:  RoadmapOutput;
   isMobile: boolean;
+  stage?:   string | null;
 }
 
-export function RoadmapPanel({ roadmap, isMobile }: Props) {
+export function RoadmapPanel({ roadmap, isMobile, stage }: Props) {
+  const isSettled = stage === 'settled';
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
   function toggle(id: string, task: RoadmapTask, stageKey: string) {
@@ -66,9 +78,14 @@ export function RoadmapPanel({ roadmap, isMobile }: Props) {
     });
   }
 
-  const activeStages = STAGE_KEYS.filter(
-    (key) => roadmap.staged_tasks[key].length > 0,
-  );
+  const activeStages = STAGE_KEYS.filter((key) => {
+    if (!roadmap.staged_tasks[key].length) return false;
+    if (isSettled && !SETTLED_ONLY_STAGES.has(key)) return false;
+    return true;
+  });
+
+  // De-duplicate link slugs across stages (AC-5: runs after persona filter)
+  const deduplicatedTasks = deduplicateRoadmapLinks(activeStages, roadmap.staged_tasks);
 
   // Default: only the first stage is open
   const [openStages, setOpenStages] = useState<Set<string>>(
@@ -100,8 +117,10 @@ export function RoadmapPanel({ roadmap, isMobile }: Props) {
 
       {/* Stage list */}
       {activeStages.map((stageKey, stageIdx) => {
-        const tasks  = roadmap.staged_tasks[stageKey] as RoadmapTask[];
-        const cfg    = STAGE_CONFIG[stageKey] ?? STAGE_CONFIG.first_30_days;
+        const tasks    = (deduplicatedTasks[stageKey] ?? []) as RoadmapTask[];
+        const baseCfg  = STAGE_CONFIG[stageKey] ?? STAGE_CONFIG.first_30_days;
+        const override = isSettled ? SETTLED_STAGE_OVERRIDES[stageKey] : undefined;
+        const cfg      = override ? { ...baseCfg, ...override } : baseCfg;
         const isLast = stageIdx === activeStages.length - 1;
 
         const isOpen = openStages.has(stageKey);
@@ -172,6 +191,18 @@ export function RoadmapPanel({ roadmap, isMobile }: Props) {
                 borderLeft: isMobile ? 'none' : `2px solid ${cfg.color}18`,
               }}
             >
+              {/* Fallback when all links were de-duplicated away */}
+              {stageHasNoLinks(tasks) && (
+                <div style={{
+                  padding: '14px 16px', borderRadius: 12,
+                  border: '1px solid #E5E7EB', background: '#FAFBFC',
+                  marginBottom: 8,
+                  fontFamily: "'DM Sans', Helvetica, sans-serif",
+                  fontSize: 13, color: '#9CA3AF', fontStyle: 'italic',
+                }}>
+                  You&apos;ve already covered these topics in earlier phases.
+                </div>
+              )}
               {tasks.map((task) => {
                 const isChecked = checked.has(task.task_id);
                 return (

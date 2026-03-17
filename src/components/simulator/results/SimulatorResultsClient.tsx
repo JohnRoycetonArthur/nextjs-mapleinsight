@@ -378,7 +378,7 @@ export function SimulatorResultsClient(props: Props) {
           lifestyle={lifestyle}
           onLifestyleChange={setLifestyle}
         />
-        <RoadmapPanel roadmap={roadmapResult} isMobile={isMobile} />
+        <RoadmapPanel roadmap={roadmapResult} isMobile={isMobile} stage={wizard.stage} />
       </section>
 
       {/* ─── Disclaimer ───────────────────────────────────────────────────── */}
