@@ -8,6 +8,14 @@ export type ArticleSummary = {
   category: string | null;
 };
 
+export type ArticleSource = {
+  _key: string;
+  sourceName: string;
+  documentTitle: string;
+  url: string;
+  accessedDate: string | null;
+};
+
 export type ArticleFull = ArticleSummary & {
   _updatedAt: string | null;
   content: unknown[];
@@ -18,6 +26,7 @@ export type ArticleFull = ArticleSummary & {
   articleType: 'guide' | 'explainer' | 'news' | 'tool-page' | null;
   faqItems: Array<{ question: string; answer: string; anchorSlug: string | null }> | null;
   exampleScenarios: Array<{ title: string; body: string }> | null;
+  sources: ArticleSource[] | null;
 };
 
 const ARTICLE_SUMMARY_FIELDS = `
@@ -57,7 +66,8 @@ export async function getArticleBySlug(slug: string): Promise<ArticleFull | null
       answerSummary,
       articleType,
       faqItems[] { question, answer, "anchorSlug": anchorSlug.current },
-      exampleScenarios[] { title, body }
+      exampleScenarios[] { title, body },
+      sources[] { _key, sourceName, documentTitle, url, accessedDate }
     }`,
     { slug }
   );

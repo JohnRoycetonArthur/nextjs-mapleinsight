@@ -19,6 +19,7 @@ import { AnswerSummaryBox } from "./AnswerSummaryBox";
 import { ExampleScenario } from "./ExampleScenario";
 import { FAQSection } from "./FAQSection";
 import { InlineCalculatorCTA } from "./InlineCalculatorCTA";
+import { SourcesSection } from "@/components/article/SourcesSection";
 
 export type ArticleSection = { id: string; title: string };
 
@@ -1027,6 +1028,9 @@ export function ArticleContent({ article, sections, readingTime }: ArticleConten
           {article.faqItems && article.faqItems.length > 0 && (
             <FAQSection faqItems={article.faqItems} />
           )}
+
+          {/* Sources & References — AC-1, AC-5 */}
+          <SourcesSection sources={article.sources} />
 
           <RelatedSection isMobile={isMobile} />
         </article>

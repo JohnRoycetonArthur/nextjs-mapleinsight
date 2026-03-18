@@ -405,6 +405,56 @@ export const articleType = defineType({
       },
       initialValue: 'guide',
     }),
+    // ─── Sources & References ───
+    defineField({
+      name: 'sources',
+      title: 'Sources & References',
+      type: 'array',
+      group: 'content',
+      description: 'Authoritative sources cited in this article (government, regulatory, or institutional pages only).',
+      of: [
+        {
+          type: 'object',
+          name: 'source',
+          title: 'Source',
+          fields: [
+            defineField({
+              name: 'sourceName',
+              title: 'Institution / Source Name',
+              type: 'string',
+              description: 'e.g. "Canada Revenue Agency" or "Financial Consumer Agency of Canada"',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'documentTitle',
+              title: 'Page / Document Title',
+              type: 'string',
+              description: 'Specific page or document title, e.g. "Tax-Free Savings Account (TFSA)"',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'url',
+              title: 'URL',
+              type: 'url',
+              description: 'Must be https:// and resolve to an active page.',
+              validation: (Rule) =>
+                Rule.required().uri({ scheme: ['https'] }),
+            }),
+            defineField({
+              name: 'accessedDate',
+              title: 'Date Accessed (optional)',
+              type: 'date',
+            }),
+          ],
+          preview: {
+            select: { title: 'documentTitle', subtitle: 'sourceName', url: 'url' },
+            prepare({ title, subtitle }: { title?: string; subtitle?: string }) {
+              return { title: title || 'Untitled Source', subtitle: subtitle || '' };
+            },
+          },
+        },
+      ],
+    }),
     defineField({
       name: 'exampleScenarios',
       title: 'Example Scenarios',
