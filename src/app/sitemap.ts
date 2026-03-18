@@ -17,11 +17,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: Array<{ route: string; priority: number; freq: MetadataRoute.Sitemap[0]["changeFrequency"] }> = [
     // Core
     { route: "",                                   priority: 1.0, freq: "weekly"  },
+    { route: "/start-here",                        priority: 0.9, freq: "monthly" },
+    { route: "/articles",                          priority: 0.8, freq: "weekly"  },
     { route: "/guides",                            priority: 0.7, freq: "weekly"  },
-    // Calculators (priority 0.9 per spec)
+    // Simulator
+    { route: "/simulator",                         priority: 0.9, freq: "monthly" },
+    // Calculators
     { route: "/calculators/tfsa-vs-rrsp",         priority: 0.9, freq: "monthly" },
     { route: "/calculators/newcomer-budget",       priority: 0.9, freq: "monthly" },
-    // Tools (priority 0.8)
+    // Tools
     { route: "/tools",                             priority: 0.7, freq: "weekly"  },
     { route: "/tools/rrsp-refund",                priority: 0.8, freq: "monthly" },
     { route: "/tools/mortgage-comparison",         priority: 0.8, freq: "monthly" },
@@ -30,9 +34,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Content pages
     { route: "/glossary",                          priority: 0.7, freq: "monthly" },
     { route: "/checklist",                         priority: 0.7, freq: "monthly" },
-    // Static
+    { route: "/recommended-tools",                 priority: 0.6, freq: "monthly" },
+    // About / contact
     { route: "/about",                             priority: 0.5, freq: "monthly" },
     { route: "/contact",                           priority: 0.5, freq: "monthly" },
+    // Legal
+    { route: "/affiliate-disclosure",              priority: 0.3, freq: "yearly"  },
+    { route: "/disclaimer",                        priority: 0.3, freq: "yearly"  },
+    { route: "/privacy",                           priority: 0.3, freq: "yearly"  },
+    { route: "/terms",                             priority: 0.3, freq: "yearly"  },
   ];
 
   const now = new Date();
