@@ -21,6 +21,12 @@ import {
   groceriesForHousehold,
   rentFromBaseline,
 } from './constants'
+import {
+  type StudyPermitData,
+  computeIRCCProofOfFunds,
+  computeStudyPermitUpfront,
+  getHealthInsuranceMonthlyCost,
+} from './study-permit'
 import type { BreakdownItem, EngineInput, EngineOutput } from './types'
 
 // ─── computeUpfront ───────────────────────────────────────────────────────────
@@ -32,11 +38,28 @@ export interface UpfrontResult {
 
 /**
  * U = immigration fees + biometrics + travel + housing deposit + setup essentials
+ * For study permit pathway, delegates to computeStudyPermitUpfront().
  */
 export function computeUpfront(
-  input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride'>,
+  input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
   baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback'>,
+  studyPermitData?: StudyPermitData,
 ): UpfrontResult {
+  // ── Study permit delegation ──────────────────────────────────────────────
+  if (input.pathway === 'study-permit' && input.studyPermit && studyPermitData) {
+    return computeStudyPermitUpfront(
+      {
+        province:              input.province,
+        housingType:           input.housingType,
+        furnishingLevel:       input.furnishingLevel,
+        household:             input.household,
+        travelEstimateOverride: input.travelEstimateOverride,
+        studyPermit:           input.studyPermit,
+      },
+      studyPermitData,
+      baseline,
+    )
+  }
   const { fees, furnishingLevel, travelEstimateOverride } = input
 
   const items: BreakdownItem[] = []
@@ -100,13 +123,15 @@ export interface MonthlyResult {
 
 /**
  * M_min = rent + transit + utilities + phone/internet + groceries + obligations
+ * For study permit pathway: adds health insurance monthly cost.
  */
 export function computeMonthlyMin(
-  input: Pick<EngineInput, 'housingType' | 'household' | 'monthlyObligations'>,
+  input: Pick<EngineInput, 'housingType' | 'household' | 'monthlyObligations' | 'pathway' | 'province' | 'studyPermit'>,
   baseline: Pick<
     CityBaseline,
     'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'monthlyTransitPass' | 'cityName' | 'isFallback'
   >,
+  studyPermitData?: StudyPermitData,
 ): MonthlyResult {
   const items: BreakdownItem[] = []
   const baselineSource = baseline.isFallback ? 'national-average' : 'cmhc'
@@ -139,6 +164,19 @@ export function computeMonthlyMin(
     })
   }
 
+  // Study permit: health insurance monthly cost
+  if (input.pathway === 'study-permit' && studyPermitData) {
+    const healthMonthly = getHealthInsuranceMonthlyCost(input.province, studyPermitData)
+    if (healthMonthly > 0) {
+      items.push({
+        key:    'health-insurance',
+        label:  'Health insurance (monthly)',
+        cad:    healthMonthly,
+        source: 'provincial',
+      })
+    }
+  }
+
   const total = items.reduce((sum, item) => sum + item.cad, 0)
   return { total, breakdown: items }
 }
@@ -151,17 +189,21 @@ export interface SafeResult {
   runwayMonths: number
   bufferPercent: number
   breakdown: BreakdownItem[]
+  irccFloor?: number          // IRCC proof-of-funds requirement (study permit only)
+  irccFloorApplied?: boolean  // true when irccFloor > standard safe savings target
 }
 
 /**
  * M_safe = M_min + childcare adder + car adder + custom expenses
  * S_safe = U + M_safe × runwayMonths + bufferPercent × (U + M_safe × runwayMonths)
+ * For study permit: S_safe = max(standard, irccFloor)
  */
 export function computeSafe(
-  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses'>,
+  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
   upfront: number,
   monthlyMin: number,
   monthlyMinBreakdown: BreakdownItem[],
+  studyPermitData?: StudyPermitData,
 ): SafeResult {
   // Build M_safe from M_min items + lifestyle adders
   const adderItems: BreakdownItem[] = []
@@ -182,24 +224,50 @@ export function computeSafe(
   const runway = RUNWAY_MONTHS[input.jobStatus]
   const runningTotal = upfront + monthlySafe * runway
   const buffer = runningTotal * BUFFER_PERCENT
-  const safeSavingsTarget = runningTotal + buffer
+  const standardTarget = runningTotal + buffer
+
+  // ── Study permit IRCC floor ──────────────────────────────────────────────
+  if (input.pathway === 'study-permit' && input.studyPermit && studyPermitData) {
+    const familySize = input.household.adults + input.household.children
+    const irccFloor  = computeIRCCProofOfFunds(
+      familySize,
+      input.studyPermit.tuitionAmount,
+      input.province,
+      studyPermitData,
+    )
+    const irccFloorApplied = irccFloor > standardTarget
+    return {
+      monthlySafe,
+      safeSavingsTarget: irccFloorApplied ? irccFloor : standardTarget,
+      runwayMonths:      runway,
+      bufferPercent:     BUFFER_PERCENT,
+      breakdown:         [...monthlyMinBreakdown, ...adderItems],
+      irccFloor,
+      irccFloorApplied,
+    }
+  }
 
   return {
     monthlySafe,
-    safeSavingsTarget,
-    runwayMonths: runway,
-    bufferPercent: BUFFER_PERCENT,
-    breakdown: [...monthlyMinBreakdown, ...adderItems],
+    safeSavingsTarget: standardTarget,
+    runwayMonths:      runway,
+    bufferPercent:     BUFFER_PERCENT,
+    breakdown:         [...monthlyMinBreakdown, ...adderItems],
   }
 }
 
 // ─── computeGap ───────────────────────────────────────────────────────────────
 
 /**
- * G = max(0, S_safe − liquidSavings)
+ * G = max(0, S_safe − (liquidSavings + scholarshipAmount))
+ * For study permit: scholarship reduces the effective savings gap.
  */
-export function computeGap(safeSavingsTarget: number, liquidSavings: number): number {
-  return Math.max(0, safeSavingsTarget - liquidSavings)
+export function computeGap(
+  safeSavingsTarget: number,
+  liquidSavings: number,
+  scholarshipAmount = 0,
+): number {
+  return Math.max(0, safeSavingsTarget - liquidSavings - scholarshipAmount)
 }
 
 // ─── generateBreakdown ────────────────────────────────────────────────────────
@@ -217,16 +285,19 @@ export function generateBreakdown(upfrontBreakdown: BreakdownItem[]): BreakdownI
 /**
  * Run the full calculation engine. Returns a complete EngineOutput.
  * Caller is responsible for pre-fetching the city baseline and fees.
+ * Pass studyPermitData when pathway === 'study-permit'.
  */
 export function runEngine(
   input: EngineInput,
   baseline: CityBaseline,
   dataVersion: string,
+  studyPermitData?: StudyPermitData,
 ): EngineOutput {
-  const upfrontResult  = computeUpfront(input, baseline)
-  const monthlyResult  = computeMonthlyMin(input, baseline)
-  const safeResult     = computeSafe(input, upfrontResult.total, monthlyResult.total, monthlyResult.breakdown)
-  const gap            = computeGap(safeResult.safeSavingsTarget, input.liquidSavings)
+  const upfrontResult  = computeUpfront(input, baseline, studyPermitData)
+  const monthlyResult  = computeMonthlyMin(input, baseline, studyPermitData)
+  const safeResult     = computeSafe(input, upfrontResult.total, monthlyResult.total, monthlyResult.breakdown, studyPermitData)
+  const scholarshipAmount = input.pathway === 'study-permit' ? (input.studyPermit?.scholarshipAmount ?? 0) : 0
+  const gap            = computeGap(safeResult.safeSavingsTarget, input.liquidSavings, scholarshipAmount)
 
   return {
     upfront:           upfrontResult.total,
@@ -241,5 +312,7 @@ export function runEngine(
     upfrontBreakdown:  upfrontResult.breakdown,
     monthlyBreakdown:  safeResult.breakdown,
     baselineFallback:  baseline.isFallback,
+    irccFloor:         safeResult.irccFloor,
+    irccFloorApplied:  safeResult.irccFloorApplied,
   }
 }

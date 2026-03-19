@@ -1,3 +1,19 @@
+// ─── Study Permit specific types ─────────────────────────────────────────────
+
+export type GICStatus = 'planning' | 'purchased' | 'not-purchasing'
+
+export type ProgramLevel = 'undergraduate' | 'graduate' | 'college-diploma' | 'language-school'
+
+export interface StudyPermitInputs {
+  programLevel:     ProgramLevel
+  tuitionAmount:    number   // CAD/year — user-entered or benchmark
+  gicStatus:        GICStatus
+  gicAmount:        number   // actual GIC amount if already purchased
+  scholarshipAmount: number  // reduces the savings gap
+  biometricsDone:   boolean  // true if biometrics already collected
+  feesPaid:         boolean  // true if permit + biometrics + medical already paid
+}
+
 // ─── Engine Input ─────────────────────────────────────────────────────────────
 
 export type ImmigrationPathway =
@@ -57,6 +73,9 @@ export interface EngineInput {
 
   // Travel
   travelEstimateOverride?: number  // override default $1,500 if provided
+
+  // Study permit specific (only present when pathway === 'study-permit')
+  studyPermit?: StudyPermitInputs
 }
 
 // ─── Breakdown ────────────────────────────────────────────────────────────────
@@ -92,4 +111,8 @@ export interface EngineOutput {
 
   // Warning if city baseline fell back to national averages
   baselineFallback: boolean
+
+  // Study permit specific (optional)
+  irccFloor?: number          // IRCC proof-of-funds requirement
+  irccFloorApplied?: boolean  // true when irccFloor overrode the standard target
 }

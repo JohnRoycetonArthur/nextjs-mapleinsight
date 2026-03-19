@@ -1,0 +1,338 @@
+/**
+ * Settlement Planner — Study Permit Engine Module (E11)
+ *
+ * Pure functions for study-permit-specific financial calculations.
+ * All IRCC thresholds come from Sanity (studyPermitData); hardcoded
+ * fallbacks are used only if the Sanity document is unavailable.
+ *
+ * Data effective: September 1, 2025 (federal) / January 1, 2026 (Quebec)
+ */
+
+import type { CityBaseline } from './baselines'
+import {
+  DEPOSIT_MONTHS,
+  FURNISHING_COST,
+  TRAVEL_ESTIMATE_DEFAULT,
+  rentFromBaseline,
+} from './constants'
+import type { BreakdownItem, EngineInput, StudyPermitInputs } from './types'
+
+// ─── StudyPermitData interface ────────────────────────────────────────────────
+
+export interface ProofOfFundsEntry {
+  familyMembers: number
+  amountCAD:     number
+}
+
+export interface HealthInsuranceEntry {
+  provinceCode:          string
+  hasProvincialCoverage: boolean
+  mechanism:             string
+  annualCostCAD:         number
+  waitPeriodMonths:      number
+  bridgeCoverageNeeded:  boolean
+  bridgeCostCAD:         number
+}
+
+export interface StudyPermitData {
+  effectiveDate:               string
+  proofOfFundsLiving:          ProofOfFundsEntry[]
+  proofOfFundsAdditionalMember: number
+  quebecProofOfFunds: {
+    effectiveDate:        string
+    singleAdult18Plus:    number
+    singleUnder18:        number
+    perAdditionalMember:  number
+  }
+  tuitionBenchmarks: {
+    undergraduate:      number
+    graduate:           number
+    collegeDiplomaLow:  number
+    collegeDiplomaHigh: number
+  }
+  gicMinimum:                  number
+  gicProcessingFee:            number
+  healthInsuranceByProvince:   HealthInsuranceEntry[]
+  studentWorkRights: {
+    maxHoursPerWeekTerm:     number
+    maxHoursPerWeekBreak:    number
+    estimatedHourlyRateLow:  number
+    estimatedHourlyRateHigh: number
+  }
+  provincialMinWages: Array<{ provinceCode: string; hourlyRate: number }>
+}
+
+export interface IRCCComplianceResult {
+  required:       number   // total IRCC proof of funds required
+  tuition:        number   // tuition component
+  livingExpenses: number   // living expense component
+  transport:      number   // $2,000 transport estimate
+  isQuebec:       boolean
+  compliant:      boolean  // availableFunds >= required
+  shortfall:      number   // max(0, required - availableFunds)
+}
+
+// ─── Hardcoded fallback (used if Sanity data unavailable) ─────────────────────
+
+export const STUDY_PERMIT_DEFAULTS: StudyPermitData = {
+  effectiveDate:               '2025-09-01',
+  proofOfFundsAdditionalMember: 6_170,
+  proofOfFundsLiving: [
+    { familyMembers: 1, amountCAD: 22_895 },
+    { familyMembers: 2, amountCAD: 28_502 },
+    { familyMembers: 3, amountCAD: 35_040 },
+    { familyMembers: 4, amountCAD: 42_543 },
+    { familyMembers: 5, amountCAD: 48_252 },
+    { familyMembers: 6, amountCAD: 54_420 },
+    { familyMembers: 7, amountCAD: 60_589 },
+  ],
+  quebecProofOfFunds: {
+    effectiveDate:       '2026-01-01',
+    singleAdult18Plus:   24_617,
+    singleUnder18:       24_617,
+    perAdditionalMember: 6_170,
+  },
+  tuitionBenchmarks: {
+    undergraduate:      41_746,
+    graduate:           24_028,
+    collegeDiplomaLow:  7_000,
+    collegeDiplomaHigh: 22_000,
+  },
+  gicMinimum:       22_895,
+  gicProcessingFee: 200,
+  healthInsuranceByProvince: [
+    { provinceCode: 'ON', hasProvincialCoverage: false, mechanism: 'UHIP',                    annualCostCAD:   792, waitPeriodMonths: 0, bridgeCoverageNeeded: false, bridgeCostCAD:   0 },
+    { provinceCode: 'BC', hasProvincialCoverage: true,  mechanism: 'MSP',                     annualCostCAD:     0, waitPeriodMonths: 3, bridgeCoverageNeeded: true,  bridgeCostCAD: 900 },
+    { provinceCode: 'AB', hasProvincialCoverage: true,  mechanism: 'AHCIP',                   annualCostCAD:     0, waitPeriodMonths: 0, bridgeCoverageNeeded: false, bridgeCostCAD:   0 },
+    { provinceCode: 'QC', hasProvincialCoverage: false, mechanism: 'RAMQ (partial)',           annualCostCAD: 1_000, waitPeriodMonths: 0, bridgeCoverageNeeded: false, bridgeCostCAD:   0 },
+    { provinceCode: 'MB', hasProvincialCoverage: false, mechanism: 'Private/university plan', annualCostCAD:   700, waitPeriodMonths: 0, bridgeCoverageNeeded: false, bridgeCostCAD:   0 },
+    { provinceCode: 'SK', hasProvincialCoverage: true,  mechanism: 'SHIP',                    annualCostCAD:     0, waitPeriodMonths: 3, bridgeCoverageNeeded: true,  bridgeCostCAD: 300 },
+    { provinceCode: 'NS', hasProvincialCoverage: false, mechanism: 'University plan',          annualCostCAD:   850, waitPeriodMonths: 0, bridgeCoverageNeeded: false, bridgeCostCAD:   0 },
+    { provinceCode: 'NB', hasProvincialCoverage: true,  mechanism: 'Medicare',                annualCostCAD:     0, waitPeriodMonths: 2, bridgeCoverageNeeded: true,  bridgeCostCAD: 200 },
+    { provinceCode: 'PE', hasProvincialCoverage: true,  mechanism: 'PEI Health Card',         annualCostCAD:     0, waitPeriodMonths: 3, bridgeCoverageNeeded: true,  bridgeCostCAD: 300 },
+    { provinceCode: 'NL', hasProvincialCoverage: true,  mechanism: 'MCP',                     annualCostCAD:     0, waitPeriodMonths: 0, bridgeCoverageNeeded: false, bridgeCostCAD:   0 },
+  ],
+  studentWorkRights: {
+    maxHoursPerWeekTerm:     24,
+    maxHoursPerWeekBreak:    40,
+    estimatedHourlyRateLow:  15,
+    estimatedHourlyRateHigh: 18,
+  },
+  provincialMinWages: [
+    { provinceCode: 'ON', hourlyRate: 17.20 },
+    { provinceCode: 'BC', hourlyRate: 17.40 },
+    { provinceCode: 'AB', hourlyRate: 15.00 },
+    { provinceCode: 'QC', hourlyRate: 15.75 },
+    { provinceCode: 'MB', hourlyRate: 15.80 },
+    { provinceCode: 'SK', hourlyRate: 15.00 },
+    { provinceCode: 'NS', hourlyRate: 15.20 },
+    { provinceCode: 'NB', hourlyRate: 15.30 },
+    { provinceCode: 'PE', hourlyRate: 15.40 },
+    { provinceCode: 'NL', hourlyRate: 15.60 },
+  ],
+}
+
+// ─── fetchStudyPermitData ─────────────────────────────────────────────────────
+
+/**
+ * Extract and return typed StudyPermitData from a raw Sanity immigrationFees
+ * document. Falls back to STUDY_PERMIT_DEFAULTS if the field is absent.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function fetchStudyPermitData(doc: Record<string, any> | null | undefined): StudyPermitData {
+  if (!doc?.studyPermitData) return STUDY_PERMIT_DEFAULTS
+  return {
+    effectiveDate:                doc.studyPermitData.effectiveDate                ?? STUDY_PERMIT_DEFAULTS.effectiveDate,
+    proofOfFundsLiving:           doc.studyPermitData.proofOfFundsLiving           ?? STUDY_PERMIT_DEFAULTS.proofOfFundsLiving,
+    proofOfFundsAdditionalMember: doc.studyPermitData.proofOfFundsAdditionalMember ?? STUDY_PERMIT_DEFAULTS.proofOfFundsAdditionalMember,
+    quebecProofOfFunds:           doc.studyPermitData.quebecProofOfFunds           ?? STUDY_PERMIT_DEFAULTS.quebecProofOfFunds,
+    tuitionBenchmarks:            doc.studyPermitData.tuitionBenchmarks            ?? STUDY_PERMIT_DEFAULTS.tuitionBenchmarks,
+    gicMinimum:                   doc.studyPermitData.gicMinimum                   ?? STUDY_PERMIT_DEFAULTS.gicMinimum,
+    gicProcessingFee:             doc.studyPermitData.gicProcessingFee             ?? STUDY_PERMIT_DEFAULTS.gicProcessingFee,
+    healthInsuranceByProvince:    doc.studyPermitData.healthInsuranceByProvince    ?? STUDY_PERMIT_DEFAULTS.healthInsuranceByProvince,
+    studentWorkRights:            doc.studyPermitData.studentWorkRights            ?? STUDY_PERMIT_DEFAULTS.studentWorkRights,
+    provincialMinWages:           doc.studyPermitData.provincialMinWages           ?? STUDY_PERMIT_DEFAULTS.provincialMinWages,
+  }
+}
+
+// ─── computeIRCCProofOfFunds ──────────────────────────────────────────────────
+
+const TRANSPORT_ESTIMATE = 2_000
+
+/**
+ * Compute the IRCC total proof-of-funds requirement.
+ *   = tuition + living expenses (by family size, Quebec-aware) + transport ($2,000)
+ */
+export function computeIRCCProofOfFunds(
+  familySize: number,
+  tuition: number,
+  province: string,
+  data: StudyPermitData,
+): number {
+  const isQuebec = province === 'QC'
+  let livingExpenses: number
+
+  if (isQuebec) {
+    const qc = data.quebecProofOfFunds
+    livingExpenses = qc.singleAdult18Plus + Math.max(0, familySize - 1) * qc.perAdditionalMember
+  } else {
+    const capped = Math.min(familySize, 7)
+    const entry  = data.proofOfFundsLiving.find(e => e.familyMembers === capped)
+    const base   = entry?.amountCAD ?? 22_895
+    livingExpenses = base + Math.max(0, familySize - 7) * data.proofOfFundsAdditionalMember
+  }
+
+  return tuition + livingExpenses + TRANSPORT_ESTIMATE
+}
+
+/**
+ * Build the full IRCCComplianceResult with individual components.
+ */
+export function buildIRCCComplianceResult(
+  familySize: number,
+  tuition: number,
+  province: string,
+  availableFunds: number,
+  data: StudyPermitData,
+): IRCCComplianceResult {
+  const isQuebec = province === 'QC'
+  let livingExpenses: number
+
+  if (isQuebec) {
+    const qc = data.quebecProofOfFunds
+    livingExpenses = qc.singleAdult18Plus + Math.max(0, familySize - 1) * qc.perAdditionalMember
+  } else {
+    const capped = Math.min(familySize, 7)
+    const entry  = data.proofOfFundsLiving.find(e => e.familyMembers === capped)
+    const base   = entry?.amountCAD ?? 22_895
+    livingExpenses = base + Math.max(0, familySize - 7) * data.proofOfFundsAdditionalMember
+  }
+
+  const required = tuition + livingExpenses + TRANSPORT_ESTIMATE
+  return {
+    required,
+    tuition,
+    livingExpenses,
+    transport:  TRANSPORT_ESTIMATE,
+    isQuebec,
+    compliant:  availableFunds >= required,
+    shortfall:  Math.max(0, required - availableFunds),
+  }
+}
+
+// ─── getHealthBridgeCost ──────────────────────────────────────────────────────
+
+/** One-time upfront bridge coverage cost during the wait period (if applicable). */
+export function getHealthBridgeCost(province: string, data: StudyPermitData): number {
+  const entry = data.healthInsuranceByProvince.find(p => p.provinceCode === province)
+  if (!entry) return 0
+  return entry.bridgeCoverageNeeded ? entry.bridgeCostCAD : 0
+}
+
+// ─── getHealthInsuranceMonthlyCost ────────────────────────────────────────────
+
+/**
+ * Monthly health insurance cost for international students in the given province.
+ * For provinces without coverage, this is the annual plan cost ÷ 12.
+ * For provinces with provincial coverage (e.g. AB), this is $0/month.
+ */
+export function getHealthInsuranceMonthlyCost(province: string, data: StudyPermitData): number {
+  const entry = data.healthInsuranceByProvince.find(p => p.provinceCode === province)
+  if (!entry) return 0
+  return Math.round(entry.annualCostCAD / 12)
+}
+
+// ─── getPartTimeMonthlyIncome ─────────────────────────────────────────────────
+
+/**
+ * Estimated monthly income for a student working part-time.
+ * Formula: hoursPerWeek × provincial min wage × 4.33 weeks/month.
+ *
+ * Note: This income does NOT count toward IRCC proof of funds.
+ * It is used only for post-arrival monthly budget projections.
+ */
+export function getPartTimeMonthlyIncome(
+  province: string,
+  hoursPerWeek: number,
+  data: StudyPermitData,
+): number {
+  const entry   = data.provincialMinWages.find(w => w.provinceCode === province)
+  const minWage = entry?.hourlyRate ?? data.studentWorkRights.estimatedHourlyRateLow
+  return hoursPerWeek * minWage * 4.33
+}
+
+// ─── computeStudyPermitUpfront ────────────────────────────────────────────────
+
+export interface StudyPermitUpfrontInput {
+  province:              string
+  housingType:           EngineInput['housingType']
+  furnishingLevel:       EngineInput['furnishingLevel']
+  household:             EngineInput['household']
+  travelEstimateOverride?: number
+  studyPermit:           StudyPermitInputs
+}
+
+/**
+ * Compute total upfront costs for study permit holders.
+ * Replaces the standard computeUpfront() when pathway === 'study-permit'.
+ */
+export function computeStudyPermitUpfront(
+  input: StudyPermitUpfrontInput,
+  data: StudyPermitData,
+  baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback'>,
+): { total: number; breakdown: BreakdownItem[] } {
+  const { studyPermit, household, province } = input
+  const familySize = household.adults + household.children
+  const items: BreakdownItem[] = []
+
+  // ── 1. Immigration fees ───────────────────────────────────────────────────
+  if (!studyPermit.feesPaid) {
+    items.push({ key: 'permit-fee',  label: 'Study permit application fee', cad: 150, source: 'ircc' })
+
+    if (!studyPermit.biometricsDone) {
+      const bioFee = familySize >= 2 ? 170 : 85
+      items.push({ key: 'biometrics', label: `Biometrics fee (${familySize >= 2 ? 'family' : 'individual'})`, cad: bioFee, source: 'ircc' })
+    }
+
+    const medical = familySize * 250
+    items.push({ key: 'medical-exam', label: `Medical exam (${familySize} person${familySize > 1 ? 's' : ''} × $250)`, cad: medical, source: 'ircc' })
+  }
+
+  // ── 2. Tuition (first year) ───────────────────────────────────────────────
+  items.push({ key: 'tuition', label: 'First year tuition', cad: studyPermit.tuitionAmount, source: 'user-input' })
+
+  // ── 3. GIC + processing fee ───────────────────────────────────────────────
+  if (studyPermit.gicStatus === 'planning') {
+    items.push({ key: 'gic', label: 'GIC (Guaranteed Investment Certificate)', cad: data.gicMinimum, source: 'ircc' })
+    items.push({ key: 'gic-fee', label: 'GIC bank processing fee', cad: data.gicProcessingFee, source: 'bank' })
+  }
+  // 'purchased' → already committed (shown in breakdown as note, not added to upfront)
+  // 'not-purchasing' → $0
+
+  // ── 4. Health insurance bridge coverage ───────────────────────────────────
+  const bridgeCost = getHealthBridgeCost(province, data)
+  if (bridgeCost > 0) {
+    items.push({ key: 'health-bridge', label: 'Bridge health insurance (wait period)', cad: bridgeCost, source: 'provincial' })
+  }
+
+  // ── 5. Travel ─────────────────────────────────────────────────────────────
+  const travel = input.travelEstimateOverride ?? TRAVEL_ESTIMATE_DEFAULT
+  items.push({ key: 'travel', label: 'Flights & travel', cad: travel, source: 'estimate' })
+
+  // ── 6. Housing deposit ────────────────────────────────────────────────────
+  const rent    = rentFromBaseline(baseline, input.housingType)
+  const deposit = rent * DEPOSIT_MONTHS
+  items.push({
+    key:    'housing-deposit',
+    label:  `Housing deposit (${DEPOSIT_MONTHS}× rent)`,
+    cad:    deposit,
+    source: baseline.isFallback ? 'national-average' : 'cmhc',
+  })
+
+  // ── 7. Setup / furnishing ─────────────────────────────────────────────────
+  const setup = FURNISHING_COST[input.furnishingLevel]
+  items.push({ key: 'setup-essentials', label: `Setup & furnishing (${input.furnishingLevel})`, cad: setup, source: 'constant' })
+
+  const total = items.reduce((sum, i) => sum + i.cad, 0)
+  return { total, breakdown: items }
+}
