@@ -53,6 +53,14 @@ export interface WizardAnswers {
   childcare?: boolean
   car?: boolean
   customExpenses?: Array<{ label: string; amount: string }>
+
+  // Study permit sub-form (only present when pathway === 'study_permit')
+  studyPermit?: {
+    programLevel:      string   // 'undergraduate'|'graduate'|'college_diploma'|'language_school'
+    tuitionAmount:     number
+    gicStatus:         string   // 'planning'|'purchased'|'not_purchasing'
+    scholarshipAmount: number
+  } | null
 }
 
 export interface SessionData {

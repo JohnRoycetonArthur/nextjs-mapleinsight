@@ -83,6 +83,11 @@ function validateStep(step: number, answers: WizardAnswers): StepErrors {
       break
     case 2:
       if (!answers.pathway) errors.pathway = 'Please select your immigration pathway.'
+      if (answers.pathway === 'study_permit') {
+        if (!answers.studyPermit?.programLevel) {
+          errors.studyPermitProgramLevel = 'Please select your program level.'
+        }
+      }
       break
     case 3:
       if (!answers.city) errors.city = 'Please select your destination city.'
