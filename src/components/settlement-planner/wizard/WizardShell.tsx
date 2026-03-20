@@ -27,6 +27,7 @@ import { Step4WorkIncome }  from './steps/Step4WorkIncome'
 import { Step5Savings }     from './steps/Step5Savings'
 import { Step6Lifestyle }   from './steps/Step6Lifestyle'
 import { C, FONT, SERIF, TOTAL_STEPS, WIZARD_STEPS } from './constants'
+import { ResultsDashboard } from '../ResultsDashboard'
 
 // ─── Consultant branding shape (minimal — what the header needs) ───────────────
 
@@ -91,6 +92,7 @@ function validateStep(step: number, answers: WizardAnswers): StepErrors {
       break
     case 3:
       if (!answers.city) errors.city = 'Please select your destination city.'
+      if (answers.city === 'other' && !answers.province) errors.province = 'Please select your province.'
       break
     case 4:
       if (!answers.jobStatus) errors.jobStatus = 'Please select your job situation.'
@@ -127,6 +129,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
   const [completed,   setCompleted]   = useState<Set<number>>(new Set())
   const [errors,      setErrors]      = useState<StepErrors>({})
   const [showClear,   setShowClear]   = useState(false)
+  const [showResults, setShowResults] = useState(false)
 
   // ── Responsive breakpoint ─────────────────────────────────────────────────
   useEffect(() => {
@@ -171,6 +174,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
 
     if (currentStep >= TOTAL_STEPS) {
       onComplete?.(answers)
+      setShowResults(true)
       return
     }
     setStep(currentStep + 1)
@@ -218,6 +222,10 @@ export function WizardShell({ consultant, onComplete }: Props) {
   const logoUrl  = consultant?.logo?.asset?.url
   const name     = consultant?.companyName ?? consultant?.displayName ?? 'Maple Insight'
   const abbr     = initials(name)
+
+  if (showResults) {
+    return <ResultsDashboard consultant={consultant} />
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT, paddingBottom: 80 }}>
