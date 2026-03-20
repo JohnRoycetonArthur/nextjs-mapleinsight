@@ -42,13 +42,13 @@ let PAYROLL_PARAMS:  PayrollParamsData  | null = null
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  ALL_OCCUPATIONS = (require('@/data/simulator/occupations.json') as { data: OccupationOption[] }).data
+  ALL_OCCUPATIONS = (require('@/data/simulator/occupations.json') as { data: OccupationOption[] }).data ?? []
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  WAGE_FACTS      = (require('@/data/simulator/wage_facts.json') as { facts: WageFact[] }).facts
+  WAGE_FACTS      = (require('@/data/simulator/wage_facts.json') as { data: WageFact[] }).data ?? []
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  TAX_BRACKETS    = (require('@/data/simulator/tax_brackets.json') as { data: TaxBracketsData }).data
+  TAX_BRACKETS    = (require('@/data/simulator/tax_brackets.json') as { data: TaxBracketsData }).data ?? null
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  PAYROLL_PARAMS  = (require('@/data/simulator/payroll_params.json') as { data: PayrollParamsData }).data
+  PAYROLL_PARAMS  = (require('@/data/simulator/payroll_params.json') as { data: PayrollParamsData }).data ?? null
 } catch {
   // Data not available — graceful degradation
 }
