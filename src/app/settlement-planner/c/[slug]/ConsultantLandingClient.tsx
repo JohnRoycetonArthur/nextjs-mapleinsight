@@ -142,7 +142,7 @@ export function ConsultantLandingClient({ consultant }: Props) {
   const cta = c.theme?.accentColor || C.accent
   const ini = initials(c.companyName ?? c.displayName)
 
-  const planUrl = `/settlement-planner/c/${c.slug}/plan`
+  const planUrl = `/settlement-planner/c/${c.slug}/wizard`
 
   return (
     <div style={{ minHeight: '60vh', background: C.bg, fontFamily: "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)" }}>
