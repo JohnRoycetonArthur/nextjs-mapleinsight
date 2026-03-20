@@ -41,6 +41,17 @@ export interface WizardAnswers {
   // Step 4 — Work & Income
   jobStatus?: string     // 'secured_30'|'offer_30_90'|'no_offer'|'student'
   income?: string        // raw string (e.g. "4,500") — parsed to number for engine
+  // Occupation estimator (optional — only set when user uses the E9 estimator)
+  occupation?: string
+  nocCode?: string
+  experience?: number
+  hoursPerWeek?: number
+  estimatedGrossLow?: number
+  estimatedGrossMid?: number
+  estimatedGrossHigh?: number
+  estimatedNetMonthly?: number
+  incomeSource?: string    // 'engine_estimate' | 'user_override' | 'direct_input'
+  confidence?: string      // 'High' | 'Medium' | 'Low'
 
   // Step 5 — Savings
   savings?: string       // raw string, maps to liquidSavings
@@ -60,6 +71,10 @@ export interface WizardAnswers {
     tuitionAmount:     number
     gicStatus:         string   // 'planning'|'purchased'|'not_purchasing'
     scholarshipAmount: number
+    // Part-time income estimator (Step 4)
+    partTimeHoursPerWeek?:             number
+    partTimeHourlyRate?:               number
+    estimatedPartTimeMonthlyIncome?:   number
   } | null
 }
 
