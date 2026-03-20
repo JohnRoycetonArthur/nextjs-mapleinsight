@@ -19,41 +19,40 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import type {
-  FurnishingLevel,
-  HouseholdComposition,
-  HousingType,
-  ImmigrationPathway,
-  JobStatus,
-} from '@/lib/settlement-engine/types'
-
 // ─── Session data shape ───────────────────────────────────────────────────────
 
 /** All answers the wizard collects — all fields are optional until submitted. */
 export interface WizardAnswers {
-  // Step 1 — Location & pathway
-  city?: string
+  // Step 1 — Household
+  adults?: number        // default 1
+  children?: number      // default 0
+  arrival?: string       // 'within_30'|'1_3_months'|'3_6_months'|'6_12_months'|'12_plus'
+
+  // Step 2 — Immigration
+  pathway?: string       // 'express_entry'|'pnp'|'study_permit'|'work_permit'|'family'|'refugee'|'other'
+  feesPaid?: boolean
+  biometricsDone?: boolean
+
+  // Step 3 — Destination
+  city?: string          // 'toronto'|'vancouver'|'calgary'|'montreal'|'ottawa'|'halifax'|'winnipeg'|'other'
   province?: string
-  pathway?: ImmigrationPathway
+  transitMode?: string   // 'public'|'car'|'both'
 
-  // Step 2 — Housing
-  housingType?: HousingType
-  furnishingLevel?: FurnishingLevel
+  // Step 4 — Work & Income
+  jobStatus?: string     // 'secured_30'|'offer_30_90'|'no_offer'|'student'
+  income?: string        // raw string (e.g. "4,500") — parsed to number for engine
 
-  // Step 3 — Household
-  adults?: number
-  children?: number
-  needsChildcare?: boolean
+  // Step 5 — Savings
+  savings?: string       // raw string, maps to liquidSavings
+  obligations?: string   // raw string, maps to monthlyObligations
+  savingsCapacity?: string
 
-  // Step 4 — Finances
-  liquidSavings?: number
-  monthlyObligations?: number
-
-  // Step 5 — Lifestyle
-  plansCar?: boolean
-  customMonthlyExpenses?: number
-  jobStatus?: JobStatus
-  travelEstimateOverride?: number
+  // Step 6 — Lifestyle
+  housing?: string       // 'studio'|'1br'|'2br'|'3br'
+  furnishing?: string    // 'minimal'|'moderate'|'full'
+  childcare?: boolean
+  car?: boolean
+  customExpenses?: Array<{ label: string; amount: string }>
 }
 
 export interface SessionData {
