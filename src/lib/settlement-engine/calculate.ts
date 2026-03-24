@@ -16,11 +16,15 @@ import {
   FURNISHING_COST,
   PHONE_INTERNET_BASELINE,
   RUNWAY_MONTHS,
-  TRAVEL_ESTIMATE_DEFAULT,
   UTILITIES_BASELINE,
+  computeOneWayFlight,
   groceriesForHousehold,
   rentFromBaseline,
 } from './constants'
+import {
+  type ExpressEntryData,
+  getComplianceRequirement,
+} from './compliance'
 import {
   type StudyPermitData,
   computeIRCCProofOfFunds,
@@ -39,28 +43,31 @@ export interface UpfrontResult {
 /**
  * U = immigration fees + biometrics + travel + housing deposit + setup essentials
  * For study permit pathway, delegates to computeStudyPermitUpfront().
+ * Regional flight cost is used when departureRegion is provided.
+ * staying-family housingType sets deposit and furnishing to $0.
  */
 export function computeUpfront(
-  input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
-  baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback'>,
+  input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride' | 'departureRegion' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
+  baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback' | 'studentHousing'>,
   studyPermitData?: StudyPermitData,
 ): UpfrontResult {
   // ── Study permit delegation ──────────────────────────────────────────────
   if (input.pathway === 'study-permit' && input.studyPermit && studyPermitData) {
     return computeStudyPermitUpfront(
       {
-        province:              input.province,
-        housingType:           input.housingType,
-        furnishingLevel:       input.furnishingLevel,
-        household:             input.household,
+        province:               input.province,
+        housingType:            input.housingType,
+        furnishingLevel:        input.furnishingLevel,
+        household:              input.household,
         travelEstimateOverride: input.travelEstimateOverride,
-        studyPermit:           input.studyPermit,
+        departureRegion:        input.departureRegion,
+        studyPermit:            input.studyPermit,
       },
       studyPermitData,
       baseline,
     )
   }
-  const { fees, furnishingLevel, travelEstimateOverride } = input
+  const { fees, furnishingLevel, travelEstimateOverride, departureRegion, household } = input
 
   const items: BreakdownItem[] = []
 
@@ -82,33 +89,38 @@ export function computeUpfront(
     })
   }
 
-  // Travel
-  const travel = travelEstimateOverride ?? TRAVEL_ESTIMATE_DEFAULT
+  // Travel — regional one-way or default
+  const travel = travelEstimateOverride
+    ?? computeOneWayFlight(departureRegion, household.adults, household.children)
   items.push({
     key:    'travel',
-    label:  'Flights & travel',
+    label:  'One-way flight & travel',
     cad:    travel,
     source: 'estimate',
   })
 
-  // Housing deposit (first + last month rent)
+  // Housing deposit ($0 for staying-family)
   const rent = rentFromBaseline(baseline, input.housingType)
-  const deposit = rent * DEPOSIT_MONTHS
-  items.push({
-    key:    'housing-deposit',
-    label:  `Housing deposit (${DEPOSIT_MONTHS}× rent)`,
-    cad:    deposit,
-    source: baseline.isFallback ? 'national-average' : 'cmhc',
-  })
+  const deposit = input.housingType === 'staying-family' ? 0 : rent * DEPOSIT_MONTHS
+  if (deposit > 0) {
+    items.push({
+      key:    'housing-deposit',
+      label:  `Housing deposit (${DEPOSIT_MONTHS}× rent)`,
+      cad:    deposit,
+      source: baseline.isFallback ? 'national-average' : 'cmhc',
+    })
+  }
 
-  // Setup / furnishing
-  const setup = FURNISHING_COST[furnishingLevel]
-  items.push({
-    key:    'setup-essentials',
-    label:  `Setup & furnishing (${furnishingLevel})`,
-    cad:    setup,
-    source: 'constant',
-  })
+  // Setup / furnishing ($0 for staying-family)
+  const setup = input.housingType === 'staying-family' ? 0 : FURNISHING_COST[furnishingLevel]
+  if (setup > 0) {
+    items.push({
+      key:    'setup-essentials',
+      label:  `Setup & furnishing (${furnishingLevel})`,
+      cad:    setup,
+      source: 'constant',
+    })
+  }
 
   const total = items.reduce((sum, item) => sum + item.cad, 0)
   return { total, breakdown: items }
@@ -129,7 +141,7 @@ export function computeMonthlyMin(
   input: Pick<EngineInput, 'housingType' | 'household' | 'monthlyObligations' | 'pathway' | 'province' | 'studyPermit'>,
   baseline: Pick<
     CityBaseline,
-    'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'monthlyTransitPass' | 'cityName' | 'isFallback'
+    'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'monthlyTransitPass' | 'cityName' | 'isFallback' | 'studentHousing'
   >,
   studyPermitData?: StudyPermitData,
 ): MonthlyResult {
@@ -189,21 +201,27 @@ export interface SafeResult {
   runwayMonths: number
   bufferPercent: number
   breakdown: BreakdownItem[]
-  irccFloor?: number          // IRCC proof-of-funds requirement (study permit only)
-  irccFloorApplied?: boolean  // true when irccFloor > standard safe savings target
+  irccFloor?: number               // IRCC proof-of-funds requirement (study permit)
+  irccFloorApplied?: boolean       // true when irccFloor overrode standard target
+  complianceFloor?: number         // IRCC settlement funds (EE FSWP/FSTP/PNP)
+  complianceFloorApplied?: boolean // true when complianceFloor overrode standard target
+  bindingConstraint?: 'compliance' | 'real-world'
 }
 
 /**
  * M_safe = M_min + childcare adder + car adder + custom expenses
  * S_safe = U + M_safe × runwayMonths + bufferPercent × (U + M_safe × runwayMonths)
  * For study permit: S_safe = max(standard, irccFloor)
+ * For EE FSWP/FSTP/PNP: S_safe = max(standard, complianceFloor)
+ * bindingConstraint indicates which drove the final safeSavingsTarget.
  */
 export function computeSafe(
-  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
+  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses' | 'pathway' | 'province' | 'household' | 'studyPermit' | 'departureRegion'>,
   upfront: number,
   monthlyMin: number,
   monthlyMinBreakdown: BreakdownItem[],
   studyPermitData?: StudyPermitData,
+  expressEntryData?: ExpressEntryData,
 ): SafeResult {
   // Build M_safe from M_min items + lifestyle adders
   const adderItems: BreakdownItem[] = []
@@ -225,25 +243,46 @@ export function computeSafe(
   const runningTotal = upfront + monthlySafe * runway
   const buffer = runningTotal * BUFFER_PERCENT
   const standardTarget = runningTotal + buffer
+  const breakdown = [...monthlyMinBreakdown, ...adderItems]
+  const familySize = input.household.adults + input.household.children
 
   // ── Study permit IRCC floor ──────────────────────────────────────────────
   if (input.pathway === 'study-permit' && input.studyPermit && studyPermitData) {
-    const familySize = input.household.adults + input.household.children
-    const irccFloor  = computeIRCCProofOfFunds(
+    const irccFloor = computeIRCCProofOfFunds(
       familySize,
       input.studyPermit.tuitionAmount,
       input.province,
       studyPermitData,
+      input.departureRegion,
+      input.household.adults,
+      input.household.children,
     )
     const irccFloorApplied = irccFloor > standardTarget
     return {
       monthlySafe,
-      safeSavingsTarget: irccFloorApplied ? irccFloor : standardTarget,
-      runwayMonths:      runway,
-      bufferPercent:     BUFFER_PERCENT,
-      breakdown:         [...monthlyMinBreakdown, ...adderItems],
+      safeSavingsTarget:   irccFloorApplied ? irccFloor : standardTarget,
+      runwayMonths:        runway,
+      bufferPercent:       BUFFER_PERCENT,
+      breakdown,
       irccFloor,
       irccFloorApplied,
+      bindingConstraint:   irccFloorApplied ? 'compliance' : 'real-world',
+    }
+  }
+
+  // ── Express Entry / PNP compliance floor ────────────────────────────────
+  const complianceFloor = getComplianceRequirement(input.pathway, familySize, expressEntryData)
+  if (complianceFloor !== null) {
+    const complianceFloorApplied = complianceFloor > standardTarget
+    return {
+      monthlySafe,
+      safeSavingsTarget:       complianceFloorApplied ? complianceFloor : standardTarget,
+      runwayMonths:            runway,
+      bufferPercent:           BUFFER_PERCENT,
+      breakdown,
+      complianceFloor,
+      complianceFloorApplied,
+      bindingConstraint:       complianceFloorApplied ? 'compliance' : 'real-world',
     }
   }
 
@@ -252,7 +291,8 @@ export function computeSafe(
     safeSavingsTarget: standardTarget,
     runwayMonths:      runway,
     bufferPercent:     BUFFER_PERCENT,
-    breakdown:         [...monthlyMinBreakdown, ...adderItems],
+    breakdown,
+    bindingConstraint: 'real-world',
   }
 }
 
@@ -286,33 +326,38 @@ export function generateBreakdown(upfrontBreakdown: BreakdownItem[]): BreakdownI
  * Run the full calculation engine. Returns a complete EngineOutput.
  * Caller is responsible for pre-fetching the city baseline and fees.
  * Pass studyPermitData when pathway === 'study-permit'.
+ * Pass expressEntryData when pathway === 'express-entry-fsw' | 'express-entry-fstp' | 'pnp'.
  */
 export function runEngine(
   input: EngineInput,
   baseline: CityBaseline,
   dataVersion: string,
   studyPermitData?: StudyPermitData,
+  expressEntryData?: ExpressEntryData,
 ): EngineOutput {
   const upfrontResult  = computeUpfront(input, baseline, studyPermitData)
   const monthlyResult  = computeMonthlyMin(input, baseline, studyPermitData)
-  const safeResult     = computeSafe(input, upfrontResult.total, monthlyResult.total, monthlyResult.breakdown, studyPermitData)
+  const safeResult     = computeSafe(input, upfrontResult.total, monthlyResult.total, monthlyResult.breakdown, studyPermitData, expressEntryData)
   const scholarshipAmount = input.pathway === 'study-permit' ? (input.studyPermit?.scholarshipAmount ?? 0) : 0
   const gap            = computeGap(safeResult.safeSavingsTarget, input.liquidSavings, scholarshipAmount)
 
   return {
-    upfront:           upfrontResult.total,
-    monthlyMin:        monthlyResult.total,
-    monthlySafe:       safeResult.monthlySafe,
-    safeSavingsTarget: safeResult.safeSavingsTarget,
-    savingsGap:        gap,
-    runwayMonths:      safeResult.runwayMonths,
-    bufferPercent:     safeResult.bufferPercent,
-    engineVersion:     ENGINE_VERSION,
+    upfront:                 upfrontResult.total,
+    monthlyMin:              monthlyResult.total,
+    monthlySafe:             safeResult.monthlySafe,
+    safeSavingsTarget:       safeResult.safeSavingsTarget,
+    savingsGap:              gap,
+    runwayMonths:            safeResult.runwayMonths,
+    bufferPercent:           safeResult.bufferPercent,
+    engineVersion:           ENGINE_VERSION,
     dataVersion,
-    upfrontBreakdown:  upfrontResult.breakdown,
-    monthlyBreakdown:  safeResult.breakdown,
-    baselineFallback:  baseline.isFallback,
-    irccFloor:         safeResult.irccFloor,
-    irccFloorApplied:  safeResult.irccFloorApplied,
+    upfrontBreakdown:        upfrontResult.breakdown,
+    monthlyBreakdown:        safeResult.breakdown,
+    baselineFallback:        baseline.isFallback,
+    irccFloor:               safeResult.irccFloor,
+    irccFloorApplied:        safeResult.irccFloorApplied,
+    complianceFloor:         safeResult.complianceFloor,
+    complianceFloorApplied:  safeResult.complianceFloorApplied,
+    bindingConstraint:       safeResult.bindingConstraint,
   }
 }

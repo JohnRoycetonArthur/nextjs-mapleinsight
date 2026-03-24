@@ -46,7 +46,7 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   WAGE_FACTS      = (require('@/data/simulator/wage_facts.json') as { data: WageFact[] }).data ?? []
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  TAX_BRACKETS    = (require('@/data/simulator/tax_brackets.json') as { data: TaxBracketsData }).data ?? null
+  TAX_BRACKETS    = require('@/data/simulator/tax_brackets.json') as TaxBracketsData
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   PAYROLL_PARAMS  = (require('@/data/simulator/payroll_params.json') as { data: PayrollParamsData }).data ?? null
 } catch {
@@ -228,9 +228,34 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
   const [tierNet, setTierNet]             = useState<TierNetMonthly | null>(null)
   const dropdownRef                       = useRef<HTMLDivElement>(null)
 
+  // Study permit path flag (uses session value with underscore)
+  const isStudyPermitPath = data.pathway === 'study_permit'
+
+  // Auto-select "Student" when on study permit path and no status set yet
+  useEffect(() => {
+    if (isStudyPermitPath && !data.jobStatus) {
+      onChange('jobStatus', 'student')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStudyPermitPath])
+
+  // Sync income field from part-time monthly when on study permit student/no-offer path
+  useEffect(() => {
+    if (isStudyPermitPath && (data.jobStatus === 'student' || data.jobStatus === 'no_offer')) {
+      const monthly = data.studyPermit?.estimatedPartTimeMonthlyIncome ?? 0
+      if (!data.income || data.incomeSource !== 'direct_input') {
+        onChange('income', String(monthly))
+        onChange('incomeSource', 'direct_input')
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStudyPermitPath, data.jobStatus])
+
   // Derived flags
   const showDirectInput     = data.jobStatus === 'secured_30' || data.jobStatus === 'offer_30_90'
-  const showEstimatorToggle = data.jobStatus === 'no_offer' || data.jobStatus === 'student'
+  const showEstimatorToggle = !isStudyPermitPath && (data.jobStatus === 'no_offer' || data.jobStatus === 'student')
+  // For study permit: show part-time estimator when student or no_offer selected
+  const showPartTimeForStudyPermit = isStudyPermitPath && (data.jobStatus === 'student' || data.jobStatus === 'no_offer')
   const isStudentPermit     = data.jobStatus === 'student' && data.pathway === 'study_permit'
 
   // Province min wage (for part-time estimator)
@@ -320,6 +345,11 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
       partTimeHourlyRate:             rate,
       estimatedPartTimeMonthlyIncome: monthly,
     })
+    // Sync income field so income scenarios can use part-time income
+    if (isStudyPermitPath) {
+      onChange('income', String(monthly))
+      onChange('incomeSource', 'direct_input')
+    }
   }
 
   // Fallback tier label for the estimate card (AC-9)
@@ -403,7 +433,7 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
         </div>
       )}
 
-      {/* ── No offer / Student: income toggle + estimator (AC-4) ────────────── */}
+      {/* ── No offer / Student: income toggle + estimator (AC-4) — hidden for study permit ── */}
       {showEstimatorToggle && (
         <div style={{ marginBottom: 24 }}>
           <Label>Do you have an expected income figure?</Label>
@@ -651,7 +681,7 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
       )}
 
       {/* ── Study permit: part-time income estimator (§4.2) ─────────────────── */}
-      {isStudentPermit && (
+      {(isStudentPermit || showPartTimeForStudyPermit) && (
         <div style={{
           background: `${C.accent}05`, border: `1px solid ${C.accent}20`,
           borderRadius: 14, padding: isMobile ? '18px 16px' : '20px 22px',

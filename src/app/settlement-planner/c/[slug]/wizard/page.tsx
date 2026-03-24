@@ -14,6 +14,7 @@ const publicClient = createClient({ projectId, dataset, apiVersion, useCdn: true
 async function getConsultant(slug: string): Promise<ConsultantBranding | null> {
   return publicClient.fetch<ConsultantBranding | null>(
     `*[_type == "consultant" && slug.current == $slug && status == "active"][0] {
+      "slug": slug.current,
       displayName,
       companyName,
       logo { asset -> { url } },

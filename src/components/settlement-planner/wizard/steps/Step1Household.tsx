@@ -12,6 +12,20 @@ import { useState } from 'react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 
+// ─── Departure region options ─────────────────────────────────────────────────
+
+const DEPARTURE_REGIONS = [
+  { code: 'north-america',    label: 'USA / Mexico / Caribbean'       },
+  { code: 'south-america',    label: 'South & Central America'        },
+  { code: 'uk-europe',        label: 'UK / Europe'                    },
+  { code: 'south-asia',       label: 'South Asia'                     },
+  { code: 'east-se-asia',     label: 'East & Southeast Asia'          },
+  { code: 'africa-west-east', label: 'West & East Africa'             },
+  { code: 'africa-south',     label: 'Southern Africa'                },
+  { code: 'middle-east-na',   label: 'Middle East / North Africa'     },
+  { code: 'domestic',         label: 'Within Canada'                  },
+]
+
 // ─── Label ────────────────────────────────────────────────────────────────────
 
 const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) => (
@@ -103,7 +117,13 @@ export function Step1Household({ data, onChange, errors }: Props) {
       ? (errors.arrival ?? 'Please select your planned arrival window.')
       : errors.arrival
 
+  const regionError =
+    (touched.region || errors.departureRegion) && !data.departureRegion
+      ? (errors.departureRegion ?? 'Please select where your household is travelling from.')
+      : errors.departureRegion
+
   const [selectFocused, setSelectFocused] = useState(false)
+  const [regionFocused, setRegionFocused] = useState(false)
 
   return (
     <div>
@@ -188,6 +208,47 @@ export function Step1Household({ data, onChange, errors }: Props) {
         {arrivalError && (
           <p id="arrival-error" role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
             {arrivalError}
+          </p>
+        )}
+      </div>
+
+      {/* ── Departure region ──────────────────────────────────────────────── */}
+      <div style={{ marginTop: 28 }}>
+        <Label htmlFor="region-select">Where is your household travelling from? *</Label>
+        <select
+          id="region-select"
+          value={data.departureRegion ?? ''}
+          onChange={e => {
+            onChange('departureRegion', e.target.value)
+            if (e.target.value) setTouched(prev => ({ ...prev, region: false }))
+          }}
+          onBlur={() => setTouched(prev => ({ ...prev, region: true }))}
+          onFocus={() => setRegionFocused(true)}
+          style={{
+            width: '100%', maxWidth: 340,
+            padding: '12px 16px', borderRadius: 10,
+            border: `1px solid ${regionError ? C.red : regionFocused ? C.accent : C.border}`,
+            boxShadow: regionFocused ? `0 0 0 3px ${C.forest}18` : 'none',
+            fontSize: 14, fontFamily: FONT, color: data.departureRegion ? C.text : C.textLight,
+            background: C.white, outline: 'none',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+          }}
+          aria-required="true"
+          aria-invalid={!!regionError}
+          aria-describedby={regionError ? 'region-error' : 'region-helper'}
+        >
+          <option value="">Select departure region</option>
+          {DEPARTURE_REGIONS.map(r => (
+            <option key={r.code} value={r.code}>{r.label}</option>
+          ))}
+        </select>
+        {regionError ? (
+          <p id="region-error" role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
+            {regionError}
+          </p>
+        ) : (
+          <p id="region-helper" style={{ fontSize: 12, color: C.textLight, margin: '6px 0 0', fontFamily: FONT }}>
+            This helps us estimate your flight cost to Canada.
           </p>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { Inter, DM_Sans, DM_Serif_Display } from "next/font/google";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { GoogleTagManager } from "@/components/analytics/GoogleTagManager";
 import { Header } from "@/components/Header";
@@ -34,13 +35,16 @@ const dmSerif = DM_Serif_Display({ subsets: ["latin"], weight: "400", variable: 
 const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const pathname = headers().get('x-pathname') ?? ''
+  const isConsultantRoute = pathname.startsWith('/settlement-planner/c/')
+
   return (
     <html lang="en">
       <body className={`${inter.className} ${dmSans.variable} ${dmSerif.variable} bg-white text-[color:#495057]`}>
         <GoogleTagManager gtmId={gtmId} />
-        <Header />
+        {!isConsultantRoute && <Header />}
         <main className="min-h-[70vh]">{children}</main>
-        <Footer />
+        {!isConsultantRoute && <Footer />}
       </body>
     </html>
   );

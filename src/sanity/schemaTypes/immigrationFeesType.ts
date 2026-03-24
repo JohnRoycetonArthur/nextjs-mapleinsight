@@ -75,6 +75,61 @@ export const immigrationFeesType = defineType({
       validation: (Rule) => Rule.required(),
     }),
 
+    // ─── Express Entry Settlement Funds (FSWP / FSTP, effective July 7, 2025) ───────
+    defineField({
+      name: 'expressEntryFunds',
+      title: 'Express Entry Settlement Funds',
+      type: 'array',
+      description: 'Required settlement funds by family size for FSWP and FSTP (50% of LICO). Effective July 7, 2025.',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({ name: 'familyMembers', title: 'Family Members', type: 'number', validation: (Rule) => Rule.required().min(1).integer() }),
+          defineField({ name: 'amountCAD',     title: 'Required Amount (CAD)', type: 'number', validation: (Rule) => Rule.required().min(0) }),
+        ],
+        preview: {
+          select: { familyMembers: 'familyMembers', amountCAD: 'amountCAD' },
+          prepare({ familyMembers, amountCAD }) {
+            return { title: `${familyMembers} person${familyMembers === 1 ? '' : 's'}`, subtitle: amountCAD != null ? `$${amountCAD.toLocaleString()}` : '' }
+          },
+        },
+      }],
+    }),
+    defineField({
+      name: 'expressEntryAdditionalMember',
+      title: 'EE Funds Per Additional Member Beyond 7',
+      type: 'number',
+      description: 'Increment added per person beyond family size 7. Currently $4,112.',
+    }),
+    defineField({
+      name: 'expressEntryEffectiveDate',
+      title: 'EE Funds Effective Date',
+      type: 'date',
+      description: 'When these EE settlement funds came into effect (e.g., 2025-07-07).',
+    }),
+
+    // ─── Flight Cost by Departure Region ─────────────────────────────────────────
+    defineField({
+      name: 'flightCostByRegion',
+      title: 'One-Way Flight Cost by Departure Region',
+      type: 'array',
+      description: 'Per-person one-way fares by departure region. Used to calculate settlement travel costs.',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({ name: 'regionCode',       title: 'Region Code',                    type: 'string', description: 'e.g. south-asia, north-america' }),
+          defineField({ name: 'regionLabel',      title: 'Region Label',                   type: 'string', description: 'Human-readable label shown in the wizard' }),
+          defineField({ name: 'farePerPersonCAD', title: 'Per-Person One-Way Fare (CAD)',   type: 'number', validation: (Rule) => Rule.required().min(0) }),
+        ],
+        preview: {
+          select: { regionLabel: 'regionLabel', farePerPersonCAD: 'farePerPersonCAD' },
+          prepare({ regionLabel, farePerPersonCAD }) {
+            return { title: regionLabel ?? '—', subtitle: farePerPersonCAD != null ? `$${farePerPersonCAD} one-way` : '' }
+          },
+        },
+      }],
+    }),
+
     // ─── Study Permit Financial Data (optional, only populated for study-permit doc) ──
     defineField({
       name: 'studyPermitData',

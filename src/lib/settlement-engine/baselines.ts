@@ -14,6 +14,11 @@ export interface CityBaseline {
   effectiveDate: string   // ISO date string, e.g. "2025-10-01"
   dataVersion: string     // e.g. "2025-10"
   isFallback: boolean     // true when national-average fallback was used
+  studentHousing?: {
+    sharedRoom: number
+    onCampus: number
+    homestay: number
+  }
 }
 
 // ─── Fallback national averages ───────────────────────────────────────────────
@@ -80,6 +85,7 @@ export async function fetchCityBaseline(city: string): Promise<CityBaseline> {
       source: string
       effectiveDate: string
       dataVersion: string | null
+      studentHousing: { sharedRoom: number; onCampus: number; homestay: number } | null
     } | null>(
       `*[_type == "cityBaseline" && lower(cityName) == lower($city)][0] {
         cityName,
@@ -90,7 +96,8 @@ export async function fetchCityBaseline(city: string): Promise<CityBaseline> {
         monthlyTransitPass,
         source,
         effectiveDate,
-        dataVersion
+        dataVersion,
+        studentHousing
       }`,
       { city },
     )
@@ -107,6 +114,7 @@ export async function fetchCityBaseline(city: string): Promise<CityBaseline> {
         effectiveDate:      result.effectiveDate,
         dataVersion:        result.dataVersion ?? result.effectiveDate.slice(0, 7),
         isFallback:         false,
+        studentHousing:     result.studentHousing ?? undefined,
       }
     } else {
       // No document found — use national-average fallback

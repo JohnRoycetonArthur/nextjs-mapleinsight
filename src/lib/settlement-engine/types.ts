@@ -28,7 +28,10 @@ export type ImmigrationPathway =
 
 export type JobStatus = 'secured' | 'offer' | 'none' | 'student'
 
-export type HousingType = 'studio' | '1br' | '2br'
+export type HousingType =
+  | 'studio' | '1br' | '2br'             // standard (all pathways)
+  | 'shared-room' | 'on-campus' | 'homestay'  // study-permit specific
+  | 'staying-family'                       // $0 cost (all pathways)
 
 export type FurnishingLevel = 'furnished' | 'basic' | 'standard'
 
@@ -73,6 +76,7 @@ export interface EngineInput {
 
   // Travel
   travelEstimateOverride?: number  // override default $1,500 if provided
+  departureRegion?: string         // e.g. 'south-asia' — used to compute regional flight cost
 
   // Study permit specific (only present when pathway === 'study-permit')
   studyPermit?: StudyPermitInputs
@@ -113,6 +117,11 @@ export interface EngineOutput {
   baselineFallback: boolean
 
   // Study permit specific (optional)
-  irccFloor?: number          // IRCC proof-of-funds requirement
+  irccFloor?: number          // IRCC proof-of-funds requirement (study permit)
   irccFloorApplied?: boolean  // true when irccFloor overrode the standard target
+
+  // Express Entry / PNP compliance (optional)
+  complianceFloor?: number         // IRCC settlement funds requirement (EE FSWP/FSTP/PNP)
+  complianceFloorApplied?: boolean // true when complianceFloor overrode the standard target
+  bindingConstraint?: 'compliance' | 'real-world'  // which constraint set safeSavingsTarget
 }

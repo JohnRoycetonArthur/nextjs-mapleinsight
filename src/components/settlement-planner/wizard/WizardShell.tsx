@@ -32,6 +32,7 @@ import { ResultsDashboard } from '../ResultsDashboard'
 // ─── Consultant branding shape (minimal — what the header needs) ───────────────
 
 export interface ConsultantBranding {
+  slug:         string
   displayName:  string
   companyName:  string | null
   logo:         { asset: { url: string } } | null
@@ -80,7 +81,8 @@ function validateStep(step: number, answers: WizardAnswers): StepErrors {
   const errors: StepErrors = {}
   switch (step) {
     case 1:
-      if (!answers.arrival) errors.arrival = 'Please select your planned arrival window.'
+      if (!answers.arrival)         errors.arrival         = 'Please select your planned arrival window.'
+      if (!answers.departureRegion) errors.departureRegion = 'Please select where your household is travelling from.'
       break
     case 2:
       if (!answers.pathway) errors.pathway = 'Please select your immigration pathway.'
@@ -100,10 +102,15 @@ function validateStep(step: number, answers: WizardAnswers): StepErrors {
     case 5:
       if (!answers.savings?.trim()) errors.savings = 'Please enter your available savings.'
       break
-    case 6:
-      if (!answers.housing)    errors.housing    = 'Please select a housing type.'
-      if (!answers.furnishing) errors.furnishing = 'Please select a furnishing level.'
+    case 6: {
+      if (!answers.housing) errors.housing = 'Please select a housing type.'
+      // Furnishing not required for furnished/family housing types
+      const noFurnishing = answers.housing === 'on-campus'
+        || answers.housing === 'homestay'
+        || answers.housing === 'staying-family'
+      if (!noFurnishing && !answers.furnishing) errors.furnishing = 'Please select a furnishing level.'
       break
+    }
   }
   return errors
 }

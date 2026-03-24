@@ -274,10 +274,10 @@ describe('irccProofOfFundsCompliance', () => {
   })
 
   it('does not fire when savings meet or exceed IRCC threshold', () => {
-    // IRCC = tuition (20k) + living allowance (~10k) + transport (2k) ≈ 32k
-    // Use 40k to be safely above
+    // IRCC = tuition (20k) + living allowance (22,895 for 1 person) + transport (2k) = 44,895
+    // Use 50k to be safely above
     const risk = irccProofOfFundsCompliance.evaluate(ctx(
-      { ...studyInput, liquidSavings: 40_000 },
+      { ...studyInput, liquidSavings: 50_000 },
       {},
     ))
     expect(risk).toBeNull()

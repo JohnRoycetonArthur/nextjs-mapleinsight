@@ -87,6 +87,14 @@ const HOUSING = [
   { value: '1br',    label: '1 Bedroom',   icon: '🛏️' },
   { value: '2br',    label: '2 Bedrooms',  icon: '🏠' },
   { value: '3br',    label: '3+ Bedrooms', icon: '🏡' },
+  { value: 'staying-family', label: 'Staying with Family / Friends', icon: '🤝' },
+]
+
+const STUDENT_HOUSING = [
+  { value: 'shared-room',    label: 'Shared Room / House',          icon: '🏠', desc: 'Share a house or apartment with roommates. Most affordable option.' },
+  { value: 'on-campus',      label: 'On-Campus Residence',          icon: '🏫', desc: 'University dormitory or student housing. Convenient, may include meal plan.' },
+  { value: 'homestay',       label: 'Homestay',                     icon: '👨‍👩‍👧', desc: 'Live with a Canadian host family. Often includes meals.' },
+  { value: 'staying-family', label: 'Staying with Family / Friends', icon: '🤝', desc: 'Live with relatives or friends at no rental cost.' },
 ]
 
 const FURNISHING = [
@@ -94,6 +102,24 @@ const FURNISHING = [
   { value: 'moderate', label: 'Moderate',        desc: 'Comfortable start — ~$1,500 setup'   },
   { value: 'full',     label: 'Fully furnished', desc: 'Everything you need — ~$3,000 setup' },
 ]
+
+// ─── Student housing costs by city (matches Sanity seed data) ─────────────────
+
+const STUDENT_HOUSING_COSTS: Record<string, { sharedRoom: number; onCampus: number; homestay: number }> = {
+  toronto:   { sharedRoom: 1_050, onCampus: 1_200, homestay: 1_200 },
+  vancouver: { sharedRoom: 1_100, onCampus: 1_200, homestay: 1_250 },
+  montreal:  { sharedRoom:   725, onCampus:   900, homestay: 1_000 },
+  ottawa:    { sharedRoom:   850, onCampus: 1_000, homestay: 1_050 },
+  calgary:   { sharedRoom:   750, onCampus:   850, homestay:   950 },
+  halifax:   { sharedRoom:   675, onCampus:   800, homestay:   900 },
+  winnipeg:  { sharedRoom:   575, onCampus:   700, homestay:   800 },
+}
+const STUDENT_HOUSING_FALLBACK = { sharedRoom: 900, onCampus: 1_000, homestay: 1_000 }
+
+function getStudentCost(city: string, type: 'sharedRoom' | 'onCampus' | 'homestay'): number {
+  const key = city.toLowerCase()
+  return (STUDENT_HOUSING_COSTS[key] ?? STUDENT_HOUSING_FALLBACK)[type]
+}
 
 // ─── Province name map ────────────────────────────────────────────────────────
 
@@ -124,8 +150,9 @@ interface Props {
 
 export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }: Props) {
   // ── Study permit health insurance derivation (§4.3) ──────────────────────
-  const isStudyPermit = data.pathway === 'study_permit'
-  const province      = data.province ?? ''
+  const isStudyPermit  = data.pathway === 'study_permit'
+  const city           = data.city ?? ''
+  const province       = data.province ?? ''
   const provinceName  = PROVINCE_NAMES[province] ?? province
 
   const healthEntry = isStudyPermit
@@ -142,6 +169,14 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
   const hiBridge   = healthEntry?.bridgeCostCAD ?? 0
   const hiMechanism = healthEntry?.mechanism ?? ''
   const hiWaitMonths = healthEntry?.waitPeriodMonths ?? 0
+
+  // ── Housing / furnishing visibility logic ────────────────────────────────
+  const housingVal      = data.housing ?? ''
+  const isStayingFamily = housingVal === 'staying-family'
+  const isOnCampus      = housingVal === 'on-campus'
+  const isHomestay      = housingVal === 'homestay'
+  // Furnishing hidden for on-campus, homestay (furnished), and staying-family
+  const showFurnishing  = !isStayingFamily && !isOnCampus && !isHomestay
 
   // Input styles for custom expense text fields
   const inputBase: React.CSSProperties = {
@@ -160,31 +195,84 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
 
       {/* ── Housing type cards (AC-1, AC-2) ────────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
-        <Label>Preferred housing type *</Label>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
-          {HOUSING.map(h => {
-            const active = data.housing === h.value
-            return (
-              <button
-                key={h.value}
-                type="button"
-                onClick={() => onChange('housing', h.value)}
-                aria-pressed={active}
-                style={{
-                  padding: '14px 12px', borderRadius: 12, textAlign: 'center',
-                  border:     active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
-                  background: active ? `${C.accent}08` : C.white,
-                  cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', minHeight: 44,
-                }}
-              >
-                <span style={{ fontSize: 22, display: 'block', marginBottom: 4 }} aria-hidden="true">{h.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: active ? C.accent : C.forest }}>
-                  {h.label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        <Label>
+          {isStudyPermit ? 'Where will you live? *' : 'Preferred housing type *'}
+        </Label>
+
+        {/* Study permit — student-specific cards (2×2 grid with descriptions + costs) */}
+        {isStudyPermit ? (
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+            {STUDENT_HOUSING.map(h => {
+              const active = data.housing === h.value
+              const monthlyCost =
+                h.value === 'staying-family' ? '$0'
+                : h.value === 'shared-room'  ? `${fmtCAD(getStudentCost(city, 'sharedRoom'))}`
+                : h.value === 'on-campus'    ? `${fmtCAD(getStudentCost(city, 'onCampus'))}`
+                : h.value === 'homestay'     ? `${fmtCAD(getStudentCost(city, 'homestay'))}`
+                : ''
+              return (
+                <button
+                  key={h.value}
+                  type="button"
+                  onClick={() => onChange('housing', h.value)}
+                  aria-pressed={active}
+                  style={{
+                    padding: '14px 16px', borderRadius: 12, textAlign: 'left',
+                    border:     active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
+                    background: active ? `${C.accent}08` : C.white,
+                    cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 20 }} aria-hidden="true">{h.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: active ? C.accent : C.forest }}>
+                      {h.label}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, color: C.gray, display: 'block', lineHeight: 1.4, marginBottom: 6 }}>
+                    {h.desc}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: active ? C.accent : C.forest }}>
+                    {monthlyCost}/month
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          /* Standard pathway — existing 4 cards + staying-family as 5th */
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5, 1fr)', gap: 10 }}>
+            {HOUSING.map(h => {
+              const active = data.housing === h.value
+              const isFamily = h.value === 'staying-family'
+              return (
+                <button
+                  key={h.value}
+                  type="button"
+                  onClick={() => onChange('housing', h.value)}
+                  aria-pressed={active}
+                  style={{
+                    padding: '14px 12px', borderRadius: 12, textAlign: 'center',
+                    border:     active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
+                    background: active ? `${C.accent}08` : C.white,
+                    cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s', minHeight: 44,
+                  }}
+                >
+                  <span style={{ fontSize: 22, display: 'block', marginBottom: 4 }} aria-hidden="true">{h.icon}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: active ? C.accent : C.forest, display: 'block' }}>
+                    {h.label}
+                  </span>
+                  {isFamily && (
+                    <span style={{ fontSize: 11, color: active ? C.accent : C.gray, display: 'block', marginTop: 2 }}>
+                      $0/month
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {errors.housing && (
           <p role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
             {errors.housing}
@@ -192,41 +280,59 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
         )}
       </div>
 
-      {/* ── Furnishing level cards (AC-1, AC-3) ────────────────────────────── */}
-      <div style={{ marginBottom: 24 }}>
-        <Label>Furnishing level *</Label>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 10 }}>
-          {FURNISHING.map(f => {
-            const active = data.furnishing === f.value
-            return (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => onChange('furnishing', f.value)}
-                aria-pressed={active}
-                style={{
-                  padding: '16px 18px', borderRadius: 12, textAlign: 'left',
-                  border:     active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
-                  background: active ? `${C.accent}08` : C.white,
-                  cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: 700, color: active ? C.accent : C.forest, display: 'block' }}>
-                  {f.label}
-                </span>
-                <span style={{ fontSize: 12, color: C.gray, display: 'block', marginTop: 3 }}>
-                  {f.desc}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-        {errors.furnishing && (
-          <p role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
-            {errors.furnishing}
+      {/* ── Staying with family advisory callout ────────────────────────────── */}
+      {isStayingFamily && (
+        <div style={{
+          background: '#EAF4FB', border: `1px solid #3B9AC425`,
+          borderRadius: 12, padding: '14px 16px', marginBottom: 24,
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }} aria-hidden="true">ℹ️</span>
+          <p style={{ fontSize: 13, color: '#1A4A6B', margin: 0, lineHeight: 1.65, fontFamily: FONT }}>
+            Living with family or friends significantly reduces your settlement costs. Consider budgeting
+            a contribution to household expenses and maintaining a contingency fund of 2–3 months&apos; rent
+            in case your arrangement changes.
           </p>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* ── Furnishing level cards (AC-1, AC-3) ────────────────────────────── */}
+      {showFurnishing && (
+        <div style={{ marginBottom: 24 }}>
+          <Label>Furnishing level *</Label>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 10 }}>
+            {FURNISHING.map(f => {
+              const active = data.furnishing === f.value
+              return (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => onChange('furnishing', f.value)}
+                  aria-pressed={active}
+                  style={{
+                    padding: '16px 18px', borderRadius: 12, textAlign: 'left',
+                    border:     active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
+                    background: active ? `${C.accent}08` : C.white,
+                    cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 700, color: active ? C.accent : C.forest, display: 'block' }}>
+                    {f.label}
+                  </span>
+                  <span style={{ fontSize: 12, color: C.gray, display: 'block', marginTop: 3 }}>
+                    {f.desc}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          {errors.furnishing && (
+            <p role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
+              {errors.furnishing}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── Childcare (shown only if household has children) (AC-1) ─────────── */}
       {hasChildren && (

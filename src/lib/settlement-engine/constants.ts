@@ -23,6 +23,47 @@ export const RUNWAY_MONTHS: Record<JobStatus, number> = {
 /** Default travel cost estimate when no override is provided (CAD). */
 export const TRAVEL_ESTIMATE_DEFAULT = 1_500
 
+// ─── Flight cost by departure region ────────────────────────────────────────
+
+/** Per-person one-way fares (CAD) by departure region code. Source: R1 data. */
+export const FLIGHT_COST_BY_REGION: Record<string, number> = {
+  'north-america':    350,
+  'south-america':    550,
+  'uk-europe':        600,
+  'south-asia':       750,
+  'east-se-asia':     700,
+  'africa-west-east': 900,
+  'africa-south':     850,
+  'middle-east-na':   700,
+  'domestic':         200,
+}
+
+/**
+ * Compute one-way flight cost for the entire household.
+ * Formula: regionFare × (adults + children × 0.75)
+ * Falls back to TRAVEL_ESTIMATE_DEFAULT if region is unknown.
+ */
+export function computeOneWayFlight(
+  departureRegion: string | undefined,
+  adults: number,
+  children: number,
+): number {
+  const fare = departureRegion ? (FLIGHT_COST_BY_REGION[departureRegion] ?? TRAVEL_ESTIMATE_DEFAULT) : TRAVEL_ESTIMATE_DEFAULT
+  return Math.round(fare * (adults + children * 0.75))
+}
+
+/**
+ * Compute round-trip flight cost for IRCC compliance calculations (study permit).
+ * Formula: regionFare × 2 × (adults + children × 0.75)
+ */
+export function computeRoundTripFlight(
+  departureRegion: string | undefined,
+  adults: number,
+  children: number,
+): number {
+  return computeOneWayFlight(departureRegion, adults, children) * 2
+}
+
 // ─── Furnishing / setup essentials by level ──────────────────────────────────
 
 /** One-time cost to set up a home depending on how furnished it already is. */
@@ -59,16 +100,29 @@ export const CAR_MONTHLY = 600
 /** Landlords in Canada typically require first + last month's rent upfront. */
 export const DEPOSIT_MONTHS = 2
 
+// Student housing fallback costs (used when Sanity studentHousing is absent)
+const STUDENT_HOUSING_FALLBACK = { sharedRoom: 900, onCampus: 1_000, homestay: 1_000 }
+
 // ─── Rent lookup helper ───────────────────────────────────────────────────────
 
 export function rentFromBaseline(
-  baseline: { avgRentStudio: number; avgRent1BR: number; avgRent2BR: number },
+  baseline: {
+    avgRentStudio: number
+    avgRent1BR: number
+    avgRent2BR: number
+    studentHousing?: { sharedRoom: number; onCampus: number; homestay: number }
+  },
   housingType: HousingType,
 ): number {
+  const sh = baseline.studentHousing ?? STUDENT_HOUSING_FALLBACK
   switch (housingType) {
-    case 'studio': return baseline.avgRentStudio
-    case '1br':    return baseline.avgRent1BR
-    case '2br':    return baseline.avgRent2BR
+    case 'studio':         return baseline.avgRentStudio
+    case '1br':            return baseline.avgRent1BR
+    case '2br':            return baseline.avgRent2BR
+    case 'shared-room':    return sh.sharedRoom
+    case 'on-campus':      return sh.onCampus
+    case 'homestay':       return sh.homestay
+    case 'staying-family': return 0
   }
 }
 

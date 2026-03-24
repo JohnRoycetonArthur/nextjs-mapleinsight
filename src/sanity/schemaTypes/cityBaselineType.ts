@@ -83,6 +83,19 @@ export const cityBaselineType = defineType({
       type: 'string',
       description: 'Version tag for tracking data updates (e.g. "2025-10").',
     }),
+
+    // ─── Student Housing Costs (study-permit pathway only) ────────────────────────
+    defineField({
+      name: 'studentHousing',
+      title: 'Student Housing Costs',
+      type: 'object',
+      description: 'Monthly housing costs for study permit holders. Only used when pathway is study-permit.',
+      fields: [
+        defineField({ name: 'sharedRoom', title: 'Shared Room ($/month)',           type: 'number', description: 'Average cost for a room in a shared house/apartment' }),
+        defineField({ name: 'onCampus',   title: 'On-Campus Residence ($/month)',   type: 'number', description: 'Average university residence fee per month' }),
+        defineField({ name: 'homestay',   title: 'Homestay ($/month)',              type: 'number', description: 'Average homestay cost including some meals' }),
+      ],
+    }),
   ],
 
   preview: {

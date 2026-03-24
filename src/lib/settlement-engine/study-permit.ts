@@ -12,7 +12,8 @@ import type { CityBaseline } from './baselines'
 import {
   DEPOSIT_MONTHS,
   FURNISHING_COST,
-  TRAVEL_ESTIMATE_DEFAULT,
+  computeOneWayFlight,
+  computeRoundTripFlight,
   rentFromBaseline,
 } from './constants'
 import type { BreakdownItem, EngineInput, StudyPermitInputs } from './types'
@@ -157,17 +158,24 @@ export function fetchStudyPermitData(doc: Record<string, any> | null | undefined
 
 // ─── computeIRCCProofOfFunds ──────────────────────────────────────────────────
 
-const TRANSPORT_ESTIMATE = 2_000
+/** Default round-trip transport fallback when no departure region is provided. */
+const TRANSPORT_ESTIMATE_DEFAULT = 2_000
 
 /**
  * Compute the IRCC total proof-of-funds requirement.
- *   = tuition + living expenses (by family size, Quebec-aware) + transport ($2,000)
+ *   = tuition + living expenses (by family size, Quebec-aware) + transport (round-trip)
+ *
+ * When departureRegion is provided, transport = round-trip regional fare × household size.
+ * Otherwise falls back to $2,000 flat estimate.
  */
 export function computeIRCCProofOfFunds(
   familySize: number,
   tuition: number,
   province: string,
   data: StudyPermitData,
+  departureRegion?: string,
+  adults?: number,
+  children?: number,
 ): number {
   const isQuebec = province === 'QC'
   let livingExpenses: number
@@ -182,11 +190,18 @@ export function computeIRCCProofOfFunds(
     livingExpenses = base + Math.max(0, familySize - 7) * data.proofOfFundsAdditionalMember
   }
 
-  return tuition + livingExpenses + TRANSPORT_ESTIMATE
+  const transport = departureRegion
+    ? computeRoundTripFlight(departureRegion, adults ?? familySize, children ?? 0)
+    : TRANSPORT_ESTIMATE_DEFAULT
+
+  return tuition + livingExpenses + transport
 }
 
 /**
  * Build the full IRCCComplianceResult with individual components.
+ *
+ * Transport uses round-trip regional fare when departureRegion is provided,
+ * otherwise falls back to $2,000 flat estimate per IRCC guidance.
  */
 export function buildIRCCComplianceResult(
   familySize: number,
@@ -194,6 +209,9 @@ export function buildIRCCComplianceResult(
   province: string,
   availableFunds: number,
   data: StudyPermitData,
+  departureRegion?: string,
+  adults?: number,
+  children?: number,
 ): IRCCComplianceResult {
   const isQuebec = province === 'QC'
   let livingExpenses: number
@@ -208,12 +226,16 @@ export function buildIRCCComplianceResult(
     livingExpenses = base + Math.max(0, familySize - 7) * data.proofOfFundsAdditionalMember
   }
 
-  const required = tuition + livingExpenses + TRANSPORT_ESTIMATE
+  const transport = departureRegion
+    ? computeRoundTripFlight(departureRegion, adults ?? familySize, children ?? 0)
+    : TRANSPORT_ESTIMATE_DEFAULT
+
+  const required = tuition + livingExpenses + transport
   return {
     required,
     tuition,
     livingExpenses,
-    transport:  TRANSPORT_ESTIMATE,
+    transport,
     isQuebec,
     compliant:  availableFunds >= required,
     shortfall:  Math.max(0, required - availableFunds),
@@ -269,6 +291,7 @@ export interface StudyPermitUpfrontInput {
   furnishingLevel:       EngineInput['furnishingLevel']
   household:             EngineInput['household']
   travelEstimateOverride?: number
+  departureRegion?:      string
   studyPermit:           StudyPermitInputs
 }
 
@@ -315,23 +338,46 @@ export function computeStudyPermitUpfront(
     items.push({ key: 'health-bridge', label: 'Bridge health insurance (wait period)', cad: bridgeCost, source: 'provincial' })
   }
 
-  // ── 5. Travel ─────────────────────────────────────────────────────────────
-  const travel = input.travelEstimateOverride ?? TRAVEL_ESTIMATE_DEFAULT
-  items.push({ key: 'travel', label: 'Flights & travel', cad: travel, source: 'estimate' })
+  // ── 5. Travel (one-way settlement cost) ───────────────────────────────────
+  const travel = input.travelEstimateOverride
+    ?? computeOneWayFlight(input.departureRegion, household.adults, household.children)
+  items.push({ key: 'travel', label: 'One-way flight & travel', cad: travel, source: 'estimate' })
 
-  // ── 6. Housing deposit ────────────────────────────────────────────────────
-  const rent    = rentFromBaseline(baseline, input.housingType)
-  const deposit = rent * DEPOSIT_MONTHS
-  items.push({
-    key:    'housing-deposit',
-    label:  `Housing deposit (${DEPOSIT_MONTHS}× rent)`,
-    cad:    deposit,
-    source: baseline.isFallback ? 'national-average' : 'cmhc',
-  })
+  // ── 6. Housing deposit (varies by housing type) ───────────────────────────
+  const rent = rentFromBaseline(baseline, input.housingType)
+  let deposit = 0
+  let depositLabel = ''
+  switch (input.housingType) {
+    case 'on-campus':
+      deposit      = 1_650 + rent  // confirmation deposit + first month
+      depositLabel = 'On-campus deposit (confirmation + 1st month)'
+      break
+    case 'homestay':
+      deposit      = rent  // first month only
+      depositLabel = 'Homestay deposit (1st month)'
+      break
+    case 'staying-family':
+      deposit      = 0
+      depositLabel = 'Housing deposit (staying with family)'
+      break
+    default:
+      deposit      = rent * DEPOSIT_MONTHS  // first + last
+      depositLabel = `Housing deposit (${DEPOSIT_MONTHS}× rent)`
+  }
+  if (deposit > 0) {
+    items.push({
+      key:    'housing-deposit',
+      label:  depositLabel,
+      cad:    deposit,
+      source: baseline.isFallback ? 'national-average' : 'cmhc',
+    })
+  }
 
-  // ── 7. Setup / furnishing ─────────────────────────────────────────────────
-  const setup = FURNISHING_COST[input.furnishingLevel]
-  items.push({ key: 'setup-essentials', label: `Setup & furnishing (${input.furnishingLevel})`, cad: setup, source: 'constant' })
+  // ── 7. Setup / furnishing ($0 for staying-family) ─────────────────────────
+  const setup = input.housingType === 'staying-family' ? 0 : FURNISHING_COST[input.furnishingLevel]
+  if (setup > 0) {
+    items.push({ key: 'setup-essentials', label: `Setup & furnishing (${input.furnishingLevel})`, cad: setup, source: 'constant' })
+  }
 
   const total = items.reduce((sum, i) => sum + i.cad, 0)
   return { total, breakdown: items }
