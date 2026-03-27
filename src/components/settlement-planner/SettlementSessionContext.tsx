@@ -66,6 +66,13 @@ export interface WizardAnswers {
   car?: boolean
   customExpenses?: Array<{ label: string; amount: string }>
 
+  // Express Entry sub-class (only present when pathway === 'express_entry')
+  expressEntry?: {
+    subClass:        string   // 'fsw' | 'cec' | 'fst' | 'unsure'
+    hasJobOffer:     boolean
+    isWorkAuthorized: boolean
+  }
+
   // Study permit sub-form (only present when pathway === 'study_permit')
   studyPermit?: {
     programLevel:      string   // 'undergraduate'|'graduate'|'college_diploma'|'language_school'

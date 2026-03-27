@@ -71,14 +71,24 @@ function parseAmount(s: string | undefined): number {
   return parseFloat(s.replace(/,/g, '')) || 0
 }
 
-function mapPathway(w: string | undefined): ImmigrationPathway {
+function mapPathway(
+  w: string | undefined,
+  expressEntry?: { subClass: string; hasJobOffer: boolean; isWorkAuthorized: boolean },
+): ImmigrationPathway {
   switch (w) {
     case 'study_permit':  return 'study-permit'
     case 'work_permit':   return 'work-permit'
     case 'pnp':           return 'pnp'
     case 'family':        return 'family-sponsorship'
-    case 'express_entry': return 'express-entry-fsw'
-    default:              return 'other'
+    case 'express_entry': {
+      const sub = expressEntry?.subClass ?? 'fsw'
+      if (sub === 'cec' && expressEntry?.hasJobOffer && expressEntry?.isWorkAuthorized) {
+        return 'express-entry-cec'   // proof-of-funds exempt
+      }
+      if (sub === 'fst') return 'express-entry-fstp'
+      return 'express-entry-fsw'     // fsw, unsure, or CEC without full exemption criteria
+    }
+    default: return 'other'
   }
 }
 
@@ -355,7 +365,7 @@ export function ResultsDashboard({ consultant }: Props) {
   const engineInput = useMemo<EngineInput | null>(() => {
     if (!baseline) return null
 
-    const pathway   = mapPathway(answers.pathway)
+    const pathway   = mapPathway(answers.pathway, answers.expressEntry ?? undefined)
     const isStudy   = pathway === 'study-permit'
     const feesPaid  = answers.feesPaid ?? false
     const bioDone   = answers.biometricsDone ?? false
@@ -581,6 +591,8 @@ export function ResultsDashboard({ consultant }: Props) {
       province:  answers.province ?? 'ON',
       city:      answers.city     ?? 'toronto',
       gicStatus: answers.studyPermit?.gicStatus ?? null,
+      income:    narrativeData?.monthlyIncome ?? 0,
+      savings:   engineInput.liquidSavings,
     },
     topRisks,
   )
@@ -761,6 +773,24 @@ export function ResultsDashboard({ consultant }: Props) {
 
         {/* ── 1. Compliance Status Card — visually dominant ─────────────── */}
 
+        {/* EE CEC: Proof of Funds Exempt */}
+        {answers.pathway === 'express_entry' && engineInput?.pathway === 'express-entry-cec' && (
+          <div style={{ borderRadius: 14, padding: isMobile ? '20px 18px' : '24px 28px', marginBottom: 20, background: '#ECFDF5', border: `2px solid ${C.accent}`, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.accent, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: FONT }}>
+              IRCC Financial Requirement
+            </div>
+            <div style={{ fontFamily: SERIF, fontSize: isMobile ? 24 : 30, fontWeight: 700, color: C.accent, marginBottom: 6 }}>
+              ✓ Proof of Funds: Exempt
+            </div>
+            <div style={{ fontSize: 13, color: C.text }}>
+              CEC applicants with a valid job offer and current work authorization are exempt from the proof-of-funds requirement.
+            </div>
+            <div style={{ fontSize: 10, color: C.textLight, marginTop: 6 }}>
+              Source: IRCC — Express Entry CEC eligibility criteria
+            </div>
+          </div>
+        )}
+
         {/* EE / PNP: IRCC Settlement Funds */}
         {complianceRequirement !== null && (() => {
           const eeShortfall = Math.max(0, complianceRequirement - savings)
@@ -935,7 +965,7 @@ export function ResultsDashboard({ consultant }: Props) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
                           <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
                           {it.sourceKey
-                            ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} />
+                            ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} fallbackSource={it.source} />
                             : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
                           }
                         </div>
@@ -1078,7 +1108,7 @@ export function ResultsDashboard({ consultant }: Props) {
 
         {/* ── 7. Settlement Checklist — collapsible accordion ─────────────── */}
         {(() => {
-          const totalItems = checklist.preArrival.length + checklist.firstWeek.length + checklist.first30.length + checklist.first90.length
+          const totalItems = checklist.preArrival.items.length + checklist.firstWeek.items.length + checklist.first30.items.length + checklist.first90.items.length
           return (
             <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, marginBottom: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
               <button
@@ -1095,17 +1125,17 @@ export function ResultsDashboard({ consultant }: Props) {
               {checklistOpen && (
                 <div style={{ padding: isMobile ? '0 16px 18px' : '0 26px 22px', borderTop: `1px solid ${C.border}` }}>
                   {[
-                    { title: 'Pre-Arrival',   items: checklist.preArrival, icon: '✈️', color: C.accent  },
-                    { title: 'First Week',    items: checklist.firstWeek,  icon: '🏁', color: C.gold    },
-                    { title: 'First 30 Days', items: checklist.first30,    icon: '📋', color: C.blue    },
-                    { title: 'First 90 Days', items: checklist.first90,    icon: '🎯', color: C.purple  },
+                    { title: 'Pre-Arrival',   period: checklist.preArrival, icon: '✈️', color: C.accent  },
+                    { title: 'First Week',    period: checklist.firstWeek,  icon: '🏁', color: C.gold    },
+                    { title: 'First 30 Days', period: checklist.first30,    icon: '📋', color: C.blue    },
+                    { title: 'First 90 Days', period: checklist.first90,    icon: '🎯', color: C.purple  },
                   ].map(group => (
                     <div key={group.title} style={{ marginTop: 16 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
                         <span aria-hidden="true" style={{ fontSize: 14 }}>{group.icon}</span>
                         <span style={{ fontFamily: SERIF, fontSize: 15, color: group.color, fontWeight: 700 }}>{group.title}</span>
                       </div>
-                      {group.items.map((item: ChecklistItem, i) => (
+                      {group.period.items.map((item: ChecklistItem, i) => (
                         <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 5, paddingLeft: 4, alignItems: 'flex-start' }}>
                           <CheckIcon color={group.color} />
                           <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>
@@ -1121,6 +1151,13 @@ export function ResultsDashboard({ consultant }: Props) {
                           </span>
                         </div>
                       ))}
+                      {group.period.additionalSteps.length > 0 && (
+                        <div style={{ marginTop: 6, paddingLeft: 4 }}>
+                          <span style={{ fontSize: 11, color: C.textLight, fontStyle: 'italic' }}>
+                            + {group.period.additionalSteps.length} additional step{group.period.additionalSteps.length > 1 ? 's' : ''} available in the full checklist PDF
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

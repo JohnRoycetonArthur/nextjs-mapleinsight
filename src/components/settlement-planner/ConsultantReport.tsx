@@ -16,6 +16,7 @@ import type { IRCCComplianceResult } from '@/lib/settlement-engine/study-permit'
 import type { ConsultantBranding } from './wizard/WizardShell'
 import type { WizardAnswers } from './SettlementSessionContext'
 import { DataFreshnessBar } from './DataFreshnessBar'
+import { DataFreshnessIndicator } from './DataFreshnessIndicator'
 import { fetchDataSources } from '@/lib/settlement-engine/sources'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -250,30 +251,38 @@ export function ConsultantReport({
         <div style={{
           background: C.white, borderRadius: 14, border: `1px solid ${C.border}`,
           padding: isMobile ? '18px 16px' : '20px 24px', marginBottom: 20,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          flexWrap: 'wrap', gap: 12,
         }}>
-          <div>
-            <div style={{ fontSize: 11, color: C.textLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
-              Client Profile
-            </div>
-            <div style={{ fontFamily: SERIF, fontSize: 20, color: C.forest }}>
-              {city}, {province} · {pathwayLabel} · {household}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            {[
-              { l: 'Savings',  v: fmt(engineInput.liquidSavings),          c: undefined },
-              { l: 'Target',   v: fmt(engineOutput.safeSavingsTarget),      c: undefined },
-              { l: 'Gap',      v: engineOutput.savingsGap > 0 ? fmt(engineOutput.savingsGap) : 'None ✓',
-                c: engineOutput.savingsGap > 0 ? C.red : C.accent },
-            ].map(m => (
-              <div key={m.l} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>{m.l}</div>
-                <div style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: m.c ?? C.forest }}>{m.v}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.textLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                Client Profile
               </div>
-            ))}
+              <div style={{ fontFamily: SERIF, fontSize: 20, color: C.forest }}>
+                {city}, {province} · {pathwayLabel} · {household}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+              {[
+                { l: 'Savings',  v: fmt(engineInput.liquidSavings),          c: undefined },
+                { l: 'Target',   v: fmt(engineOutput.safeSavingsTarget),      c: undefined },
+                { l: 'Gap',      v: engineOutput.savingsGap > 0 ? fmt(engineOutput.savingsGap) : 'None ✓',
+                  c: engineOutput.savingsGap > 0 ? C.red : C.accent },
+              ].map(m => (
+                <div key={m.l} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>{m.l}</div>
+                  <div style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: m.c ?? C.forest }}>{m.v}</div>
+                </div>
+              ))}
+            </div>
           </div>
+          {/* ── Data freshness bar (AC-1, AC-2) ─────────────────────────── */}
+          {dataSources.size > 0 && (() => {
+            const allKeys = [
+              ...engineOutput.upfrontBreakdown,
+              ...engineOutput.monthlyBreakdown,
+            ].map(it => it.sourceKey).filter((k): k is string => Boolean(k))
+            return <DataFreshnessIndicator sources={dataSources} sourceKeys={allKeys} />
+          })()}
         </div>
 
         {/* ══ SECTION 1: Financial Readiness Assessment ════════════════════ */}
@@ -319,77 +328,135 @@ export function ConsultantReport({
         {/* ══ SECTION 2: Alternative Scenario Analysis ══════════════════════ */}
         <SectionCard>
           <SectionTitle icon="🔮">Alternative Scenario Analysis</SectionTitle>
-          <p style={{ fontSize: 13, color: C.gray, margin: '0 0 18px', lineHeight: 1.6 }}>
-            These scenarios show how specific changes to the client&apos;s plan would affect their financial readiness. Use them as discussion starters.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-            {scenarios.map(s => (
-              <div key={s.id} style={{
-                borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px',
-                background: C.white, position: 'relative', overflow: 'hidden',
-              }}>
-                {/* Delta badge */}
-                <div style={{ position: 'absolute', top: 0, right: 0, background: '#16a34a12', padding: '4px 12px 4px 14px', borderBottomLeftRadius: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
-                    <ArrowUp/> {s.deltaLabel}
-                  </div>
+          {engineOutput.savingsGap === 0 ? (
+            /* AC-4: gap = 0 — compact info card instead of full scenarios */
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              background: '#EFF6FF', borderRadius: 12,
+              border: `1px solid ${C.blue}30`, padding: '16px 20px',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+                  Alternative scenarios available but not critical
                 </div>
-                <div style={{ fontSize: 20, marginBottom: 8 }}>{s.icon}</div>
-                <div style={{ fontFamily: SERIF, fontSize: 15, color: C.forest, fontWeight: 700, marginBottom: 4, paddingRight: 90 }}>{s.name}</div>
-                <div style={{ fontSize: 12, color: C.gray, lineHeight: 1.6, marginBottom: 12 }}>{s.details}</div>
-                <div style={{ display: 'flex', gap: 18 }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>New Target</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(s.newTarget)}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>New Gap</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: s.newGap === 0 ? C.accent : C.gold, fontFamily: SERIF }}>
-                      {s.newGap === 0 ? 'None ✓' : fmt(s.newGap)}
-                    </div>
-                  </div>
+                <div style={{ fontSize: 12, color: C.gray, lineHeight: 1.6 }}>
+                  Client is financially prepared. Scenarios can be explored to optimise further if desired.
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize: 13, color: C.gray, margin: '0 0 18px', lineHeight: 1.6 }}>
+                These scenarios show how specific changes to the client&apos;s plan would affect their financial readiness. Use them as discussion starters.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+                {scenarios.map(s => (
+                  <div key={s.id} style={{
+                    borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px',
+                    background: C.white, position: 'relative', overflow: 'hidden',
+                  }}>
+                    {/* Delta badge */}
+                    <div style={{ position: 'absolute', top: 0, right: 0, background: '#16a34a12', padding: '4px 12px 4px 14px', borderBottomLeftRadius: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
+                        <ArrowUp/> {s.deltaLabel}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 20, marginBottom: 8 }}>{s.icon}</div>
+                    <div style={{ fontFamily: SERIF, fontSize: 15, color: C.forest, fontWeight: 700, marginBottom: 4, paddingRight: 90 }}>{s.name}</div>
+                    <div style={{ fontSize: 12, color: C.gray, lineHeight: 1.6, marginBottom: 12 }}>{s.details}</div>
+                    <div style={{ display: 'flex', gap: 18 }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>New Target</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(s.newTarget)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>New Gap</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: s.newGap === 0 ? C.accent : C.gold, fontFamily: SERIF }}>
+                          {s.newGap === 0 ? 'None ✓' : fmt(s.newGap)}
+                        </div>
+                      </div>
+                    </div>
+                    {/* AC-5: scenario closes gap — show note */}
+                    {s.newGap === 0 && (
+                      <div style={{
+                        marginTop: 10, display: 'flex', alignItems: 'center', gap: 6,
+                        fontSize: 11, fontWeight: 700, color: C.accent,
+                      }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        Gap eliminated under this scenario
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </SectionCard>
 
         {/* ══ SECTION 3: Gap Closure Strategies ════════════════════════════ */}
         <SectionCard>
           <SectionTitle icon="🎯">Gap Closure Strategies</SectionTitle>
-          <p style={{ fontSize: 13, color: C.gray, margin: '0 0 16px', lineHeight: 1.6 }}>
-            Ordered by financial impact. Combine multiple strategies to close or significantly reduce the{' '}
-            {engineOutput.savingsGap > 0 ? <strong>{fmt(engineOutput.savingsGap)}</strong> : 'savings'} gap.
-          </p>
-          {strategies.map((s, i) => (
-            <div key={i} style={{
-              display: 'flex', gap: 14, padding: '16px 0',
-              borderBottom: i < strategies.length - 1 ? `1px solid ${C.lightGray}` : 'none',
-              alignItems: 'flex-start',
+          {engineOutput.savingsGap === 0 ? (
+            /* AC-3: gap = 0 — replace strategies with green success card */
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              background: '#ECFDF5', borderRadius: 12,
+              border: `1px solid ${C.accent}40`, padding: '16px 20px',
             }}>
-              {/* Rank bubble */}
-              <div style={{
-                width: 30, height: 30, borderRadius: '50%',
-                background: s.impact < 0 ? `${C.accent}15` : C.lightGray,
-                color: s.impact < 0 ? C.accent : C.gray,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: 13, flexShrink: 0, fontFamily: SERIF,
-              }}>{i + 1}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: C.forest }}>{s.title}</span>
-                  <DifficultyPill level={s.difficulty}/>
-                  {s.impact !== 0 && (
-                    <span style={{ fontSize: 12, fontWeight: 700, color: s.impact < 0 ? '#16a34a' : C.red }}>
-                      {s.impact < 0 ? '↓' : '↑'} {fmt(Math.abs(s.impact))}
-                    </span>
-                  )}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.accent, marginBottom: 4 }}>
+                  Client meets safe target
                 </div>
-                <p style={{ fontSize: 12, color: C.text, margin: '0 0 4px', lineHeight: 1.6 }}>{s.rationale}</p>
-                <span style={{ fontSize: 11, color: C.textLight }}>Timeline: {s.timeline}</span>
+                <div style={{ fontSize: 12, color: C.gray, lineHeight: 1.6 }}>
+                  No gap closure strategies needed. Savings of <strong>{fmt(engineInput.liquidSavings)}</strong> fully cover the recommended target of <strong>{fmt(engineOutput.safeSavingsTarget)}</strong>.
+                </div>
               </div>
             </div>
-          ))}
+          ) : (
+            <>
+              <p style={{ fontSize: 13, color: C.gray, margin: '0 0 16px', lineHeight: 1.6 }}>
+                Ordered by financial impact. Combine multiple strategies to close or significantly reduce the{' '}
+                <strong>{fmt(engineOutput.savingsGap)}</strong> gap.
+              </p>
+              {strategies.map((s, i) => (
+                <div key={i} style={{
+                  display: 'flex', gap: 14, padding: '16px 0',
+                  borderBottom: i < strategies.length - 1 ? `1px solid ${C.lightGray}` : 'none',
+                  alignItems: 'flex-start',
+                }}>
+                  {/* Rank bubble */}
+                  <div style={{
+                    width: 30, height: 30, borderRadius: '50%',
+                    background: s.impact < 0 ? `${C.accent}15` : C.lightGray,
+                    color: s.impact < 0 ? C.accent : C.gray,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: 13, flexShrink: 0, fontFamily: SERIF,
+                  }}>{i + 1}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C.forest }}>{s.title}</span>
+                      <DifficultyPill level={s.difficulty}/>
+                      {s.impact !== 0 && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: s.impact < 0 ? '#16a34a' : C.red }}>
+                          {s.impact < 0 ? '↓' : '↑'} {fmt(Math.abs(s.impact))}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: C.text, margin: '0 0 4px', lineHeight: 1.6 }}>{s.rationale}</p>
+                    <span style={{ fontSize: 11, color: C.textLight }}>Timeline: {s.timeline}</span>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </SectionCard>
 
         {/* ══ SECTION 4: Program-Specific Notes ════════════════════════════ */}
@@ -499,25 +566,35 @@ export function ConsultantReport({
             </div>
           )}
 
-          {/* Cross-Referrals */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.purple, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
-              Maple Insight Tools to Recommend
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {meetingGuide.crossReferrals.map((cr, i) => (
-                <a key={i} href={cr.link} style={{
-                  flex: '1 1 180px', padding: '12px 16px', borderRadius: 10,
-                  border: `1px solid ${C.purple}20`, background: `${C.purple}04`,
-                  textDecoration: 'none', display: 'block',
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.purple, marginBottom: 2 }}>{cr.tool}</div>
-                  <div style={{ fontSize: 11, color: C.gray, lineHeight: 1.4 }}>{cr.reason}</div>
-                </a>
-              ))}
-            </div>
-          </div>
         </SectionCard>
+
+        {/* ── Recommended Tools (web-only — excluded from PDF per AC-7) ──── */}
+        {meetingGuide.crossReferrals && meetingGuide.crossReferrals.length > 0 && (
+          <>
+            <div style={{ borderTop: `1px solid ${C.border}`, margin: '8px 0 24px' }} aria-hidden="true"/>
+            <div style={{
+              background: C.white, borderRadius: 12, border: `1px dashed ${C.border}`,
+              padding: isMobile ? '18px 16px' : '22px 24px', marginBottom: 20,
+              opacity: 0.92,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>
+                Recommended Maple Insight Tools
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {meetingGuide.crossReferrals.map((cr, i) => (
+                  <a key={i} href={cr.link} style={{
+                    flex: '1 1 180px', padding: '10px 14px', borderRadius: 8,
+                    border: `1px solid ${C.border}`, background: C.lightGray,
+                    textDecoration: 'none', display: 'block',
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 2 }}>{cr.tool}</div>
+                    <div style={{ fontSize: 11, color: C.textLight, lineHeight: 1.4 }}>{cr.reason}</div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── Data footer ────────────────────────────────────────────────── */}
         <div style={{ background: C.lightGray, borderRadius: 10, padding: '14px 18px', fontSize: 11, color: C.textLight, lineHeight: 1.7 }}>

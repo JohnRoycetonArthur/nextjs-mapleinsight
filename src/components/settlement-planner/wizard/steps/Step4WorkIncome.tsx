@@ -744,7 +744,7 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
                   aria-label="Part-time hours per week"
                 />
                 <Helper>
-                  International students can work up to 24 hours/week during the academic term.
+                  International students can work up to 24 hours per week off campus during regular academic sessions. On-campus work has no hourly limit.
                 </Helper>
               </div>
 

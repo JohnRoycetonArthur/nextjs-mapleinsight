@@ -538,15 +538,17 @@ function renderChecklist(pkg: MapleReportPackage): string {
       province:  answers.province ?? 'ON',
       city:      answers.city     ?? 'toronto',
       gicStatus: answers.studyPermit?.gicStatus ?? null,
+      income:    pkg.narrative?.monthlyIncome ?? 0,
+      savings:   pkg.engineInput.liquidSavings,
     },
     risks,
   )
 
   const groups = [
-    { icon: '✈', title: 'Pre-Arrival',   items: checklist.preArrival },
-    { icon: '🏁', title: 'First Week',    items: checklist.firstWeek  },
-    { icon: '📋', title: 'First 30 Days', items: checklist.first30    },
-    { icon: '🎯', title: 'First 90 Days', items: checklist.first90    },
+    { icon: '✈', title: 'Pre-Arrival',   items: checklist.preArrival.items },
+    { icon: '🏁', title: 'First Week',    items: checklist.firstWeek.items  },
+    { icon: '📋', title: 'First 30 Days', items: checklist.first30.items    },
+    { icon: '🎯', title: 'First 90 Days', items: checklist.first90.items    },
   ]
 
   const col = (grps: typeof groups) => grps.map(g => `
@@ -607,7 +609,8 @@ function sourceTextLabel(
 /** Compliance status card — shown on Page 1 for study permit or EE/PNP pathways */
 function renderComplianceCard(pkg: MapleReportPackage): string {
   const { results, engineInput, answers } = pkg
-  const pathway = answers.pathway ?? engineInput.pathway ?? ''
+  // answers.pathway uses underscores ('study_permit'), engineInput.pathway uses hyphens ('study-permit')
+  const pathway = (answers.pathway ?? engineInput.pathway ?? '').replace(/_/g, '-')
   const savings = engineInput.liquidSavings
 
   if (pathway === 'study-permit' && results.irccCompliance) {
@@ -1074,15 +1077,6 @@ function renderMeetingGuide(advisory: ConsultantAdvisory): string {
       `).join('')
     : '<p style="font-size:8.5pt;color:#6B7280;">No red flags identified.</p>'
 
-  const referrals = meetingGuide.crossReferrals.length > 0
-    ? meetingGuide.crossReferrals.map(r => `
-        <div class="referral-item">
-          <div class="referral-tool">${esc(r.tool)}</div>
-          <div class="referral-reason">${esc(r.reason)}</div>
-        </div>
-      `).join('')
-    : ''
-
   return `
     <div>
       <div class="section">
@@ -1101,17 +1095,9 @@ function renderMeetingGuide(advisory: ConsultantAdvisory): string {
 
       <hr class="divider">
 
-      <div class="two-col">
-        <div>
-          <h3>Red Flags to Address</h3>
-          ${redFlags}
-        </div>
-        ${referrals ? `
-          <div>
-            <h3>Cross-Referrals</h3>
-            ${referrals}
-          </div>
-        ` : ''}
+      <div>
+        <h3>Red Flags to Address</h3>
+        ${redFlags}
       </div>
     </div>
   `
@@ -1169,15 +1155,17 @@ function buildClientAppendix(pkg: MapleReportPackage, totalPages: number, append
       province:  answers.province ?? 'ON',
       city:      answers.city     ?? 'toronto',
       gicStatus: answers.studyPermit?.gicStatus ?? null,
+      income:    pkg.narrative?.monthlyIncome ?? 0,
+      savings:   pkg.engineInput.liquidSavings,
     },
     risks,
   )
 
   const groups = [
-    { icon: '✈', title: 'Pre-Arrival',   items: checklist.preArrival },
-    { icon: '🏁', title: 'First Week',    items: checklist.firstWeek  },
-    { icon: '📋', title: 'First 30 Days', items: checklist.first30    },
-    { icon: '🎯', title: 'First 90 Days', items: checklist.first90    },
+    { icon: '✈', title: 'Pre-Arrival',   items: checklist.preArrival.items },
+    { icon: '🏁', title: 'First Week',    items: checklist.firstWeek.items  },
+    { icon: '📋', title: 'First 30 Days', items: checklist.first30.items    },
+    { icon: '🎯', title: 'First 90 Days', items: checklist.first90.items    },
   ]
 
   const col = (grps: typeof groups) => grps.map(g => `

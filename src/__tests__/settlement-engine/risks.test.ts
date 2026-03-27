@@ -127,12 +127,10 @@ describe('incomeUncertainty', () => {
 // ─── Rule 3: healthCoverageGap ────────────────────────────────────────────────
 
 describe('healthCoverageGap', () => {
-  it('fires for express-entry-fsw in ON (3-month wait)', () => {
-    const risk = healthCoverageGap.evaluate(ctx({ pathway: 'express-entry-fsw', province: 'ON' }))
-    expect(risk).not.toBeNull()
-    expect(risk!.id).toBe('healthCoverageGap')
-    expect(risk!.severity).toBe('medium')
-    expect(risk!.title).toContain('3-Month')
+  it('does NOT fire for ON (no OHIP wait period — immediate coverage upon residency)', () => {
+    // Ontario eliminated the OHIP waiting period: newcomers get coverage immediately.
+    // Source: ontario.ca/page/apply-ohip-and-get-health-card
+    expect(healthCoverageGap.evaluate(ctx({ pathway: 'express-entry-fsw', province: 'ON' }))).toBeNull()
   })
 
   it('fires for BC (3-month wait)', () => {

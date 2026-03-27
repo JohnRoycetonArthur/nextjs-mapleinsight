@@ -382,6 +382,88 @@ interface Props {
   isMobile: boolean
 }
 
+// ─── Express Entry sub-class data ────────────────────────────────────────────
+
+const EE_SUB_CLASSES = [
+  { code: 'FSW', value: 'fsw',    title: 'Federal Skilled Worker',   desc: 'Points-based selection for skilled workers' },
+  { code: 'CEC', value: 'cec',    title: 'Canadian Experience Class', desc: 'For those with Canadian work experience' },
+  { code: 'FST', value: 'fst',    title: 'Federal Skilled Trades',    desc: 'For qualified tradespeople' },
+  { code: '?',   value: 'unsure', title: 'Not Sure',                  desc: 'Apply conservative (FSW) requirements' },
+]
+
+const DEFAULT_EXPRESS_ENTRY: NonNullable<WizardAnswers['expressEntry']> = {
+  subClass:         'fsw',
+  hasJobOffer:      false,
+  isWorkAuthorized: false,
+}
+
+// ─── SubClassCard ─────────────────────────────────────────────────────────────
+
+function SubClassCard({
+  code, title, desc, selected, onClick,
+}: { code: string; title: string; desc: string; selected: boolean; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      aria-pressed={selected}
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick() }}
+      style={{
+        flex: '1 1 140px', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
+        border:     `2px solid ${selected ? C.gold : C.border}`,
+        background: selected ? '#FFFBEB' : C.white,
+        transition: 'all 0.15s',
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 700, color: selected ? C.gold : C.text, fontFamily: FONT }}>{code}</div>
+      <div style={{ fontFamily: SERIF, fontSize: 15, color: C.forest, margin: '4px 0 2px', fontWeight: 700 }}>{title}</div>
+      <div style={{ fontSize: 11, color: C.gray, lineHeight: 1.4 }}>{desc}</div>
+    </div>
+  )
+}
+
+// ─── SwitchToggle ─────────────────────────────────────────────────────────────
+
+function SwitchToggle({
+  label, checked, onChange: handleChange, helper,
+}: { label: string; checked: boolean; onChange: () => void; helper?: string }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 12,
+      padding: '12px 16px',
+      background: checked ? '#FFFBEB' : C.lightGray,
+      borderRadius: 10, marginBottom: 8,
+    }}>
+      <div
+        onClick={handleChange}
+        role="switch"
+        aria-checked={checked}
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleChange() }}
+        style={{
+          width: 40, height: 22, borderRadius: 11,
+          background: checked ? C.gold : C.border,
+          position: 'relative', cursor: 'pointer', flexShrink: 0, marginTop: 2,
+          transition: 'background 0.2s',
+        }}
+      >
+        <div style={{
+          width: 18, height: 18, borderRadius: 9, background: C.white,
+          position: 'absolute', top: 2, left: checked ? 20 : 2,
+          transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+        }} />
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: FONT }}>{label}</div>
+        {helper && <div style={{ fontSize: 11, color: C.textLight, marginTop: 2 }}>{helper}</div>}
+      </div>
+    </div>
+  )
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const DEFAULT_STUDY_PERMIT: NonNullable<WizardAnswers['studyPermit']> = {
   programLevel:      '',
   tuitionAmount:     0,
@@ -390,19 +472,32 @@ const DEFAULT_STUDY_PERMIT: NonNullable<WizardAnswers['studyPermit']> = {
 }
 
 export function Step2Immigration({ data, onChange, errors, isMobile }: Props) {
-  const isStudyPermit = data.pathway === 'study_permit'
+  const isStudyPermit   = data.pathway === 'study_permit'
+  const isExpressEntry  = data.pathway === 'express_entry'
+  const ee              = data.expressEntry ?? DEFAULT_EXPRESS_ENTRY
+  const showJobOffer    = isExpressEntry && (ee.subClass === 'cec' || ee.subClass === 'fst')
+  const showWorkAuth    = isExpressEntry && ee.subClass === 'cec' && ee.hasJobOffer
 
   const handlePathwayChange = (pathwayValue: string) => {
     onChange('pathway', pathwayValue)
     if (pathwayValue === 'study_permit') {
-      // Initialize sub-form with defaults if not already present
       if (!data.studyPermit) {
         onChange('studyPermit', { ...DEFAULT_STUDY_PERMIT })
       }
     } else {
-      // Clear study permit data when switching away
       onChange('studyPermit', null)
     }
+    if (pathwayValue === 'express_entry') {
+      if (!data.expressEntry) {
+        onChange('expressEntry', { ...DEFAULT_EXPRESS_ENTRY })
+      }
+    } else {
+      onChange('expressEntry', undefined)
+    }
+  }
+
+  const handleEEChange = (patch: Partial<NonNullable<WizardAnswers['expressEntry']>>) => {
+    onChange('expressEntry', { ...(data.expressEntry ?? DEFAULT_EXPRESS_ENTRY), ...patch })
   }
 
   const handleStudyPermitChange = (patch: Partial<NonNullable<WizardAnswers['studyPermit']>>) => {
@@ -449,6 +544,69 @@ export function Step2Immigration({ data, onChange, errors, isMobile }: Props) {
           <p role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
             {errors.pathway}
           </p>
+        )}
+      </div>
+
+      {/* ── Express Entry: sub-class selector + conditional toggles ─────── */}
+      <div
+        aria-hidden={!isExpressEntry}
+        style={{
+          maxHeight:  isExpressEntry ? '600px' : '0px',
+          overflow:   'hidden',
+          transition: 'max-height 0.4s ease-in-out',
+        }}
+      >
+        {isExpressEntry && (
+          <div style={{
+            background: C.white, borderRadius: 14, border: `1px solid ${C.border}`,
+            padding: 20, marginBottom: 16,
+          }}>
+            {/* Sub-class header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 20 }} aria-hidden="true">🎯</span>
+              <div>
+                <Label>Which Express Entry class are you applying under?</Label>
+                <Helper>This determines whether proof of funds is required.</Helper>
+              </div>
+            </div>
+
+            {/* Sub-class cards */}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+              {EE_SUB_CLASSES.map(sc => (
+                <SubClassCard
+                  key={sc.value}
+                  code={sc.code}
+                  title={sc.title}
+                  desc={sc.desc}
+                  selected={ee.subClass === sc.value}
+                  onClick={() => {
+                    const reset = { hasJobOffer: false, isWorkAuthorized: false }
+                    handleEEChange(sc.value === 'cec' ? { subClass: sc.value } : { subClass: sc.value, ...reset })
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Job offer toggle (CEC or FST) */}
+            {showJobOffer && (
+              <SwitchToggle
+                label="Do you have a valid job offer from a Canadian employer?"
+                checked={ee.hasJobOffer}
+                onChange={() => handleEEChange({ hasJobOffer: !ee.hasJobOffer, isWorkAuthorized: false })}
+                helper="A job offer from an LMIA-exempt or LMIA-approved employer"
+              />
+            )}
+
+            {/* Work authorization toggle (CEC + job offer only) */}
+            {showWorkAuth && (
+              <SwitchToggle
+                label="Are you currently authorized to work in Canada?"
+                checked={ee.isWorkAuthorized}
+                onChange={() => handleEEChange({ isWorkAuthorized: !ee.isWorkAuthorized })}
+                helper="You hold a valid work permit or PGWP"
+              />
+            )}
+          </div>
         )}
       </div>
 

@@ -101,10 +101,10 @@ export interface CrossReferral {
 }
 
 export interface MeetingGuide {
-  talkingPoints:  string[]
-  questions:      string[]
-  redFlags:       RedFlag[]
-  crossReferrals: CrossReferral[]
+  talkingPoints:   string[]
+  questions:       string[]
+  redFlags:        RedFlag[]
+  crossReferrals?: CrossReferral[]
 }
 
 export interface ConsultantAdvisory {
@@ -114,6 +114,58 @@ export interface ConsultantAdvisory {
   programNotes:          ProgramNote[]
   studyPermitAdvisory?:  StudyPermitAdvisory
   meetingGuide:          MeetingGuide
+}
+
+// ─── Fact Registry ────────────────────────────────────────────────────────────
+//
+// Central deduplication mechanism (US-19.3).
+// Section generators claim facts in priority order:
+//   scenarios → strategies → notes → meetingGuide → redFlags
+// When a fact is already claimed, later sections use a cross-reference
+// instead of restating the data.
+
+export type FactType = 'number' | 'strategy' | 'risk' | 'note'
+export type AdvisorySection = 'scenarios' | 'strategies' | 'notes' | 'meetingGuide' | 'redFlags'
+
+export interface RegistryFact {
+  key:          string
+  type:         FactType
+  content:      string        // human-readable label, e.g. "Scenario 1: Destination: Winnipeg"
+  dollarImpact: number | null
+  section:      AdvisorySection | null
+}
+
+export class FactRegistry {
+  private readonly facts = new Map<string, RegistryFact>()
+
+  /** Add a fact. No-op if key is already registered. */
+  register(key: string, fact: { type: FactType; content: string; dollarImpact: number | null }): void {
+    if (!this.facts.has(key)) {
+      this.facts.set(key, { ...fact, key, section: null })
+    }
+  }
+
+  /**
+   * Mark a fact as owned by a section.
+   * Returns true when successful; false if not found or already claimed.
+   */
+  claim(key: string, section: AdvisorySection): boolean {
+    const f = this.facts.get(key)
+    if (!f || f.section !== null) return false
+    f.section = section
+    return true
+  }
+
+  /** Returns true when the fact has not yet been claimed. */
+  isAvailable(key: string): boolean {
+    const f = this.facts.get(key)
+    return f === undefined || f.section === null
+  }
+
+  /** Returns all facts claimed by a given section. */
+  getBySection(section: AdvisorySection): RegistryFact[] {
+    return Array.from(this.facts.values()).filter(f => f.section === section)
+  }
 }
 
 // ─── Internal constants ───────────────────────────────────────────────────────
@@ -128,7 +180,7 @@ const HIGH_COST_CITIES = new Set(['toronto', 'vancouver', 'calgary', 'ottawa'])
 // Approximate monthly savings vs expensive alternatives (used for city-swap scenario)
 const CHEAPER_CITY_ALT: Record<string, { city: string; monthlySavings: number; details: string }> = {
   toronto:   { city: 'Winnipeg',    monthlySavings: 754, details: 'Winnipeg 1BR rent is $1,232/mo (vs $1,761 in Toronto) — a $529/mo savings. Transit is $119/mo. Total monthly cost drops significantly.' },
-  vancouver: { city: 'Calgary',     monthlySavings: 700, details: 'Calgary 1BR rent is ~$1,660/mo (vs $2,350 in Vancouver) — a $690/mo savings. No provincial income tax in Alberta.' },
+  vancouver: { city: 'Calgary',     monthlySavings: 700, details: 'Calgary 1BR rent is ~$1,660/mo (vs $2,350 in Vancouver) — a $690/mo savings. No provincial sales tax in Alberta (GST only at 5%).' },
   calgary:   { city: 'Edmonton',    monthlySavings: 280, details: 'Edmonton 1BR rent is ~$1,380/mo (vs $1,660 in Calgary) — a $280/mo savings with a similar Alberta job market.' },
   ottawa:    { city: 'Hamilton',    monthlySavings: 440, details: 'Hamilton 1BR rent is ~$1,450/mo (vs $1,900 in Ottawa) — a $450/mo savings. 1hr from Toronto via GO Transit.' },
   montreal:  { city: 'Quebec City', monthlySavings: 300, details: 'Quebec City 1BR rent is ~$900/mo (vs $1,200 in Montreal) — a $300/mo savings in a bilingual market.' },
@@ -142,6 +194,7 @@ export function computeReadinessScore(
   monthlyIncome:         number,
   risks:                 Risk[],
   complianceRequirement: number | null,
+  registry?:             FactRegistry,
 ): ReadinessScore {
   // ── Component 1: Savings Coverage (30%) ──────────────────────────────────
   const savingsCovScore = output.safeSavingsTarget <= 0 ? 10
@@ -206,7 +259,7 @@ export function computeReadinessScore(
   const tier  = score < 3 ? 'Critical' : score < 5 ? 'Needs Work' : score < 7 ? 'Moderate' : score < 9 ? 'Good' : 'Excellent'
   const color = score < 3 ? C.red : score < 5 ? '#E06B00' : score < 7 ? C.gold : C.accent
 
-  const narrative = buildNarrative(input, output, score, monthlyIncome, complianceRequirement)
+  const narrative = buildNarrative(input, output, score, monthlyIncome, complianceRequirement, registry)
 
   return { score, tier, color, narrative, components }
 }
@@ -219,6 +272,7 @@ function buildNarrative(
   score:                 number,
   monthlyIncome:         number,
   complianceRequirement: number | null,
+  registry?:             FactRegistry,
 ): string {
   const city      = cityLabel(input.city)
   const savingsPct = output.safeSavingsTarget > 0
@@ -237,10 +291,19 @@ function buildNarrative(
 
   let complianceLine = ''
   if (complianceRequirement !== null) {
-    const gap = Math.max(0, complianceRequirement - input.liquidSavings)
-    complianceLine = gap > 0
-      ? ` They do not yet meet the IRCC proof-of-funds minimum of ${fmt(complianceRequirement)}, with a shortfall of ${fmt(gap)}.`
-      : ` They meet the IRCC proof-of-funds minimum of ${fmt(complianceRequirement)} with a ${fmt(input.liquidSavings - complianceRequirement)} buffer.`
+    if (registry) {
+      // When the registry is active, full IRCC detail lives in Program-Specific Notes.
+      // Keep the narrative concise with a cross-reference.
+      const gap = Math.max(0, complianceRequirement - input.liquidSavings)
+      complianceLine = gap > 0
+        ? ` IRCC proof-of-funds shortfall of ${fmt(gap)} — see Program-Specific Notes.`
+        : ` IRCC proof-of-funds requirement met — see Program-Specific Notes.`
+    } else {
+      const gap = Math.max(0, complianceRequirement - input.liquidSavings)
+      complianceLine = gap > 0
+        ? ` They do not yet meet the IRCC proof-of-funds minimum of ${fmt(complianceRequirement)}, with a shortfall of ${fmt(gap)}.`
+        : ` They meet the IRCC proof-of-funds minimum of ${fmt(complianceRequirement)} with a ${fmt(input.liquidSavings - complianceRequirement)} buffer.`
+    }
   }
 
   let riskLine = ''
@@ -259,9 +322,10 @@ function buildNarrative(
 // ─── Section 2: generateAlternativeScenarios ─────────────────────────────────
 
 export function generateAlternativeScenarios(
-  input:         EngineInput,
-  output:        EngineOutput,
+  input:          EngineInput,
+  output:         EngineOutput,
   _monthlyIncome: number,
+  registry?:      FactRegistry,
 ): AlternativeScenario[] {
   const scenarios: AlternativeScenario[] = []
   const cityLow   = input.city.toLowerCase()
@@ -344,15 +408,27 @@ export function generateAlternativeScenarios(
     details:    `With a secured job at ${fmt(medianGross)} gross (~${fmt(approxNet)}/mo net), the runway assumption drops to ${JOB_RUNWAY} months. Safe target falls to ${fmt(jobTarget)} (upfront + ${JOB_RUNWAY} months buffer). ${input.liquidSavings >= jobTarget ? 'Current savings already exceed this reduced target.' : `Gap reduces to ${fmt(jobGap)}.`}`,
   })
 
+  // Register and claim each scenario so downstream generators can cross-reference
+  scenarios.forEach((s, i) => {
+    registry?.register('scenario:' + s.id, {
+      type:         'number',
+      content:      `Scenario ${i + 1}: ${s.name}`,
+      dollarImpact: s.delta,
+    })
+    registry?.claim('scenario:' + s.id, 'scenarios')
+  })
+
   return scenarios
 }
 
 // ─── Section 3: generateGapStrategies ────────────────────────────────────────
 
 export function generateGapStrategies(
-  input:         EngineInput,
-  output:        EngineOutput,
+  input:          EngineInput,
+  output:         EngineOutput,
   _monthlyIncome: number,
+  scenarios?:     AlternativeScenario[],
+  registry?:      FactRegistry,
 ): GapStrategy[] {
   const strategies: GapStrategy[] = []
   const city       = cityLabel(input.city)
@@ -388,13 +464,18 @@ export function generateGapStrategies(
 
   // ── 3. Pre-arrival job search (non-student, no job) ───────────────────────
   if (!hasJob && !isStudent) {
-    const jobImpact = Math.max(5_000, Math.round(output.monthlySafe * (output.runwayMonths - 2)))
+    const jobImpact   = Math.max(5_000, Math.round(output.monthlySafe * (output.runwayMonths - 2)))
+    const jobScenario = scenarios?.find(s => s.id === 'income_scenario')
+    const jobScenarioIdx = jobScenario ? (scenarios!.findIndex(s => s.id === 'income_scenario') + 1) : null
+    const jobClaimed  = registry && !registry.isAvailable('scenario:income_scenario')
     strategies.push({
       title:      'Accelerate job search — apply pre-arrival',
       impact:     -jobImpact,
       difficulty: 'Moderate',
       timeline:   'Start now',
-      rationale:  `Securing a job offer before landing changes the runway assumption from ${output.runwayMonths} months to 2 months, reducing the safe savings target by ~${fmt(jobImpact)}. Even a conditional offer significantly improves financial readiness.`,
+      rationale:  (jobClaimed && jobScenario && jobScenarioIdx)
+        ? `Securing employment before landing is the highest-impact financial action. See Scenario ${jobScenarioIdx} (${jobScenario.name}) for the full target reduction. Even a conditional offer significantly improves readiness.`
+        : `Securing a job offer before landing changes the runway assumption from ${output.runwayMonths} months to 2 months, reducing the safe savings target by ~${fmt(jobImpact)}. Even a conditional offer significantly improves financial readiness.`,
     })
   }
 
@@ -405,11 +486,11 @@ export function generateGapStrategies(
     const ptHours = 20
     const monthly = Math.round(ptHours * minWage * 4.33)
     strategies.push({
-      title:      `Maximize on-campus part-time work (up to ${ptMax} hrs/week)`,
+      title:      `Maximize off-campus part-time work (up to ${ptMax} hours/week)`,
       impact:     -Math.round(monthly * 8),   // 8-month academic year
       difficulty: 'Moderate',
       timeline:   'After arrival',
-      rationale:  `Students in ${input.province} can work up to ${ptMax} hrs/week on campus during term and full-time during breaks. At $${minWage.toFixed(2)}/hr, ${ptHours} hrs/week generates ~${fmt(monthly)}/month — significantly extending financial runway. This income does not count toward IRCC proof of funds.`,
+      rationale:  `Students in ${input.province} can work up to ${ptMax} hours per week off campus during regular academic sessions and full-time during scheduled breaks. On-campus work has no hourly limit. At $${minWage.toFixed(2)}/hr, ${ptHours} hrs/week generates ~${fmt(monthly)}/month — significantly extending financial runway. This income does not count toward IRCC proof of funds.`,
     })
   }
 
@@ -417,12 +498,17 @@ export function generateGapStrategies(
   if (isHighCost && !hasJob && !isStudent) {
     const alt = CHEAPER_CITY_ALT[cityLow]
     if (alt) {
+      const cityScenario = scenarios?.find(s => s.id === 'city_swap')
+      const cityScenarioIdx = cityScenario ? (scenarios!.findIndex(s => s.id === 'city_swap') + 1) : null
+      const cityClaimed = registry && !registry.isAvailable('scenario:city_swap')
       strategies.push({
         title:      `Consider a 'stepping stone' city strategy`,
         impact:     -Math.round(alt.monthlySavings * 12),
         difficulty: 'Moderate',
         timeline:   'Planning phase',
-        rationale:  `Land in ${alt.city} for 6–12 months to build Canadian work experience and credit history, then transfer to ${city}. Monthly costs are 20–30% lower, closing the savings gap while building a financial cushion.`,
+        rationale:  (cityClaimed && cityScenario && cityScenarioIdx)
+          ? `See Scenario ${cityScenarioIdx} (${cityScenario.name}) for the gap impact. Land in ${alt.city} for 6–12 months to build Canadian experience and credit history, then transfer to ${city}.`
+          : `Land in ${alt.city} for 6–12 months to build Canadian work experience and credit history, then transfer to ${city}. Monthly costs are 20–30% lower, closing the savings gap while building a financial cushion.`,
       })
     }
   }
@@ -456,10 +542,12 @@ export function generateGapStrategies(
 // ─── Section 4: generateProgramNotes ─────────────────────────────────────────
 
 export function generateProgramNotes(
-  input:                 EngineInput,
-  output:                EngineOutput,
-  irccCompliance:        IRCCComplianceResult | null,
-  complianceRequirement: number | null,
+  input:                  EngineInput,
+  output:                 EngineOutput,
+  irccCompliance:         IRCCComplianceResult | null,
+  complianceRequirement:  number | null,
+  registry?:              FactRegistry,
+  hasStudyPermitAdvisory?: boolean,
 ): ProgramNote[] {
   const notes: ProgramNote[] = []
   const prov = input.province
@@ -468,6 +556,17 @@ export function generateProgramNotes(
   if (input.pathway.startsWith('express-entry') || input.pathway === 'pnp') {
     const required = complianceRequirement ?? 0
     const buffer   = input.liquidSavings - required
+
+    // CEC exemption note
+    if (input.pathway === 'express-entry-cec') {
+      notes.push({
+        title:    'Proof of Funds: Exempt (CEC)',
+        severity: 'positive',
+        color:    C.accent,
+        content:  'This client qualifies for the CEC proof-of-funds exemption: Canadian Experience Class with a valid job offer and current work authorization. No IRCC settlement funds minimum applies. However, the client should still demonstrate sufficient funds for the landing transition period. The real-world savings target above reflects this.',
+        source:   'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html',
+      })
+    }
 
     // Proof of funds
     if (complianceRequirement !== null) {
@@ -509,7 +608,7 @@ export function generateProgramNotes(
         title:    'Ontario OHIP: No Waiting Period',
         severity: 'positive',
         color:    C.accent,
-        content:  'Ontario eliminated the 3-month OHIP waiting period. The client will have provincial health coverage from the date of residency establishment. No private insurance bridge is required — a cost advantage vs. BC or Saskatchewan.',
+        content:  'Ontario: No waiting period — immediate OHIP coverage upon establishing residency. No private insurance bridge is required. This is a cost advantage vs. BC or Saskatchewan where a wait period applies.',
         source:   'https://www.ontario.ca/page/apply-ohip-and-get-health-card',
       })
     } else if (['BC', 'SK', 'NB', 'PE'].includes(prov)) {
@@ -536,9 +635,12 @@ export function generateProgramNotes(
         title:    irccCompliance.compliant ? 'IRCC Proof of Funds: Compliant' : 'IRCC Proof of Funds: Shortfall',
         severity: irccCompliance.compliant ? 'positive' : 'negative',
         color:    irccCompliance.compliant ? C.accent : C.red,
-        content:  irccCompliance.compliant
-          ? `Client meets the IRCC study permit proof-of-funds requirement of ${fmt(irccCompliance.required)} (tuition ${fmt(irccCompliance.tuition)} + living ${fmt(irccCompliance.livingExpenses)} + transport ${fmt(irccCompliance.transport)}).`
-          : `Client is ${fmt(irccCompliance.shortfall)} short of the IRCC proof-of-funds requirement of ${fmt(irccCompliance.required)}. Insufficient proof of funds is the leading cause of study permit refusals.`,
+        content:  (registry && hasStudyPermitAdvisory)
+          // Study Permit Advisory Block has full detail — keep this note brief
+          ? `IRCC requirement: ${fmt(irccCompliance.required)}. Status: ${irccCompliance.compliant ? `compliant ✓` : `shortfall of ${fmt(irccCompliance.shortfall)}`}. Full details in Study Permit Advisory Block below.`
+          : irccCompliance.compliant
+            ? `Client meets the IRCC study permit proof-of-funds requirement of ${fmt(irccCompliance.required)} (tuition ${fmt(irccCompliance.tuition)} + living ${fmt(irccCompliance.livingExpenses)} + transport ${fmt(irccCompliance.transport)}).`
+            : `Client is ${fmt(irccCompliance.shortfall)} short of the IRCC proof-of-funds requirement of ${fmt(irccCompliance.required)}. Insufficient proof of funds is the leading cause of study permit refusals.`,
         source: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/study-permit-requirements.html',
       })
     }
@@ -674,7 +776,7 @@ export function generateStudyPermitAdvisory(
     title:  'Part-Time Work Income Projection',
     status: 'info',
     metric: `~${fmt(ptMonthly)}/month estimated`,
-    content: `Students in ${prov} may work up to ${ptRights.maxHoursPerWeekTerm} hrs/week during term and ${ptRights.maxHoursPerWeekBreak} hrs/week during breaks. At $${minWage.toFixed(2)}/hr minimum wage, ${ptHours} hrs/week generates ~${fmt(ptMonthly)}/month. This income does NOT count toward IRCC proof of funds. It is supplemental post-arrival cash flow only and depends on securing eligible on-campus or off-campus employment.`,
+    content: `Students in ${prov} may work up to ${ptRights.maxHoursPerWeekTerm} hours per week off campus during regular academic sessions, and full-time during scheduled breaks. On-campus work has no hourly limit. At $${minWage.toFixed(2)}/hr minimum wage, ${ptHours} hrs/week generates ~${fmt(ptMonthly)}/month. This income does NOT count toward IRCC proof of funds. It is supplemental post-arrival cash flow only and depends on securing eligible employment.`,
   }
 
   // ── 5. Key Risk: Study Permit Refusal ────────────────────────────────────
@@ -712,6 +814,7 @@ export function generateMeetingGuide(
   scenarios:     AlternativeScenario[],
   strategies:    GapStrategy[],
   programNotes:  ProgramNote[],
+  registry?:     FactRegistry,
 ): MeetingGuide {
   const city       = cityLabel(input.city)
   const cityLow    = input.city.toLowerCase()
@@ -724,10 +827,12 @@ export function generateMeetingGuide(
   const talkingPoints: string[] = []
 
   if (hasGap) {
-    const top2      = strategies.slice(0, 2)
-    const combined  = Math.abs(top2.reduce((s, st) => s + st.impact, 0))
+    const top2     = strategies.slice(0, 2)
+    const combined = Math.abs(top2.reduce((s, st) => s + st.impact, 0))
     talkingPoints.push(
-      `Address the ${fmt(output.savingsGap)} savings gap first — present the combined strategies (${top2.map(s => `"${s.title}"`).join(' and ')}) as a package that could reduce the gap by ~${fmt(combined)}.`
+      registry
+        ? `Address the ${fmt(output.savingsGap)} gap: lead with Strategies 1 & 2 as a package (combined impact: ~${fmt(combined)}).`
+        : `Address the ${fmt(output.savingsGap)} savings gap first — present the combined strategies (${top2.map(s => `"${s.title}"`).join(' and ')}) as a package that could reduce the gap by ~${fmt(combined)}.`
     )
   } else {
     talkingPoints.push(
@@ -745,16 +850,24 @@ export function generateMeetingGuide(
   }
 
   if (!hasJob && !isStudent) {
-    const jobScenario = scenarios.find(s => s.id === 'income_scenario')
+    const jobScenario    = scenarios.find(s => s.id === 'income_scenario')
+    const jobIdx         = jobScenario ? scenarios.findIndex(s => s.id === 'income_scenario') + 1 : null
+    const jobClaimed     = registry && !registry.isAvailable('scenario:income_scenario')
     talkingPoints.push(
-      `Discuss the pre-arrival job search strategy — this is the single highest-impact action. ${jobScenario ? `A secured job offer reduces the safe target from ${fmt(output.safeSavingsTarget)} to ${fmt(jobScenario.newTarget)}` : 'Securing income before landing significantly reduces financial risk'}.`
+      (registry && jobClaimed && jobScenario && jobIdx)
+        ? `Discuss the pre-arrival job search — the highest-impact action (see Scenario ${jobIdx}: ${jobScenario.name}).`
+        : `Discuss the pre-arrival job search strategy — this is the single highest-impact action. ${jobScenario ? `A secured job offer reduces the safe target from ${fmt(output.safeSavingsTarget)} to ${fmt(jobScenario.newTarget)}` : 'Securing income before landing significantly reduces financial risk'}.`
     )
   }
 
-  const citySwap = scenarios.find(s => s.id === 'city_swap')
+  const citySwap     = scenarios.find(s => s.id === 'city_swap')
+  const citySwapIdx  = citySwap ? scenarios.findIndex(s => s.id === 'city_swap') + 1 : null
+  const citySwapClaimed = registry && !registry.isAvailable('scenario:city_swap')
   if (citySwap && hasGap) {
     talkingPoints.push(
-      `Present the ${citySwap.name} alternative as a Plan B — it ${citySwap.newGap === 0 ? 'eliminates the gap entirely' : `reduces the gap to ${fmt(citySwap.newGap)}`} by lowering the safe target by ${fmt(Math.abs(citySwap.delta))}.`
+      (registry && citySwapClaimed && citySwapIdx)
+        ? `Present Scenario ${citySwapIdx}: ${citySwap.name} as a Plan B — see Scenario Analysis for gap-reduction detail.`
+        : `Present the ${citySwap.name} alternative as a Plan B — it ${citySwap.newGap === 0 ? 'eliminates the gap entirely' : `reduces the gap to ${fmt(citySwap.newGap)}`} by lowering the safe target by ${fmt(Math.abs(citySwap.delta))}.`
     )
   }
 
@@ -839,17 +952,25 @@ export function generateConsultantAdvisory(
   irccCompliance?:       IRCCComplianceResult,
   studyPermitData?:      StudyPermitData,
 ): ConsultantAdvisory {
-  const readiness  = computeReadinessScore(input, output, monthlyIncome, risks, complianceRequirement)
-  const scenarios  = generateAlternativeScenarios(input, output, monthlyIncome)
-  const strategies = generateGapStrategies(input, output, monthlyIncome)
-  const programNotes = generateProgramNotes(input, output, irccCompliance ?? null, complianceRequirement)
+  // Priority order: scenarios → strategies → studyPermitAdvisory → notes → meetingGuide
+  const registry = new FactRegistry()
 
+  const readiness  = computeReadinessScore(input, output, monthlyIncome, risks, complianceRequirement, registry)
+  const scenarios  = generateAlternativeScenarios(input, output, monthlyIncome, registry)
+  const strategies = generateGapStrategies(input, output, monthlyIncome, scenarios, registry)
+
+  // Generate study permit advisory BEFORE program notes so the IRCC fact can be claimed
   const studyPermitAdvisory = (input.pathway === 'study-permit' && irccCompliance && input.studyPermit)
     ? generateStudyPermitAdvisory(input, output, irccCompliance, studyPermitData ?? STUDY_PERMIT_DEFAULTS)
     : undefined
 
+  const programNotes = generateProgramNotes(
+    input, output, irccCompliance ?? null, complianceRequirement,
+    registry, !!studyPermitAdvisory,
+  )
+
   const meetingGuide = generateMeetingGuide(
-    input, output, monthlyIncome, risks, scenarios, strategies, programNotes,
+    input, output, monthlyIncome, risks, scenarios, strategies, programNotes, registry,
   )
 
   return { readiness, scenarios, strategies, programNotes, studyPermitAdvisory, meetingGuide }

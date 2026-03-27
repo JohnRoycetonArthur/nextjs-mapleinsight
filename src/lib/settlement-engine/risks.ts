@@ -65,10 +65,12 @@ const HIGH_COST_CITIES = new Set(['toronto', 'vancouver', 'calgary', 'ottawa'])
  * General immigration health coverage wait periods (months) by province.
  * Applies to all newcomers regardless of pathway (PR, work permit, etc.).
  * Source: provincial health authority eligibility rules.
+ *
+ * NOTE: Ontario (OHIP) has NO waiting period — immediate coverage upon
+ * establishing residency. Source: ontario.ca/page/apply-ohip-and-get-health-card
  */
 const HEALTH_WAIT_MONTHS: Record<string, number> = {
   BC: 3,
-  ON: 3,
   NB: 3,
   PE: 3,
   SK: 3,

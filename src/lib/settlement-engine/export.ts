@@ -104,7 +104,8 @@ export function generateReportPackage(params: GenerateReportParams): MapleReport
   if (complianceRequirement) results.complianceRequirement = complianceRequirement
 
   // Consultant advisory — only generate when consultant is present
-  const consultantAdvisory: ConsultantAdvisory | null = consultant
+  // crossReferrals is stripped from the export (F-08: cross-sell inside a professional report reduces trust)
+  const _fullAdvisory = consultant
     ? generateConsultantAdvisory(
         engineInput,
         engineOutput,
@@ -113,6 +114,16 @@ export function generateReportPackage(params: GenerateReportParams): MapleReport
         complianceRequirement ?? null,
         irccCompliance ?? undefined,
       )
+    : null
+  const consultantAdvisory: ConsultantAdvisory | null = _fullAdvisory
+    ? {
+        ..._fullAdvisory,
+        meetingGuide: {
+          talkingPoints: _fullAdvisory.meetingGuide.talkingPoints,
+          questions:     _fullAdvisory.meetingGuide.questions,
+          redFlags:      _fullAdvisory.meetingGuide.redFlags,
+        },
+      }
     : null
 
   // Consultant meta — strip email (AC-4)
