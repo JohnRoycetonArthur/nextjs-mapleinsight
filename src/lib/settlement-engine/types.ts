@@ -1,3 +1,16 @@
+// ─── Data Source Catalog ──────────────────────────────────────────────────────
+
+export interface DataSource {
+  key: string
+  name: string
+  url: string
+  effectiveDate: string    // ISO date, e.g. "2025-07-07"
+  lastVerified: string     // ISO datetime, e.g. "2026-03-25T00:00:00Z"
+  category: 'regulatory' | 'authority' | 'estimate'
+  appliesTo: string[]      // engine variable keys governed by this source
+  notes?: string
+}
+
 // ─── Study Permit specific types ─────────────────────────────────────────────
 
 export type GICStatus = 'planning' | 'purchased' | 'not-purchasing'
@@ -85,10 +98,11 @@ export interface EngineInput {
 // ─── Breakdown ────────────────────────────────────────────────────────────────
 
 export interface BreakdownItem {
-  key: string       // machine-readable identifier
-  label: string     // human-readable label
-  cad: number       // amount in CAD
-  source: string    // data source (e.g. "ircc", "cmhc", "constant")
+  key: string        // machine-readable identifier
+  label: string      // human-readable label
+  cad: number        // amount in CAD
+  source: string     // data source (e.g. "ircc", "cmhc", "constant")
+  sourceKey?: string // catalog key linking to a dataSource document (e.g. "ircc-fee-schedule")
 }
 
 // ─── Engine Output ────────────────────────────────────────────────────────────

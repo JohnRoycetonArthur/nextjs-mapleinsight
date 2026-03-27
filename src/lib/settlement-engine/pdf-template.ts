@@ -13,6 +13,7 @@
 import type { MapleReportPackage } from './export'
 import type { ConsultantAdvisory } from './consultant-advisory'
 import type { TimelineItem }       from './narrative'
+import type { DataSource }         from './types'
 import { generateChecklist }       from './checklist'
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
@@ -571,24 +572,326 @@ function renderChecklist(pkg: MapleReportPackage): string {
   `
 }
 
+// ─── NEW: Client PDF — Section renderers (US-19.1) ────────────────────────────
+
+/** Short colored text label for a breakdown row (PDF-safe, no hover) */
+function sourceTextLabel(
+  sourceKey: string | undefined,
+  source: string,
+  dataSources?: Map<string, DataSource>,
+): string {
+  if (sourceKey === 'user-input') {
+    return `<span style="font-size:7pt;color:#B8860B;font-weight:700;"> [Yours]</span>`
+  }
+  if (sourceKey && dataSources) {
+    const src = dataSources.get(sourceKey)
+    if (src) {
+      const color = src.category === 'regulatory' ? '#1B7A4A'
+        : src.category === 'authority' ? '#2563EB'
+        : '#6B7280'
+      const abbrev = src.category === 'regulatory' ? 'IRCC'
+        : sourceKey.startsWith('cmhc') ? 'CMHC'
+        : sourceKey.startsWith('transit') ? 'Transit'
+        : 'Est.'
+      return `<span style="font-size:7pt;color:${color};font-weight:700;"> [${esc(abbrev)}]</span>`
+    }
+  }
+  const MAP: Record<string, string> = {
+    ircc: 'IRCC', cmhc: 'CMHC', estimate: 'Est.', constant: 'Est.',
+    provincial: 'Prov.', bank: 'Bank', 'national-average': 'Avg.',
+  }
+  const lbl = MAP[source] ?? source
+  return `<span style="font-size:7pt;color:#9CA3AF;"> [${esc(lbl)}]</span>`
+}
+
+/** Compliance status card — shown on Page 1 for study permit or EE/PNP pathways */
+function renderComplianceCard(pkg: MapleReportPackage): string {
+  const { results, engineInput, answers } = pkg
+  const pathway = answers.pathway ?? engineInput.pathway ?? ''
+  const savings = engineInput.liquidSavings
+
+  if (pathway === 'study-permit' && results.irccCompliance) {
+    const { required, compliant, shortfall } = results.irccCompliance
+    const surplus = savings - required
+    const bg = compliant ? '#ECFDF5' : '#FEF2F2'
+    const border = compliant ? '#1B7A4A' : '#FCA5A5'
+    const color = compliant ? '#1B7A4A' : '#B91C1C'
+    const headline = compliant ? '✓ Meets Requirement' : '✗ Does Not Meet Requirement'
+    const detail = compliant
+      ? `Your savings of ${money(savings)} exceed the IRCC minimum of ${money(required)} by ${money(surplus)}`
+      : `Shortfall of ${money(shortfall)} — you need ${money(required)} to meet IRCC proof-of-funds requirements`
+    return `
+      <div style="background:${bg};border:2px solid ${border};border-radius:10px;padding:14px 20px;margin-bottom:14px;text-align:center;">
+        <div style="font-size:7.5pt;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">IRCC Study Permit — Proof of Funds</div>
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:17pt;color:${color};margin-bottom:4px;">${esc(headline)}</div>
+        <div style="font-size:9pt;color:#374151;">${esc(detail)}</div>
+        <div style="font-size:7.5pt;color:#9CA3AF;margin-top:4px;">Based on IRCC proof-of-funds table effective September 2025</div>
+      </div>
+    `
+  }
+
+  const isEEorPNP = ['express-entry-fsw', 'express-entry-fstp', 'pnp'].includes(pathway)
+  if (isEEorPNP && results.complianceRequirement) {
+    const required = results.complianceRequirement
+    const compliant = savings >= required
+    const surplus = savings - required
+    const bg = compliant ? '#ECFDF5' : '#FEF2F2'
+    const border = compliant ? '#1B7A4A' : '#FCA5A5'
+    const color = compliant ? '#1B7A4A' : '#B91C1C'
+    const headline = compliant ? '✓ Settlement Funds: Compliant' : '✗ Settlement Funds: Below Minimum'
+    const detail = compliant
+      ? `Your savings of ${money(savings)} exceed the IRCC minimum of ${money(required)} by ${money(surplus)}`
+      : `IRCC requires ${money(required)} — you need ${money(Math.abs(surplus))} more`
+    return `
+      <div style="background:${bg};border:2px solid ${border};border-radius:10px;padding:14px 20px;margin-bottom:14px;text-align:center;">
+        <div style="font-size:7.5pt;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">IRCC Settlement Funds Requirement</div>
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:17pt;color:${color};margin-bottom:4px;">${esc(headline)}</div>
+        <div style="font-size:9pt;color:#374151;">${esc(detail)}</div>
+        <div style="font-size:7.5pt;color:#9CA3AF;margin-top:4px;">Based on IRCC proof-of-funds table effective July 2025</div>
+      </div>
+    `
+  }
+
+  return ''
+}
+
+/** 4 metric tiles — upfront / monthly / safe target / runway */
+function renderClientMetrics(pkg: MapleReportPackage): string {
+  const { results } = pkg
+  const runway = results.runwayMonths >= 24
+    ? '24+ mo' : results.runwayMonths <= 0
+    ? 'None' : `${Math.round(results.runwayMonths)} mo`
+
+  const tile = (label: string, value: string, sub: string, color: string) => `
+    <div style="flex:1 1 120px;background:#fff;border-radius:10px;border:1px solid #E5E7EB;border-left:4px solid ${color};padding:11px 13px;">
+      <div style="font-size:7pt;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;">${esc(label)}</div>
+      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:18pt;color:#1B4F4A;line-height:1.1;">${esc(value)}</div>
+      <div style="font-size:7.5pt;color:#6B7280;margin-top:2px;">${esc(sub)}</div>
+    </div>
+  `
+
+  return `
+    <div style="display:flex;gap:9px;margin-bottom:13px;flex-wrap:wrap;">
+      ${tile('Upfront Costs',  money(results.upfront),            'One-time setup',        '#2563EB')}
+      ${tile('Monthly Min.',   money(results.monthlyMin),         'Recurring expenses',     '#9333EA')}
+      ${tile('Safe Target',    money(results.safeSavingsTarget),  'Recommended total',      '#B8860B')}
+      ${tile('Runway',         runway,                            'Without income',         '#C41E3A')}
+    </div>
+  `
+}
+
+/** Savings gap visualizer with progress bar */
+function renderClientGap(pkg: MapleReportPackage): string {
+  const { results, engineInput } = pkg
+  const hasGap = results.savingsGap > 0
+  const savings = engineInput.liquidSavings
+  const target  = results.safeSavingsTarget
+  const pct     = target > 0 ? Math.min(100, Math.round((savings / target) * 100)) : 100
+
+  if (hasGap) {
+    return `
+      <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:13px 16px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+          <span style="font-family:'DM Serif Display',Georgia,serif;font-size:13pt;font-weight:700;color:#B91C1C;">Savings Gap: ${esc(money(results.savingsGap))}</span>
+          <span style="font-size:8pt;color:#6B7280;">Your savings cover ${pct}% of the safe target</span>
+        </div>
+        <div style="height:9px;background:#FECACA;border-radius:5px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:#1B7A4A;border-radius:5px;"></div>
+        </div>
+        <div style="margin-top:6px;font-size:8.5pt;color:#374151;">
+          You have <strong>${esc(money(savings))}</strong> — safe target is <strong>${esc(money(target))}</strong>.
+        </div>
+      </div>
+    `
+  }
+
+  return `
+    <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;padding:13px 16px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+        <span style="font-family:'DM Serif Display',Georgia,serif;font-size:13pt;font-weight:700;color:#166534;">✓ Target Met</span>
+        <span style="font-size:8pt;color:#6B7280;">Your savings cover ${pct}% of the safe target</span>
+      </div>
+      <div style="height:9px;background:#BBF7D0;border-radius:5px;overflow:hidden;">
+        <div style="width:${Math.min(100, pct)}%;height:100%;background:#1B7A4A;border-radius:5px;"></div>
+      </div>
+      <div style="margin-top:6px;font-size:8.5pt;color:#374151;">
+        You have <strong>${esc(money(savings))}</strong> — safe target is <strong>${esc(money(target))}</strong>.
+      </div>
+    </div>
+  `
+}
+
+/** Top 3 risk flags as dot + text (Page 1 compact view) */
+function renderClientRiskFlags(pkg: MapleReportPackage): string {
+  const risks = pkg.risks.slice(0, 3)
+  if (!risks.length) return ''
+
+  const dotColor: Record<string, string> = {
+    critical: '#B91C1C', high: '#B91C1C', medium: '#B8860B', low: '#1B7A4A',
+  }
+
+  return `
+    <div style="margin-top:12px;">
+      <div style="font-size:8.5pt;font-weight:700;color:#374151;margin-bottom:7px;">Key Risk Flags</div>
+      ${risks.map(r => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="width:8px;height:8px;min-width:8px;border-radius:50%;background:${dotColor[r.severity] ?? '#6B7280'};display:inline-block;"></span>
+          <span style="font-size:8.5pt;color:#374151;">${esc(r.title)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `
+}
+
+/** Compact side-by-side breakdown tables for Page 2 */
+function renderClientBreakdown(pkg: MapleReportPackage, dataSources?: Map<string, DataSource>): string {
+  const { results } = pkg
+  const MAX_ROWS = 8
+
+  const upfrontItems = results.upfrontBreakdown.filter(i => i.cad > 0).slice(0, MAX_ROWS)
+  const monthlyItems = results.monthlyBreakdown.filter(i => i.cad > 0).slice(0, MAX_ROWS)
+  const upfrontTotal = results.upfrontBreakdown.reduce((s, i) => s + i.cad, 0)
+  const monthlyTotal = results.monthlyBreakdown.reduce((s, i) => s + i.cad, 0)
+
+  const renderRows = (items: typeof upfrontItems) =>
+    items.map(i => `
+      <tr>
+        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6;font-size:8.5pt;color:#374151;">
+          ${esc(i.label)}${sourceTextLabel(i.sourceKey, i.source, dataSources)}
+        </td>
+        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6;text-align:right;font-size:8.5pt;font-weight:600;color:#1B4F4A;white-space:nowrap;">
+          ${esc(money(i.cad))}
+        </td>
+      </tr>
+    `).join('')
+
+  const tblWrap   = 'border-radius:8px;border:1px solid #E5E7EB;overflow:hidden;flex:1;'
+  const headStyle = 'padding:7px 10px;background:#F8FAFC;font-size:8.5pt;font-weight:700;color:#374151;border-bottom:1px solid #E5E7EB;'
+  const totStyle  = 'padding:7px 10px;font-size:9pt;font-weight:700;color:#1B4F4A;border-top:2px solid #E5E7EB;background:#F9FAFB;'
+
+  return `
+    <div style="margin-bottom:16px;">
+      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:13pt;color:#1B4F4A;margin-bottom:10px;">Cost Breakdown</div>
+      <div style="display:flex;gap:12px;">
+        <div style="${tblWrap}">
+          <div style="${headStyle}">One-Time (Upfront)</div>
+          <table style="width:100%;border-collapse:collapse;">
+            ${renderRows(upfrontItems)}
+            <tr>
+              <td style="${totStyle}">Total Upfront</td>
+              <td style="${totStyle}text-align:right;">${esc(money(upfrontTotal))}</td>
+            </tr>
+          </table>
+        </div>
+        <div style="${tblWrap}">
+          <div style="${headStyle}">Monthly Budget</div>
+          <table style="width:100%;border-collapse:collapse;">
+            ${renderRows(monthlyItems)}
+            <tr>
+              <td style="${totStyle}">Total Monthly</td>
+              <td style="${totStyle}text-align:right;">${esc(money(monthlyTotal))}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+/** Top 5 recommended actions for Page 2 */
+function renderTopActions(pkg: MapleReportPackage): string {
+  const actions: Array<{ title: string; impact?: string }> = []
+
+  for (const r of pkg.risks) {
+    for (const a of r.actions) {
+      if (actions.length >= 5) break
+      const impact = a.impactCAD > 0
+        ? `-${money(a.impactCAD)}`
+        : a.impactCAD < 0 ? `+${money(Math.abs(a.impactCAD))}` : undefined
+      actions.push({ title: a.title, impact: impact ?? undefined })
+    }
+    if (actions.length >= 5) break
+  }
+
+  if (actions.length < 5 && pkg.narrative?.priorityAction) {
+    actions.push({ title: pkg.narrative.priorityAction.title })
+  }
+
+  if (!actions.length) return ''
+
+  return `
+    <div style="margin-bottom:16px;">
+      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:13pt;color:#1B4F4A;margin-bottom:10px;">Recommended Actions</div>
+      ${actions.slice(0, 5).map((a, i) => `
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+          <span style="width:20px;height:20px;min-width:20px;border-radius:6px;background:#1B7A4A1A;color:#1B7A4A;font-size:8pt;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${i + 1}</span>
+          <span style="font-size:9pt;color:#374151;flex:1;">${esc(a.title)}</span>
+          ${a.impact ? `<span style="font-size:7.5pt;font-weight:700;color:#1B7A4A;background:#ECFDF5;padding:2px 6px;border-radius:4px;white-space:nowrap;">${esc(a.impact)}</span>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `
+}
+
+/** CTA block — Schedule Your Plan Review */
+function renderCTABlock(pkg: MapleReportPackage): string {
+  const name    = pkg.consultant?.displayName ?? 'a Maple Insight consultant'
+  const company = pkg.consultant?.companyName ?? 'Maple Insight'
+  return `
+    <div style="padding:18px 22px;border-radius:10px;border:2px solid #C41E3A;background:#FEF2F2;text-align:center;margin-bottom:14px;">
+      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:14pt;font-weight:700;color:#C41E3A;margin-bottom:5px;">Schedule Your Plan Review</div>
+      <div style="font-size:9pt;color:#374151;margin-bottom:10px;">Discuss this plan with ${esc(name)} at ${esc(company)} to finalise your settlement strategy.</div>
+      <div style="display:inline-block;padding:8px 24px;background:#C41E3A;color:#fff;border-radius:7px;font-size:10pt;font-weight:700;">Book a Consultation</div>
+    </div>
+  `
+}
+
 // ─── Section: Disclaimers ─────────────────────────────────────────────────────
 
-function renderDisclaimers(pkg: MapleReportPackage): string {
-  const sourceMap: Record<string, string> = {
-    ircc: 'IRCC', cmhc: 'CMHC', constant: 'Maple Insight Estimates',
-    estimate: 'Maple Insight Estimates', provincial: 'Provincial Government',
-    bank: 'Bank of Canada', 'national-average': 'Statistics Canada',
-    'user-input': 'Client Input',
+const CATEGORY_COLOR: Record<string, string> = {
+  regulatory: '#1B7A4A',
+  authority:  '#2563EB',
+  estimate:   '#6B7280',
+}
+
+function renderDisclaimers(pkg: MapleReportPackage, dataSources?: Map<string, DataSource>): string {
+  // Collect unique sourceKeys from the breakdown items
+  const uniqueKeys = [...new Set([
+    ...pkg.results.upfrontBreakdown.map(i => i.sourceKey),
+    ...pkg.results.monthlyBreakdown.map(i => i.sourceKey),
+  ])].filter((k): k is string => Boolean(k) && k !== 'user-input')
+
+  let sourcesHtml: string
+  if (dataSources && dataSources.size > 0) {
+    sourcesHtml = uniqueKeys.map(key => {
+      const src = dataSources.get(key)
+      if (!src) return ''
+      const color = CATEGORY_COLOR[src.category] ?? '#6B7280'
+      const verified = src.lastVerified.slice(0, 10)
+      return `<div style="margin-bottom:4px;font-size:9.5px;">
+        <span style="color:${color};font-weight:700;">[${esc(src.category.toUpperCase())}]</span>
+        <strong>${esc(src.name)}</strong>
+        — effective ${esc(src.effectiveDate)} · verified ${esc(verified)}
+      </div>`
+    }).filter(Boolean).join('')
+  } else {
+    // Fallback: simple list from source field
+    const sourceMap: Record<string, string> = {
+      ircc: 'IRCC', cmhc: 'CMHC', constant: 'Maple Insight Estimates',
+      estimate: 'Maple Insight Estimates', provincial: 'Provincial Government',
+      bank: 'Bank', 'national-average': 'Statistics Canada', 'user-input': 'Client Input',
+    }
+    const sources = [...new Set([
+      ...pkg.results.upfrontBreakdown.map(i => i.source),
+      ...pkg.results.monthlyBreakdown.map(i => i.source),
+    ])].map(s => sourceMap[s] ?? s.toUpperCase())
+    sourcesHtml = sources.map(s => `<span style="margin-right:14px;">• ${esc(s)}</span>`).join('')
   }
-  const sources = [...new Set([
-    ...pkg.results.upfrontBreakdown.map(i => i.source),
-    ...pkg.results.monthlyBreakdown.map(i => i.source),
-  ])].map(s => sourceMap[s] ?? s.toUpperCase())
 
   return `
     <div class="section">
-      <h3>Data Sources</h3>
-      <div class="sources">${sources.map(s => `<span style="margin-right:14px;">• ${esc(s)}</span>`).join('')}</div>
+      <h3>Data Sources &amp; Freshness</h3>
+      <div class="sources">${sourcesHtml}</div>
       <div class="disclaimer">
         This report is generated by Maple Insight's Settlement Financial Planner and is intended as a planning
         estimate only. Actual costs may vary significantly based on market conditions. This document does not
@@ -816,38 +1119,40 @@ function renderMeetingGuide(advisory: ConsultantAdvisory): string {
 
 // ─── Page builders ────────────────────────────────────────────────────────────
 
-function buildPage1(pkg: MapleReportPackage): string {
+/** Client Page 1: compliance card + 4 metric tiles + gap visualizer + top 3 risk flags */
+function buildClientPage1(pkg: MapleReportPackage, totalPages: number): string {
   const { consultant, generatedAt } = pkg
   return `
     <div class="page">
       ${renderPageHeader(consultant?.displayName ?? null, consultant?.companyName ?? null, generatedAt)}
       <div class="page-content">
         ${renderSummaryBar(pkg)}
-        ${renderMetrics(pkg)}
-        ${renderGap(pkg)}
-        <hr class="divider">
-        ${renderRisksActions(pkg)}
+        ${renderComplianceCard(pkg)}
+        ${renderClientMetrics(pkg)}
+        ${renderClientGap(pkg)}
+        ${renderClientRiskFlags(pkg)}
         <div class="page-footer">
           <span>Maple Insight Settlement Planner</span>
-          <span>Page 1 of 2${pkg.consultantAdvisory ? '+' : ''}</span>
+          <span>Page 1 of ${totalPages}</span>
         </div>
       </div>
     </div>
   `
 }
 
-function buildPage2(pkg: MapleReportPackage, totalPages: number): string {
+/** Client Page 2: compact breakdown tables + top 5 actions + CTA + disclaimer */
+function buildClientPage2(pkg: MapleReportPackage, totalPages: number, dataSources?: Map<string, DataSource>): string {
   const { consultant, generatedAt } = pkg
   return `
     <div class="page">
       ${renderPageHeader(consultant?.displayName ?? null, consultant?.companyName ?? null, generatedAt)}
       <div class="page-content">
-        ${renderCostBreakdown(pkg)}
-        ${renderScenarioNotes(pkg)}
-        ${renderChecklist(pkg)}
-        ${renderDisclaimers(pkg)}
+        ${renderClientBreakdown(pkg, dataSources)}
+        ${renderTopActions(pkg)}
+        ${renderCTABlock(pkg)}
+        ${renderDisclaimers(pkg, dataSources)}
         <div class="page-footer">
-          <span>Maple Insight Settlement Planner · Confidential planning estimate</span>
+          <span>Maple Insight Settlement Planner · Planning estimate only</span>
           <span>Page 2 of ${totalPages}</span>
         </div>
       </div>
@@ -855,8 +1160,60 @@ function buildPage2(pkg: MapleReportPackage, totalPages: number): string {
   `
 }
 
-function buildPage3Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvisory): string {
+/** Client Appendix: full settlement checklist with "Appendix" header */
+function buildClientAppendix(pkg: MapleReportPackage, totalPages: number, appendixPageNum: number): string {
+  const { consultant, generatedAt, answers, risks } = pkg
+  const checklist = generateChecklist(
+    {
+      pathway:   answers.pathway  ?? '',
+      province:  answers.province ?? 'ON',
+      city:      answers.city     ?? 'toronto',
+      gicStatus: answers.studyPermit?.gicStatus ?? null,
+    },
+    risks,
+  )
+
+  const groups = [
+    { icon: '✈', title: 'Pre-Arrival',   items: checklist.preArrival },
+    { icon: '🏁', title: 'First Week',    items: checklist.firstWeek  },
+    { icon: '📋', title: 'First 30 Days', items: checklist.first30    },
+    { icon: '🎯', title: 'First 90 Days', items: checklist.first90    },
+  ]
+
+  const col = (grps: typeof groups) => grps.map(g => `
+    <div>
+      <div class="period-heading"><span>${g.icon}</span> ${esc(g.title)}</div>
+      ${g.items.map(it => `
+        <div class="cl-item">
+          <div class="cl-box"></div>
+          <span class="cl-text">${esc(it.label)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('')
+
+  return `
+    <div class="page">
+      ${renderPageHeader(consultant?.displayName ?? null, consultant?.companyName ?? null, generatedAt, 'Settlement Checklist — Appendix')}
+      <div class="page-content">
+        <div style="display:inline-block;background:#9CA3AF;color:#fff;font-size:8pt;font-weight:700;padding:2px 10px;border-radius:4px;margin-bottom:12px;letter-spacing:0.05em;">APPENDIX</div>
+        <h2 style="margin-bottom:14px;">Settlement Checklist</h2>
+        <div class="two-col">
+          <div>${col(groups.slice(0, 2))}</div>
+          <div>${col(groups.slice(2))}</div>
+        </div>
+        <div class="page-footer">
+          <span>Maple Insight Settlement Planner</span>
+          <span>Page ${appendixPageNum} of ${totalPages}</span>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function buildPage3Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvisory, totalPages: number): string {
   const { consultant, generatedAt } = pkg
+  const p = totalPages - 2   // e.g. page 4 of 6 when totalPages = 6
   return `
     <div class="page">
       ${renderPageHeader(consultant?.displayName ?? null, consultant?.companyName ?? null, generatedAt, 'Consultant Intelligence Report')}
@@ -869,15 +1226,16 @@ function buildPage3Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvis
         ${renderScenarios(advisory)}
         <div class="page-footer">
           <span>Maple Insight · Consultant Report — Confidential</span>
-          <span>Page 3 of 5</span>
+          <span>Page ${p} of ${totalPages}</span>
         </div>
       </div>
     </div>
   `
 }
 
-function buildPage4Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvisory): string {
+function buildPage4Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvisory, totalPages: number): string {
   const { consultant, generatedAt } = pkg
+  const p = totalPages - 1
   return `
     <div class="page">
       ${renderPageHeader(consultant?.displayName ?? null, consultant?.companyName ?? null, generatedAt, 'Consultant Intelligence Report')}
@@ -890,14 +1248,14 @@ function buildPage4Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvis
         ${renderProgramNotes(advisory)}
         <div class="page-footer">
           <span>Maple Insight · Consultant Report — Confidential</span>
-          <span>Page 4 of 5</span>
+          <span>Page ${p} of ${totalPages}</span>
         </div>
       </div>
     </div>
   `
 }
 
-function buildPage5Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvisory): string {
+function buildPage5Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvisory, totalPages: number): string {
   const { consultant, generatedAt } = pkg
   return `
     <div class="page">
@@ -909,7 +1267,7 @@ function buildPage5Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvis
         ${renderMeetingGuide(advisory)}
         <div class="page-footer">
           <span>Maple Insight · Consultant Report — Confidential · Generated ${new Date(generatedAt).toLocaleDateString('en-CA')}</span>
-          <span>Page 5 of 5</span>
+          <span>Page ${totalPages} of ${totalPages}</span>
         </div>
       </div>
     </div>
@@ -921,23 +1279,29 @@ function buildPage5Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvis
 /**
  * Generates a self-contained HTML document for PDF rendering.
  *
+ * Client PDF:    Page 1 (metrics/compliance/gap/risks) + Page 2 (breakdown/actions/CTA) + Appendix (checklist)
+ * Consultant PDF: client pages + 3 consultant advisory pages
+ *
  * @param pkg                   Full MapleReportPackage from generateReportPackage()
- * @param includeConsultantPages  When true, adds Pages 3–5 (consultant advisory)
+ * @param includeConsultantPages  When true, appends Pages 4–6 (consultant advisory)
+ * @param dataSources           Optional catalog for source badge labels in breakdown tables
  */
 export function renderPdfTemplate(
   pkg: MapleReportPackage,
   includeConsultantPages = false,
+  dataSources?: Map<string, DataSource>,
 ): string {
-  const advisory = pkg.consultantAdvisory
+  const advisory    = pkg.consultantAdvisory
   const hasAdvisory = includeConsultantPages && advisory != null
 
-  const totalPages = hasAdvisory ? 5 : 2
+  // Client: 3 pages (1 + 2 + Appendix). Consultant adds 3 more = 6 total.
+  const totalPages = hasAdvisory ? 6 : 3
 
   const consultantPages = hasAdvisory && advisory
     ? `
-        ${buildPage3Consultant(pkg, advisory)}
-        ${buildPage4Consultant(pkg, advisory)}
-        ${buildPage5Consultant(pkg, advisory)}
+        ${buildPage3Consultant(pkg, advisory, totalPages)}
+        ${buildPage4Consultant(pkg, advisory, totalPages)}
+        ${buildPage5Consultant(pkg, advisory, totalPages)}
       `
     : ''
 
@@ -950,8 +1314,9 @@ export function renderPdfTemplate(
   <style>${CSS}</style>
 </head>
 <body>
-  ${buildPage1(pkg)}
-  ${buildPage2(pkg, totalPages)}
+  ${buildClientPage1(pkg, totalPages)}
+  ${buildClientPage2(pkg, totalPages, dataSources)}
+  ${buildClientAppendix(pkg, totalPages, 3)}
   ${consultantPages}
 </body>
 </html>`

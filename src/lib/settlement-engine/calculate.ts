@@ -33,6 +33,13 @@ import {
 } from './study-permit'
 import type { BreakdownItem, EngineInput, EngineOutput } from './types'
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+/** Normalize a city name to a Sanity catalog key fragment (e.g. "Montréal" → "montreal"). */
+function citySlug(name: string): string {
+  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')
+}
+
 // ─── computeUpfront ───────────────────────────────────────────────────────────
 
 export interface UpfrontResult {
@@ -48,7 +55,7 @@ export interface UpfrontResult {
  */
 export function computeUpfront(
   input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride' | 'departureRegion' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
-  baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback' | 'studentHousing'>,
+  baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback' | 'studentHousing' | 'cityName'>,
   studyPermitData?: StudyPermitData,
 ): UpfrontResult {
   // ── Study permit delegation ──────────────────────────────────────────────
@@ -73,19 +80,21 @@ export function computeUpfront(
 
   // Immigration application fee
   items.push({
-    key:    'immigration-fee',
-    label:  'Immigration application fee',
-    cad:    fees.applicationFee,
-    source: 'ircc',
+    key:       'immigration-fee',
+    label:     'Immigration application fee',
+    cad:       fees.applicationFee,
+    source:    'ircc',
+    sourceKey: 'ircc-fee-schedule',
   })
 
   // Biometrics (skip if already paid)
   if (!fees.biometricsPaid) {
     items.push({
-      key:    'biometrics',
-      label:  'Biometrics fee',
-      cad:    fees.biometricsFee,
-      source: 'ircc',
+      key:       'biometrics',
+      label:     'Biometrics fee',
+      cad:       fees.biometricsFee,
+      source:    'ircc',
+      sourceKey: 'ircc-fee-schedule',
     })
   }
 
@@ -93,10 +102,11 @@ export function computeUpfront(
   const travel = travelEstimateOverride
     ?? computeOneWayFlight(departureRegion, household.adults, household.children)
   items.push({
-    key:    'travel',
-    label:  'One-way flight & travel',
-    cad:    travel,
-    source: 'estimate',
+    key:       'travel',
+    label:     'One-way flight & travel',
+    cad:       travel,
+    source:    'estimate',
+    sourceKey: 'maple-estimate',
   })
 
   // Housing deposit ($0 for staying-family)
@@ -104,10 +114,11 @@ export function computeUpfront(
   const deposit = input.housingType === 'staying-family' ? 0 : rent * DEPOSIT_MONTHS
   if (deposit > 0) {
     items.push({
-      key:    'housing-deposit',
-      label:  `Housing deposit (${DEPOSIT_MONTHS}× rent)`,
-      cad:    deposit,
-      source: baseline.isFallback ? 'national-average' : 'cmhc',
+      key:       'housing-deposit',
+      label:     `Housing deposit (${DEPOSIT_MONTHS}× rent)`,
+      cad:       deposit,
+      source:    baseline.isFallback ? 'national-average' : 'cmhc',
+      sourceKey: baseline.isFallback ? 'maple-estimate' : `cmhc-${citySlug(baseline.cityName)}-rent`,
     })
   }
 
@@ -115,10 +126,11 @@ export function computeUpfront(
   const setup = input.housingType === 'staying-family' ? 0 : FURNISHING_COST[furnishingLevel]
   if (setup > 0) {
     items.push({
-      key:    'setup-essentials',
-      label:  `Setup & furnishing (${furnishingLevel})`,
-      cad:    setup,
-      source: 'constant',
+      key:       'setup-essentials',
+      label:     `Setup & furnishing (${furnishingLevel})`,
+      cad:       setup,
+      source:    'constant',
+      sourceKey: 'maple-estimate',
     })
   }
 
@@ -146,33 +158,36 @@ export function computeMonthlyMin(
   studyPermitData?: StudyPermitData,
 ): MonthlyResult {
   const items: BreakdownItem[] = []
-  const baselineSource = baseline.isFallback ? 'national-average' : 'cmhc'
-  const transitSource  = baseline.isFallback ? 'national-average' : baseline.cityName.toLowerCase().replace(/\s+/g, '-')
+  const baselineSource    = baseline.isFallback ? 'national-average' : 'cmhc'
+  const transitSource     = baseline.isFallback ? 'national-average' : baseline.cityName.toLowerCase().replace(/\s+/g, '-')
+  const rentSourceKey     = baseline.isFallback ? 'maple-estimate' : `cmhc-${citySlug(baseline.cityName)}-rent`
+  const transitSourceKey  = baseline.isFallback ? 'maple-estimate' : `transit-${citySlug(baseline.cityName)}`
 
   // Rent
   const rent = rentFromBaseline(baseline, input.housingType)
-  items.push({ key: 'rent',    label: 'Rent',          cad: rent,                        source: baselineSource })
+  items.push({ key: 'rent',    label: 'Rent',          cad: rent,                        source: baselineSource, sourceKey: rentSourceKey })
 
   // Transit
-  items.push({ key: 'transit', label: 'Transit pass',  cad: baseline.monthlyTransitPass,  source: transitSource })
+  items.push({ key: 'transit', label: 'Transit pass',  cad: baseline.monthlyTransitPass,  source: transitSource,  sourceKey: transitSourceKey })
 
   // Utilities
-  items.push({ key: 'utilities', label: 'Utilities',   cad: UTILITIES_BASELINE,           source: 'constant' })
+  items.push({ key: 'utilities', label: 'Utilities',   cad: UTILITIES_BASELINE,           source: 'constant', sourceKey: 'maple-estimate' })
 
   // Phone + internet
-  items.push({ key: 'phone', label: 'Phone & internet', cad: PHONE_INTERNET_BASELINE,     source: 'constant' })
+  items.push({ key: 'phone', label: 'Phone & internet', cad: PHONE_INTERNET_BASELINE,     source: 'constant', sourceKey: 'maple-estimate' })
 
   // Groceries
   const groceries = groceriesForHousehold(input.household.adults, input.household.children)
-  items.push({ key: 'groceries', label: 'Groceries',   cad: groceries,                    source: 'constant' })
+  items.push({ key: 'groceries', label: 'Groceries',   cad: groceries,                    source: 'constant', sourceKey: 'maple-estimate' })
 
   // Monthly obligations
   if (input.monthlyObligations > 0) {
     items.push({
-      key:    'obligations',
-      label:  'Monthly obligations (debt / remittances)',
-      cad:    input.monthlyObligations,
-      source: 'user-input',
+      key:       'obligations',
+      label:     'Monthly obligations (debt / remittances)',
+      cad:       input.monthlyObligations,
+      source:    'user-input',
+      sourceKey: 'user-input',
     })
   }
 
@@ -181,10 +196,11 @@ export function computeMonthlyMin(
     const healthMonthly = getHealthInsuranceMonthlyCost(input.province, studyPermitData)
     if (healthMonthly > 0) {
       items.push({
-        key:    'health-insurance',
-        label:  'Health insurance (monthly)',
-        cad:    healthMonthly,
-        source: 'provincial',
+        key:       'health-insurance',
+        label:     'Health insurance (monthly)',
+        cad:       healthMonthly,
+        source:    'provincial',
+        sourceKey: 'maple-estimate',
       })
     }
   }
@@ -227,15 +243,15 @@ export function computeSafe(
   const adderItems: BreakdownItem[] = []
 
   if (input.needsChildcare) {
-    adderItems.push({ key: 'childcare', label: 'Childcare', cad: CHILDCARE_MONTHLY, source: 'constant' })
+    adderItems.push({ key: 'childcare', label: 'Childcare', cad: CHILDCARE_MONTHLY, source: 'constant', sourceKey: 'maple-estimate' })
   }
 
   if (input.plansCar) {
-    adderItems.push({ key: 'car', label: 'Car (payment + insurance + fuel)', cad: CAR_MONTHLY, source: 'constant' })
+    adderItems.push({ key: 'car', label: 'Car (payment + insurance + fuel)', cad: CAR_MONTHLY, source: 'constant', sourceKey: 'maple-estimate' })
   }
 
   if (input.customMonthlyExpenses > 0) {
-    adderItems.push({ key: 'custom', label: 'Other monthly expenses', cad: input.customMonthlyExpenses, source: 'user-input' })
+    adderItems.push({ key: 'custom', label: 'Other monthly expenses', cad: input.customMonthlyExpenses, source: 'user-input', sourceKey: 'user-input' })
   }
 
   const monthlySafe = monthlyMin + adderItems.reduce((s, i) => s + i.cad, 0)

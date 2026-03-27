@@ -18,6 +18,11 @@ import {
 } from './constants'
 import type { BreakdownItem, EngineInput, StudyPermitInputs } from './types'
 
+/** Normalize a city name to a Sanity catalog key fragment (e.g. "Montréal" → "montreal"). */
+function citySlug(name: string): string {
+  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')
+}
+
 // ─── StudyPermitData interface ────────────────────────────────────────────────
 
 export interface ProofOfFundsEntry {
@@ -119,9 +124,23 @@ export const STUDY_PERMIT_DEFAULTS: StudyPermitData = {
     estimatedHourlyRateLow:  15,
     estimatedHourlyRateHigh: 18,
   },
+  // Provincial minimum wages — verified 2026 values.
+  // Note: BC $18.25 is effective June 1, 2026 (forward rate used for planning);
+  //       $17.85 is current through May 31, 2026.
+  // Sources:
+  //   ON: ontario.ca/page/employment-standard-exemptions (effective Oct 1, 2024 → $17.20)
+  //   BC: labour.gov.bc.ca/esb/ESBAct/regulations/mworder.htm ($17.85 → $18.25 Jun 1 2026)
+  //   AB: alberta.ca/minimum-wage ($15.00)
+  //   QC: travail.gouv.qc.ca/en/employers/labour-standards/wages ($15.75)
+  //   MB: gov.mb.ca/labour/standards/doc,minimum_wage,factsheet.html ($15.80)
+  //   SK: saskatchewan.ca/business/employment-standards/minimum-wage ($15.00)
+  //   NS: novascotia.ca/lae/employmentrights/minimumwage.asp ($15.20)
+  //   NB: gnb.ca/content/gnb/en/departments/post-secondary_education_training_and_labour/labour/content/employment_standards/minimum_wage.html ($15.30)
+  //   PE: princeedwardisland.ca/en/information/workforce-advanced-learning-and-population/minimum-wage ($15.40)
+  //   NL: gov.nl.ca/ecc/labour-standards/minimum-wage/ ($15.60)
   provincialMinWages: [
     { provinceCode: 'ON', hourlyRate: 17.20 },
-    { provinceCode: 'BC', hourlyRate: 17.40 },
+    { provinceCode: 'BC', hourlyRate: 18.25 },   // $17.85 current (< Jun 2026); $18.25 effective Jun 1 2026
     { provinceCode: 'AB', hourlyRate: 15.00 },
     { provinceCode: 'QC', hourlyRate: 15.75 },
     { provinceCode: 'MB', hourlyRate: 15.80 },
@@ -302,7 +321,7 @@ export interface StudyPermitUpfrontInput {
 export function computeStudyPermitUpfront(
   input: StudyPermitUpfrontInput,
   data: StudyPermitData,
-  baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback'>,
+  baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback' | 'cityName'>,
 ): { total: number; breakdown: BreakdownItem[] } {
   const { studyPermit, household, province } = input
   const familySize = household.adults + household.children
@@ -310,24 +329,24 @@ export function computeStudyPermitUpfront(
 
   // ── 1. Immigration fees ───────────────────────────────────────────────────
   if (!studyPermit.feesPaid) {
-    items.push({ key: 'permit-fee',  label: 'Study permit application fee', cad: 150, source: 'ircc' })
+    items.push({ key: 'permit-fee',  label: 'Study permit application fee', cad: 150, source: 'ircc', sourceKey: 'ircc-study-permit-fees' })
 
     if (!studyPermit.biometricsDone) {
       const bioFee = familySize >= 2 ? 170 : 85
-      items.push({ key: 'biometrics', label: `Biometrics fee (${familySize >= 2 ? 'family' : 'individual'})`, cad: bioFee, source: 'ircc' })
+      items.push({ key: 'biometrics', label: `Biometrics fee (${familySize >= 2 ? 'family' : 'individual'})`, cad: bioFee, source: 'ircc', sourceKey: 'ircc-study-permit-fees' })
     }
 
     const medical = familySize * 250
-    items.push({ key: 'medical-exam', label: `Medical exam (${familySize} person${familySize > 1 ? 's' : ''} × $250)`, cad: medical, source: 'ircc' })
+    items.push({ key: 'medical-exam', label: `Medical exam (${familySize} person${familySize > 1 ? 's' : ''} × $250)`, cad: medical, source: 'ircc', sourceKey: 'ircc-study-permit-fees' })
   }
 
   // ── 2. Tuition (first year) ───────────────────────────────────────────────
-  items.push({ key: 'tuition', label: 'First year tuition', cad: studyPermit.tuitionAmount, source: 'user-input' })
+  items.push({ key: 'tuition', label: 'First year tuition', cad: studyPermit.tuitionAmount, source: 'user-input', sourceKey: 'user-input' })
 
   // ── 3. GIC + processing fee ───────────────────────────────────────────────
   if (studyPermit.gicStatus === 'planning') {
-    items.push({ key: 'gic', label: 'GIC (Guaranteed Investment Certificate)', cad: data.gicMinimum, source: 'ircc' })
-    items.push({ key: 'gic-fee', label: 'GIC bank processing fee', cad: data.gicProcessingFee, source: 'bank' })
+    items.push({ key: 'gic', label: 'GIC (Guaranteed Investment Certificate)', cad: data.gicMinimum, source: 'ircc', sourceKey: 'ircc-proof-of-funds-sp' })
+    items.push({ key: 'gic-fee', label: 'GIC bank processing fee', cad: data.gicProcessingFee, source: 'bank', sourceKey: 'maple-estimate' })
   }
   // 'purchased' → already committed (shown in breakdown as note, not added to upfront)
   // 'not-purchasing' → $0
@@ -335,13 +354,13 @@ export function computeStudyPermitUpfront(
   // ── 4. Health insurance bridge coverage ───────────────────────────────────
   const bridgeCost = getHealthBridgeCost(province, data)
   if (bridgeCost > 0) {
-    items.push({ key: 'health-bridge', label: 'Bridge health insurance (wait period)', cad: bridgeCost, source: 'provincial' })
+    items.push({ key: 'health-bridge', label: 'Bridge health insurance (wait period)', cad: bridgeCost, source: 'provincial', sourceKey: 'maple-estimate' })
   }
 
   // ── 5. Travel (one-way settlement cost) ───────────────────────────────────
   const travel = input.travelEstimateOverride
     ?? computeOneWayFlight(input.departureRegion, household.adults, household.children)
-  items.push({ key: 'travel', label: 'One-way flight & travel', cad: travel, source: 'estimate' })
+  items.push({ key: 'travel', label: 'One-way flight & travel', cad: travel, source: 'estimate', sourceKey: 'maple-estimate' })
 
   // ── 6. Housing deposit (varies by housing type) ───────────────────────────
   const rent = rentFromBaseline(baseline, input.housingType)
@@ -366,17 +385,18 @@ export function computeStudyPermitUpfront(
   }
   if (deposit > 0) {
     items.push({
-      key:    'housing-deposit',
-      label:  depositLabel,
-      cad:    deposit,
-      source: baseline.isFallback ? 'national-average' : 'cmhc',
+      key:       'housing-deposit',
+      label:     depositLabel,
+      cad:       deposit,
+      source:    baseline.isFallback ? 'national-average' : 'cmhc',
+      sourceKey: baseline.isFallback ? 'maple-estimate' : `cmhc-${citySlug(baseline.cityName)}-rent`,
     })
   }
 
   // ── 7. Setup / furnishing ($0 for staying-family) ─────────────────────────
   const setup = input.housingType === 'staying-family' ? 0 : FURNISHING_COST[input.furnishingLevel]
   if (setup > 0) {
-    items.push({ key: 'setup-essentials', label: `Setup & furnishing (${input.furnishingLevel})`, cad: setup, source: 'constant' })
+    items.push({ key: 'setup-essentials', label: `Setup & furnishing (${input.furnishingLevel})`, cad: setup, source: 'constant', sourceKey: 'maple-estimate' })
   }
 
   const total = items.reduce((sum, i) => sum + i.cad, 0)

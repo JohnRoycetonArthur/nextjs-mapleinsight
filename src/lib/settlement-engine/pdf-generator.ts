@@ -13,6 +13,7 @@
 import { chromium }          from 'playwright-core'
 import { renderPdfTemplate } from './pdf-template'
 import type { MapleReportPackage } from './export'
+import type { DataSource } from './types'
 
 // ─── Internal: browser launcher ───────────────────────────────────────────────
 
@@ -54,8 +55,9 @@ async function launchBrowser() {
 export async function generatePdfBuffer(
   pkg: MapleReportPackage,
   includeConsultantPages = false,
+  dataSources?: Map<string, DataSource>,
 ): Promise<Buffer> {
-  const html    = renderPdfTemplate(pkg, includeConsultantPages)
+  const html    = renderPdfTemplate(pkg, includeConsultantPages, dataSources)
   const browser = await launchBrowser()
 
   try {

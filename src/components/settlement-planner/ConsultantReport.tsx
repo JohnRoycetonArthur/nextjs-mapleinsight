@@ -10,11 +10,13 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { generateConsultantAdvisory } from '@/lib/settlement-engine/consultant-advisory'
-import type { EngineInput, EngineOutput } from '@/lib/settlement-engine/types'
+import type { EngineInput, EngineOutput, DataSource } from '@/lib/settlement-engine/types'
 import type { Risk } from '@/lib/settlement-engine/risks'
 import type { IRCCComplianceResult } from '@/lib/settlement-engine/study-permit'
 import type { ConsultantBranding } from './wizard/WizardShell'
 import type { WizardAnswers } from './SettlementSessionContext'
+import { DataFreshnessBar } from './DataFreshnessBar'
+import { fetchDataSources } from '@/lib/settlement-engine/sources'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -166,13 +168,18 @@ export function ConsultantReport({
   engineInput, engineOutput, answers, consultant,
   irccCompliance, complianceRequirement, monthlyIncome, risks, onBack,
 }: Props) {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile,     setIsMobile]     = useState(false)
+  const [dataSources,  setDataSources]  = useState<Map<string, DataSource>>(new Map())
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    fetchDataSources().then(setDataSources).catch(() => { /* degrade gracefully */ })
   }, [])
 
   // Generate all advisory data
@@ -272,6 +279,13 @@ export function ConsultantReport({
         {/* ══ SECTION 1: Financial Readiness Assessment ════════════════════ */}
         <SectionCard>
           <SectionTitle icon="📊">Financial Readiness Assessment</SectionTitle>
+          {(() => {
+            const allKeys = [
+              ...engineOutput.upfrontBreakdown,
+              ...engineOutput.monthlyBreakdown,
+            ].map(it => it.sourceKey).filter((k): k is string => Boolean(k))
+            return <DataFreshnessBar sources={dataSources} sourceKeys={allKeys} />
+          })()}
           <ReadinessGauge score={readiness.score} tier={readiness.tier} color={readiness.color}/>
 
           {/* Score components */}

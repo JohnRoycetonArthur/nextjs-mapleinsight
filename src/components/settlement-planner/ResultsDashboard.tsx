@@ -10,19 +10,12 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer,
-} from 'recharts'
-import {
   generateVerdict,
   computeTimeToDepletion,
   getPriorityAction,
   generateTimelineGuidance,
   modelIncomeScenarios,
   type NarrativeOutput,
-  type DepletionResult,
-  type PriorityAction,
-  type TimelineItem,
-  type ScenarioSet,
 } from '@/lib/settlement-engine/narrative'
 import { useSettlementSession } from './SettlementSessionContext'
 import { fetchCityBaseline } from '@/lib/settlement-engine/baselines'
@@ -50,6 +43,10 @@ import { ConsultantReport } from './ConsultantReport'
 import { generateReportPackage, downloadReportPackage, type MapleReportPackage } from '@/lib/settlement-engine/export'
 import { generateChecklist, type ChecklistItem } from '@/lib/settlement-engine/checklist'
 import { SendToConsultantModal } from './SendToConsultantModal'
+import { SourceBadge } from './SourceBadge'
+import { DataFreshnessBar } from './DataFreshnessBar'
+import { fetchDataSources } from '@/lib/settlement-engine/sources'
+import type { DataSource } from '@/lib/settlement-engine/types'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -330,6 +327,8 @@ export function ResultsDashboard({ consultant }: Props) {
   const [pdfLoading,           setPdfLoading]           = useState(false)
   const [showSendModal,        setShowSendModal]        = useState(false)
   const [sendPackage,          setSendPackage]          = useState<MapleReportPackage | null>(null)
+  const [dataSources,          setDataSources]          = useState<Map<string, DataSource>>(new Map())
+  const [checklistOpen,        setChecklistOpen]        = useState(false)
 
   // ── Responsive ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -346,6 +345,11 @@ export function ResultsDashboard({ consultant }: Props) {
       .then(b => setBaseline(b))
       .catch(() => setBaselineError(true))
   }, [answers.city])
+
+  // ── Fetch data source catalog ─────────────────────────────────────────────
+  useEffect(() => {
+    fetchDataSources().then(setDataSources).catch(() => { /* degrade gracefully */ })
+  }, [])
 
   // ── Build EngineInput ────────────────────────────────────────────────────────
   const engineInput = useMemo<EngineInput | null>(() => {
@@ -570,7 +574,6 @@ export function ResultsDashboard({ consultant }: Props) {
   const companyAbbr    = companyName.split(/\s+/).slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase() || 'MI'
 
   const isStudyPermit  = answers.pathway === 'study_permit'
-  const showGICCard    = isStudyPermit && (answers.studyPermit?.gicStatus ?? 'planning') !== 'purchased'
 
   const checklist = generateChecklist(
     {
@@ -585,7 +588,6 @@ export function ResultsDashboard({ consultant }: Props) {
   // ── IRCC card derived values (study permit) ──────────────────────────────────
   let irccStatus: 'compliant' | 'amber' | 'deficit' = 'compliant'
   let irccBorderColor = C.accent
-  let irccStatusText  = 'Meets IRCC requirements'
   let irccAvailable   = 0
 
   if (irccCompliance) {
@@ -593,28 +595,17 @@ export function ResultsDashboard({ consultant }: Props) {
     const ratio   = irccCompliance.shortfall / irccCompliance.required
     irccStatus      = irccCompliance.compliant ? 'compliant' : ratio <= 0.1 ? 'amber' : 'deficit'
     irccBorderColor = irccStatus === 'compliant' ? C.accent : irccStatus === 'amber' ? C.gold : C.red
-    irccStatusText  = irccStatus === 'compliant'
-      ? 'Meets IRCC requirements'
-      : irccStatus === 'amber'
-      ? 'Close to minimum — strengthen documentation'
-      : 'Application may be refused'
   }
 
   // ── EE/PNP compliance derived values ─────────────────────────────────────────
   let eeStatus: 'compliant' | 'amber' | 'deficit' = 'compliant'
   let eeBorderColor = C.accent
-  let eeStatusText  = 'Meets IRCC requirements'
 
   if (complianceRequirement !== null) {
     const gap   = complianceRequirement - savings
     const ratio = complianceRequirement > 0 ? gap / complianceRequirement : 0
     eeStatus      = savings >= complianceRequirement ? 'compliant' : ratio <= 0.1 ? 'amber' : 'deficit'
     eeBorderColor = eeStatus === 'compliant' ? C.accent : eeStatus === 'amber' ? C.gold : C.red
-    eeStatusText  = eeStatus === 'compliant'
-      ? 'Meets IRCC requirements'
-      : eeStatus === 'amber'
-      ? 'Close to minimum — strengthen documentation'
-      : 'Below IRCC minimum — application at risk'
   }
 
   // ─── Report Package download (US-13.2) ────────────────────────────────────
@@ -768,338 +759,102 @@ export function ResultsDashboard({ consultant }: Props) {
 
       <section style={{ maxWidth: isMobile ? '100%' : 760, margin: '0 auto', padding: isMobile ? '22px 16px' : '36px 24px' }}>
 
-        {/* ── AC-1: Metric Tiles ─────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        {/* ── 1. Compliance Status Card — visually dominant ─────────────── */}
 
-          {/* ── Compliance-first: EE / PNP ───────────────────────────────── */}
-          {complianceRequirement !== null && (() => {
-            const eeShortfall = Math.max(0, complianceRequirement - savings)
-            const eeExplainer = (
-              <div>
-                <div style={{ fontWeight: 700, color: C.forest, marginBottom: 8, fontSize: 13 }}>
-                  Express Entry / PNP Settlement Funds
-                </div>
-                <p style={{ margin: '0 0 10px' }}>
-                  Under IRCC regulations, {answers.pathway === 'pnp' ? 'PNP' : 'Express Entry FSW/FSTP'} applicants must demonstrate sufficient settlement funds. The amount is based on family size using LICO (Low Income Cut-Off) benchmarks.
-                </p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${C.lightGray}` }}>
-                  <span>Required (family of {engineInput.household.adults + engineInput.household.children})</span>
-                  <strong style={{ color: C.forest }}>{fmt(complianceRequirement)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${C.lightGray}` }}>
-                  <span>Your current savings</span>
-                  <strong style={{ color: C.text }}>{fmt(savings)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                  <span>{eeStatus === 'compliant' ? 'Surplus' : 'Shortfall'}</span>
-                  <strong style={{ color: eeBorderColor }}>
-                    {eeStatus === 'compliant' ? `+${fmt(savings - complianceRequirement)}` : `-${fmt(eeShortfall)}`}
-                  </strong>
-                </div>
-                {eeStatus !== 'compliant' && (
-                  <div style={{ marginTop: 10, padding: '8px 10px', background: '#FEF2F2', borderRadius: 6, fontSize: 11 }}>
-                    You need <strong>{fmt(eeShortfall)}</strong> more in liquid savings to meet IRCC&apos;s threshold. Funds must be readily available and documented.
-                  </div>
-                )}
-                <p style={{ margin: '10px 0 0', fontSize: 11, color: C.textLight }}>
-                  Data effective {EXPRESS_ENTRY_DEFAULTS.expressEntryEffectiveDate} · Source: IRCC (canada.ca)
-                </p>
-              </div>
-            )
-            return (
-              <>
-                <MetricTile
-                  label="IRCC Required Funds"
-                  value={fmt(complianceRequirement)}
-                  sub={`Family of ${engineInput.household.adults + engineInput.household.children}`}
-                  color={eeBorderColor}
-                  isMobile={isMobile}
-                  isPrimary
-                  explainerId="tile-compliance"
-                  openExplainer={openExplainer}
-                  onToggleExplainer={setOpenExplainer}
-                  explainerContent={eeExplainer}
-                  statusBadge={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: eeBorderColor, flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: eeBorderColor }}>{eeStatusText}</span>
-                    </div>
-                  }
-                />
-                <MetricTile label="Upfront Move Cost"   value={fmt(engineOutput.upfront)}    sub="One-time costs"    color={C.accent} isMobile={isMobile}
-                  explainerId="tile-upfront" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                  explainerContent={<p style={{ margin: 0 }}>Includes immigration fees, biometrics, one-way flight, housing deposit (first + last month), and setup/furnishing costs. Does not include ongoing monthly expenses.</p>}
-                />
-                <MetricTile label="Monthly Survival"    value={fmt(engineOutput.monthlyMin)} sub="Minimum monthly"   color={C.blue}   isMobile={isMobile}
-                  explainerId="tile-monthly" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                  explainerContent={<p style={{ margin: 0 }}>Core monthly costs: rent, utilities, transit, groceries, phone/internet, plus any obligations, childcare, or car costs you entered. This is the minimum needed to cover basic living expenses each month.</p>}
-                />
-                <MetricTile label="Safe Savings Target" value={fmt(engineOutput.safeSavingsTarget)} sub="Recommended total" color={C.purple} isMobile={isMobile}
-                  explainerId="tile-target" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                  explainerContent={<p style={{ margin: 0 }}>Your upfront move cost plus a {Math.round((engineOutput.safeSavingsTarget / engineOutput.upfront - 1) * 100)}% buffer for unexpected expenses. This is the total liquid savings recommended before your move — separate from any IRCC compliance funds above.</p>}
-                />
-              </>
-            )
-          })()}
-
-          {/* ── Compliance-first: Study Permit ───────────────────────────── */}
-          {isStudyPermit && irccCompliance && complianceRequirement === null && (() => {
-            const spExplainer = (
-              <div>
-                <div style={{ fontWeight: 700, color: C.forest, marginBottom: 8, fontSize: 13 }}>
-                  IRCC Study Permit — Proof of Funds
-                </div>
-                {[
-                  { label: 'First year tuition',      amount: irccCompliance.tuition,        note: 'Your input'                                    },
-                  { label: 'Living expenses (IRCC)',   amount: irccCompliance.livingExpenses, note: irccCompliance.isQuebec ? 'Quebec MIFI' : 'IRCC' },
-                  { label: 'Round-trip transportation', amount: irccCompliance.transport,     note: 'Estimate'                                       },
-                ].map((row, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${C.lightGray}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>{row.label}</span>
-                      <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 5px', borderRadius: 3 }}>{row.note}</span>
-                    </div>
-                    <strong style={{ color: C.forest }}>{fmt(row.amount)}</strong>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${C.lightGray}` }}>
-                  <span style={{ fontWeight: 700 }}>Required proof of funds</span>
-                  <strong style={{ color: C.forest }}>{fmt(irccCompliance.required)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${C.lightGray}` }}>
-                  <span>Your available funds</span>
-                  <strong style={{ color: C.text }}>{fmt(irccAvailable)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                  <span>{irccCompliance.compliant ? 'Surplus' : 'Shortfall'}</span>
-                  <strong style={{ color: irccBorderColor }}>
-                    {irccCompliance.compliant ? `+${fmt(irccAvailable - irccCompliance.required)}` : `-${fmt(irccCompliance.shortfall)}`}
-                  </strong>
-                </div>
-                {!irccCompliance.compliant && (
-                  <div style={{ marginTop: 10, padding: '8px 10px', background: '#FEF2F2', borderRadius: 6, fontSize: 11 }}>
-                    A GIC ({fmt(STUDY_PERMIT_DEFAULTS.gicMinimum)}) at a designated Canadian bank satisfies proof-of-funds requirements and is returned in monthly installments after arrival.
-                  </div>
-                )}
-                <a href="/articles/study-permit-proof-of-funds" style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none' }}>
-                  Learn about proof of funds →
-                </a>
-              </div>
-            )
-            return (
-              <>
-                <MetricTile
-                  label="IRCC Proof of Funds"
-                  value={fmt(irccCompliance.required)}
-                  sub="Required for study permit"
-                  color={irccBorderColor}
-                  isMobile={isMobile}
-                  isPrimary
-                  explainerId="tile-compliance"
-                  openExplainer={openExplainer}
-                  onToggleExplainer={setOpenExplainer}
-                  explainerContent={spExplainer}
-                  statusBadge={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: irccBorderColor, flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: irccBorderColor }}>{irccStatusText}</span>
-                    </div>
-                  }
-                />
-                <MetricTile label="Upfront Move Cost"   value={fmt(engineOutput.upfront)}    sub="One-time costs"    color={C.accent} isMobile={isMobile}
-                  explainerId="tile-upfront" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                  explainerContent={<p style={{ margin: 0 }}>Includes study permit fee, biometrics, one-way flight, housing deposit, furnishing, GIC (if applicable), and first tuition instalment.</p>}
-                />
-                <MetricTile label="Monthly Survival"    value={fmt(engineOutput.monthlyMin)} sub="Minimum monthly"   color={C.blue}   isMobile={isMobile}
-                  explainerId="tile-monthly" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                  explainerContent={<p style={{ margin: 0 }}>Core monthly costs including rent/housing, transit, utilities, groceries, phone, and provincial health insurance. Your GIC will release funds monthly to help cover these costs after arrival.</p>}
-                />
-                <MetricTile label="Financial Runway"    value={runwayLabel}                  sub="Months of coverage" color={C.gold}   isMobile={isMobile}
-                  explainerId="tile-runway" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                  explainerContent={<p style={{ margin: 0 }}>How many months your current savings (after upfront costs) cover your monthly minimum. This excludes any GIC funds, which are returned monthly after you arrive.</p>}
-                />
-              </>
-            )
-          })()}
-
-          {/* ── No compliance requirement (CEC, Work Permit, Family, etc.) ── */}
-          {!isStudyPermit && complianceRequirement === null && (
-            <>
-              <MetricTile label="Upfront Move Cost"   value={fmt(engineOutput.upfront)}           sub="One-time costs"     color={C.accent} isMobile={isMobile}
-                explainerId="tile-upfront" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                explainerContent={<p style={{ margin: 0 }}>Includes immigration fees, biometrics, one-way flight, housing deposit (first + last month), and setup/furnishing costs. Does not include ongoing monthly expenses.</p>}
-              />
-              <MetricTile label="Monthly Survival"    value={fmt(engineOutput.monthlyMin)}        sub="Minimum monthly"    color={C.blue}   isMobile={isMobile}
-                explainerId="tile-monthly" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                explainerContent={<p style={{ margin: 0 }}>Core monthly costs: rent, utilities, transit, groceries, phone/internet, plus any obligations, childcare, or car costs you entered.</p>}
-              />
-              <MetricTile label="Safe Savings Target" value={fmt(engineOutput.safeSavingsTarget)} sub="Recommended total"  color={C.purple} isMobile={isMobile}
-                explainerId="tile-target" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                explainerContent={<p style={{ margin: 0 }}>Your upfront move cost plus a buffer for unexpected expenses. This is the total liquid savings recommended before your move. There is no mandatory IRCC savings floor for your pathway.</p>}
-              />
-              <MetricTile label="Financial Runway"    value={runwayLabel}                         sub="Months of coverage" color={C.gold}   isMobile={isMobile}
-                explainerId="tile-runway" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
-                explainerContent={<p style={{ margin: 0 }}>How many months your current savings (after upfront costs) cover your monthly minimum expenses.</p>}
-              />
-            </>
-          )}
-
-        </div>
-
-        {/* ── R4 Zone A: Financial Summary Block ─────────────────────────── */}
-        {narrativeData && (() => {
-          const { verdict, timeToDepletion: depletion, priorityAction, timelineGuidance } = narrativeData
-
-          // Verdict color
-          const verdictIsPositive =
-            !verdict.startsWith('You are not') && !verdict.startsWith('You need')
-          const verdictColor = verdictIsPositive ? C.forest : C.red
-
-          // Severity colors
-          const SEV_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-            critical:   { bg: '#FEF2F2', text: C.red,    border: C.red    },
-            limited:    { bg: '#FDF6E3', text: C.gold,   border: C.gold   },
-            reasonable: { bg: '#F0FFF4', text: C.accent, border: C.accent },
-            strong:     { bg: '#F0FFF4', text: C.accent, border: C.accent },
-          }
-          const depColors = SEV_COLORS[depletion.severity] ?? SEV_COLORS.reasonable
-
-          // Urgency colors for Priority Action
-          const URG_COLORS: Record<string, string> = {
-            critical: C.red, high: C.red, medium: C.gold, low: C.accent,
-          }
-          const urgColor = URG_COLORS[priorityAction.urgency] ?? C.accent
-
-          // Risk level colors for Timeline
-          const RISK_COLORS: Record<string, string> = {
-            high: C.red, medium: C.gold, low: C.accent,
-          }
-
+        {/* EE / PNP: IRCC Settlement Funds */}
+        {complianceRequirement !== null && (() => {
+          const eeShortfall = Math.max(0, complianceRequirement - savings)
+          const eeBg = eeStatus === 'compliant' ? '#ECFDF5' : eeStatus === 'amber' ? '#FFFBEB' : '#FEF2F2'
           return (
-            <div style={{ marginBottom: 14 }}>
-
-              {/* 1. Readiness Verdict */}
-              <p style={{
-                fontFamily: SERIF, fontSize: 18, fontWeight: 700,
-                color: verdictColor, lineHeight: 1.5,
-                margin: '0 0 12px', padding: 0,
-              }}>
-                {verdict}
-              </p>
-
-              {/* 2. Time-to-Depletion Card — or Academic Budget for study permit */}
-              {isStudyPermit ? (() => {
-                const tuition     = engineInput?.studyPermit?.tuitionAmount ?? 0
-                const monthlyMin  = engineOutput?.monthlyMin ?? 0
-                const firstYear   = tuition + monthlyMin * 12
-                return (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 16,
-                    background: '#EFF6FF', borderRadius: 16,
-                    border: '1px solid #BFDBFE',
-                    padding: isMobile ? '14px 16px' : '16px 22px',
-                    marginBottom: 10,
-                  }}>
-                    <div style={{ fontSize: isMobile ? 28 : 34, lineHeight: 1, flexShrink: 0 }}>🎓</div>
-                    <div>
-                      <div style={{ fontFamily: SERIF, fontSize: isMobile ? 26 : 32, fontWeight: 700, color: '#1D4ED8', lineHeight: 1.1 }}>
-                        {fmt(firstYear)}
-                      </div>
-                      <div style={{ fontSize: 13, color: C.text, marginTop: 3, fontFamily: FONT, lineHeight: 1.5, fontWeight: 600 }}>
-                        First year budget
-                      </div>
-                      <div style={{ fontSize: 12, color: C.gray, marginTop: 2, fontFamily: FONT, lineHeight: 1.5 }}>
-                        Your first year of study will cost approximately {fmt(firstYear)} including tuition, housing, and living expenses.
-                      </div>
-                    </div>
-                  </div>
-                )
-              })() : (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  background: depColors.bg, borderRadius: 16,
-                  border: `1px solid ${depColors.border}20`,
-                  padding: isMobile ? '14px 16px' : '16px 22px',
-                  marginBottom: 10,
-                }}>
-                  <div style={{ fontSize: isMobile ? 28 : 34, lineHeight: 1, flexShrink: 0 }}>⏱️</div>
-                  <div>
-                    <div style={{ fontFamily: SERIF, fontSize: isMobile ? 26 : 32, fontWeight: 700, color: depColors.text, lineHeight: 1.1 }}>
-                      {depletion.months === Infinity ? '∞' : `${depletion.months.toFixed(1)} mo`}
-                    </div>
-                    <div style={{ fontSize: 13, color: C.text, marginTop: 3, fontFamily: FONT, lineHeight: 1.5 }}>
-                      {depletion.label}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 3. #1 Priority Action Card */}
-              <div style={{
-                background: C.white, borderRadius: 14,
-                borderLeft: `5px solid ${urgColor}`,
-                borderTop: `1px solid ${urgColor}18`,
-                borderRight: `1px solid ${urgColor}18`,
-                borderBottom: `1px solid ${urgColor}18`,
-                padding: isMobile ? '14px 16px' : '16px 22px',
-                marginBottom: 10,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                    color: '#fff', background: urgColor,
-                    padding: '3px 8px', borderRadius: 4, letterSpacing: 0.6,
-                  }}>
-                    #1 Priority
-                  </span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: C.forest, fontFamily: FONT, marginBottom: 4 }}>
-                  {priorityAction.title}
-                </div>
-                <div style={{ fontSize: 14, color: C.text, lineHeight: 1.6, fontFamily: FONT }}>
-                  {priorityAction.description}
-                </div>
+            <div style={{ borderRadius: 14, padding: isMobile ? '20px 18px' : '24px 28px', marginBottom: 20, background: eeBg, border: `2px solid ${eeBorderColor}`, textAlign: 'center' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: eeBorderColor, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: FONT }}>
+                IRCC Financial Requirement
               </div>
-
-              {/* 4. Timeline Guidance */}
-              <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
-                {timelineGuidance.map((item, i) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 14,
-                      padding: isMobile ? '12px 16px' : '14px 20px',
-                      borderBottom: i < timelineGuidance.length - 1 ? `1px solid ${C.lightGray}` : 'none',
-                    }}
-                  >
-                    {/* Risk badge */}
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
-                      minWidth: 72, paddingTop: 2,
-                    }}>
-                      <div style={{ width: 9, height: 9, borderRadius: '50%', background: RISK_COLORS[item.riskLevel], flexShrink: 0 }} />
-                      <span style={{ fontSize: 10, fontWeight: 700, color: RISK_COLORS[item.riskLevel], textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        {item.riskLabel}
-                      </span>
-                    </div>
-                    {/* Text */}
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.forest, marginBottom: 2, fontFamily: FONT }}>
-                        {item.label}
-                      </div>
-                      <div style={{ fontSize: 12, color: C.text, lineHeight: 1.55, fontFamily: FONT }}>
-                        {item.description}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div style={{ fontFamily: SERIF, fontSize: isMobile ? 24 : 30, fontWeight: 700, color: eeBorderColor, marginBottom: 6 }}>
+                {eeStatus === 'compliant' ? '✓ Meets Requirement' : eeStatus === 'amber' ? '⚠ Close to Minimum' : '✗ Below IRCC Minimum'}
               </div>
-
+              <div style={{ fontSize: 13, color: C.text }}>
+                {eeStatus === 'compliant'
+                  ? `Savings of ${fmt(savings)} exceed the IRCC minimum of ${fmt(complianceRequirement)} by ${fmt(savings - complianceRequirement)}`
+                  : `You need ${fmt(eeShortfall)} more to meet the IRCC minimum of ${fmt(complianceRequirement)}`
+                }
+              </div>
+              <div style={{ fontSize: 10, color: C.textLight, marginTop: 6 }}>
+                Based on IRCC proof-of-funds table effective {EXPRESS_ENTRY_DEFAULTS.expressEntryEffectiveDate}
+              </div>
             </div>
           )
         })()}
 
-        {/* ── AC-2: Savings Gap ──────────────────────────────────────────── */}
+        {/* Study Permit: IRCC Proof of Funds */}
+        {isStudyPermit && irccCompliance && (
+          <div style={{ borderRadius: 14, padding: isMobile ? '20px 18px' : '24px 28px', marginBottom: 20, background: irccCompliance.compliant ? '#ECFDF5' : '#FEF2F2', border: `2px solid ${irccBorderColor}`, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: irccBorderColor, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: FONT }}>
+              IRCC Study Permit — Proof of Funds
+            </div>
+            <div style={{ fontFamily: SERIF, fontSize: isMobile ? 24 : 30, fontWeight: 700, color: irccBorderColor, marginBottom: 6 }}>
+              {irccCompliance.compliant ? '✓ Funds Sufficient' : '✗ Shortfall Detected'}
+            </div>
+            <div style={{ fontSize: 13, color: C.text }}>
+              {irccCompliance.compliant
+                ? `Available funds of ${fmt(irccAvailable)} meet the required ${fmt(irccCompliance.required)}`
+                : `Required: ${fmt(irccCompliance.required)} · Available: ${fmt(irccAvailable)} · Shortfall: ${fmt(irccCompliance.shortfall)}`
+              }
+            </div>
+            <div style={{ fontSize: 10, color: C.textLight, marginTop: 6 }}>
+              Requirement based on tuition + IRCC living expenses + transportation
+            </div>
+          </div>
+        )}
+
+        {/* ── 2. Metric Tiles ───────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+
+
+          {/* ── 4 uniform metric tiles — all pathways ────────────────────── */}
+          <MetricTile
+            label="Upfront Move Cost" value={fmt(engineOutput.upfront)} sub="One-time costs"
+            color={C.accent} isMobile={isMobile}
+            explainerId="tile-upfront" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
+            explainerContent={<p style={{ margin: 0 }}>
+              {isStudyPermit
+                ? 'Includes study permit fee, biometrics, one-way flight, housing deposit, furnishing, GIC (if applicable), and first tuition instalment.'
+                : 'Includes immigration fees, biometrics, one-way flight, housing deposit (first + last month), and setup/furnishing costs. Does not include ongoing monthly expenses.'}
+            </p>}
+          />
+          <MetricTile
+            label="Monthly Survival" value={fmt(engineOutput.monthlyMin)} sub="Minimum monthly"
+            color={C.blue} isMobile={isMobile}
+            explainerId="tile-monthly" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
+            explainerContent={<p style={{ margin: 0 }}>
+              {isStudyPermit
+                ? 'Core monthly costs including rent/housing, transit, utilities, groceries, phone, and provincial health insurance. Your GIC will release funds monthly to help cover these costs after arrival.'
+                : 'Core monthly costs: rent, utilities, transit, groceries, phone/internet, plus any obligations, childcare, or car costs you entered. This is the minimum needed to cover basic living expenses each month.'}
+            </p>}
+          />
+          <MetricTile
+            label="Safe Savings Target" value={fmt(engineOutput.safeSavingsTarget)} sub="Recommended total"
+            color={C.purple} isMobile={isMobile}
+            explainerId="tile-target" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
+            explainerContent={<p style={{ margin: 0 }}>
+              {complianceRequirement !== null
+                ? `Your upfront move cost plus a ${Math.round((engineOutput.safeSavingsTarget / engineOutput.upfront - 1) * 100)}% buffer for unexpected expenses. This is the total liquid savings recommended before your move — separate from any IRCC compliance funds above.`
+                : 'Your upfront move cost plus a buffer for unexpected expenses. This is the total liquid savings recommended before your move.'}
+            </p>}
+          />
+          <MetricTile
+            label="Financial Runway" value={runwayLabel} sub="Months of coverage"
+            color={C.gold} isMobile={isMobile}
+            explainerId="tile-runway" openExplainer={openExplainer} onToggleExplainer={setOpenExplainer}
+            explainerContent={<p style={{ margin: 0 }}>
+              How many months your current savings (after upfront costs) cover your monthly minimum expenses.
+              {isStudyPermit && ' This excludes any GIC funds, which are returned monthly after you arrive.'}
+            </p>}
+          />
+
+        </div>
+
+        {/* ── 3. Savings Gap ─────────────────────────────────────────────── */}
         <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
             <span style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, fontWeight: 700 }}>
@@ -1139,80 +894,7 @@ export function ResultsDashboard({ consultant }: Props) {
           )}
         </div>
 
-        {/* ── AC-4: Income Estimate Card (E9 engine) ─────────────────────── */}
-        {answers.incomeSource === 'engine_estimate' && (answers.estimatedGrossMid ?? 0) > 0 && (
-          <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.purple}20`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontFamily: SERIF, fontSize: 16, color: C.forest, fontWeight: 700 }}>Income Estimate</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: C.accent, background: `${C.accent}12`, padding: '2px 8px', borderRadius: 4 }}>
-                  {answers.confidence ?? 'Medium'} confidence
-                </span>
-                {answers.nocCode && (
-                  <span style={{ fontSize: 10, color: C.textLight }}>NOC {answers.nocCode}</span>
-                )}
-              </div>
-            </div>
-            <div style={{ fontSize: 12, color: C.gray, marginBottom: 10 }}>
-              Based on <strong>{answers.occupation ?? 'your occupation'}</strong> wages in {cityLabel} (Job Bank data)
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {[
-                { label: 'Low',    gross: answers.estimatedGrossLow  ?? 0, net: 0,                              hl: false },
-                { label: 'Median', gross: answers.estimatedGrossMid  ?? 0, net: answers.estimatedNetMonthly ?? 0, hl: true  },
-                { label: 'High',   gross: answers.estimatedGrossHigh ?? 0, net: 0,                              hl: false },
-              ].map(e => (
-                <div key={e.label} style={{
-                  flex: 1, minWidth: 80, textAlign: 'center',
-                  padding: '10px 8px', borderRadius: 8,
-                  background: e.hl ? `${C.purple}08` : C.lightGray,
-                  border: e.hl ? `1px solid ${C.purple}20` : 'none',
-                }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: C.textLight, textTransform: 'uppercase' }}>{e.label}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: e.hl ? C.purple : C.forest, fontFamily: SERIF }}>
-                    ${(e.gross / 1000).toFixed(0)}K
-                  </div>
-                  {e.hl && e.net > 0 && (
-                    <div style={{ fontSize: 11, color: C.gray }}>~${e.net.toLocaleString('en-CA')}/mo net</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* User-provided income (non-engine) */}
-        {answers.incomeSource !== 'engine_estimate' && answers.income && (
-          <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontFamily: SERIF, fontSize: 16, color: C.forest, fontWeight: 700 }}>Expected Monthly Income</span>
-              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: C.textLight, background: C.lightGray, padding: '2px 8px', borderRadius: 4 }}>Your estimate</span>
-            </div>
-            <div style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 700, color: C.forest, marginTop: 8 }}>
-              {fmt(parseAmount(answers.income))}<span style={{ fontSize: 14, fontWeight: 400, color: C.gray }}>/mo</span>
-            </div>
-          </div>
-        )}
-
-        {/* ── Study Permit: GIC Recommendation Card ──────────────────────── */}
-        {showGICCard && (
-          <div style={{ background: '#F0F4FF', borderRadius: 16, border: '1px solid #BFCFFF', padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14 }}>
-            <h2 style={{ fontFamily: SERIF, fontSize: 17, color: C.forest, margin: '0 0 10px' }}>
-              💰 Consider a Guaranteed Investment Certificate (GIC)
-            </h2>
-            <p style={{ fontSize: 13, color: C.text, lineHeight: 1.6, margin: '0 0 12px' }}>
-              A GIC of <strong>{fmt(STUDY_PERMIT_DEFAULTS.gicMinimum)}</strong> at a designated Canadian bank satisfies IRCC&apos;s proof-of-funds requirement and is returned to you in monthly installments after you arrive. Processing fee: ~{fmt(STUDY_PERMIT_DEFAULTS.gicProcessingFee)}.
-            </p>
-            <div style={{ fontSize: 12, color: C.gray, marginBottom: 10 }}>
-              <strong>Participating banks:</strong> Scotiabank, TD, CIBC, RBC, BMO
-            </div>
-            <a href="/articles/what-is-a-gic-canada" style={{ fontSize: 12, fontWeight: 600, color: C.blue, textDecoration: 'none' }}>
-              Learn more about GICs for study permits →
-            </a>
-          </div>
-        )}
-
-        {/* ── AC-3: Cost Breakdown ────────────────────────────────────────── */}
+        {/* ── 4. Cost Breakdown ───────────────────────────────────────────── */}
         {(() => {
           const regionLabel = DEPARTURE_REGION_LABELS[answers.departureRegion ?? ''] ?? 'International'
           const familySize  = (answers.adults ?? 1) + (answers.children ?? 0)
@@ -1240,26 +922,33 @@ export function ResultsDashboard({ consultant }: Props) {
               {[
                 { label: 'Upfront Costs', items: engineOutput.upfrontBreakdown, total: engineOutput.upfront    },
                 { label: 'Monthly Costs', items: engineOutput.monthlyBreakdown,  total: engineOutput.monthlyMin },
-              ].map(section => (
-                <div key={section.label} style={{ marginBottom: 18 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>
-                    {section.label}
-                  </div>
-                  {section.items.map((it, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < section.items.length - 1 ? `1px solid ${C.lightGray}` : 'none' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
-                        <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
-                        <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
-                      </div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: C.forest, whiteSpace: 'nowrap' }}>{fmt(it.cad)}</span>
+              ].map(section => {
+                const sectionSourceKeys = section.items.map(it => it.sourceKey).filter((k): k is string => Boolean(k))
+                return (
+                  <div key={section.label} style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>
+                      {section.label}
                     </div>
-                  ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', borderTop: `2px solid ${C.border}`, marginTop: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: C.forest }}>Total</span>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(section.total)}</span>
+                    <DataFreshnessBar sources={dataSources} sourceKeys={sectionSourceKeys} />
+                    {section.items.map((it, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < section.items.length - 1 ? `1px solid ${C.lightGray}` : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
+                          <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
+                          {it.sourceKey
+                            ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} />
+                            : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
+                          }
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: C.forest, whiteSpace: 'nowrap' }}>{fmt(it.cad)}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', borderTop: `2px solid ${C.border}`, marginTop: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.forest }}>Total</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(section.total)}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
               {isStudyPermit && (
                 <p style={{ fontSize: 11, color: C.textLight, margin: '0', fontStyle: 'italic' }}>
                   * IRCC proof-of-funds calculation includes a round-trip transport estimate. The upfront cost above reflects your one-way flight only.
@@ -1269,165 +958,7 @@ export function ResultsDashboard({ consultant }: Props) {
           )
         })()}
 
-        {/* ── R4 Zone B: Income Scenarios (or Part-Time Work Impact for study permit) ── */}
-        {narrativeData && (() => {
-          // ── Study permit: replace with Part-Time Work Impact card ──────────────
-          if (isStudyPermit) {
-            const ptHours   = answers.studyPermit?.partTimeHoursPerWeek ?? 0
-            const ptRate    = answers.studyPermit?.partTimeHourlyRate   ?? 15
-            const ptMonthly = answers.studyPermit?.estimatedPartTimeMonthlyIncome ?? 0
-            if (ptHours === 0) return null  // no part-time work planned — omit section
-
-            const ptTotal    = ptMonthly * 8
-            const monthlyMin = engineOutput?.monthlyMin ?? 1
-            const ptPct      = Math.min(100, Math.round(ptMonthly / monthlyMin * 100))
-
-            return (
-              <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <span style={{ fontSize: 22 }}>💼</span>
-                  <h2 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: 0 }}>Part-time work impact</h2>
-                </div>
-                <p style={{ fontSize: 14, color: C.text, lineHeight: 1.7, margin: '0 0 12px', fontFamily: FONT }}>
-                  Working <strong>{ptHours} hrs/week</strong> at <strong>{fmt(ptRate)}/hr</strong>, you could earn approximately{' '}
-                  <strong>{fmt(ptMonthly)}/month</strong> during the academic term. Over 8 months of classes, that&apos;s{' '}
-                  ~<strong>{fmt(ptTotal)}</strong> — enough to cover approximately <strong>{ptPct}%</strong> of your monthly living expenses.
-                </p>
-                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#1D4ED8', fontFamily: FONT, lineHeight: 1.6 }}>
-                  ℹ️ This income is not counted toward IRCC proof of funds. IRCC requires you to demonstrate available funds without relying on employment in Canada.
-                </div>
-              </div>
-            )
-          }
-
-          const { incomeScenarios, compGap, isExempt, monthlyIncome } = narrativeData
-          const { best, expected, worst } = incomeScenarios
-
-          // No income entered — show a helpful prompt instead of identical scenarios
-          if (monthlyIncome === 0) {
-            return (
-              <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-                <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: '0 0 10px' }}>
-                  What happens when you start earning?
-                </h2>
-                <div style={{ background: `${C.gold}0F`, border: `1px solid ${C.gold}40`, borderLeft: `4px solid ${C.gold}`, borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: FONT, marginBottom: 4 }}>
-                      Add your expected income to see cash-flow projections
-                    </div>
-                    <div style={{ fontSize: 12, color: C.gray, fontFamily: FONT, lineHeight: 1.6 }}>
-                      Go back to Step 4 and enter your expected monthly income. We&apos;ll model three scenarios — best case, expected, and worst case — showing how your savings evolve over the first 12 months in Canada.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          // Chart data: one point per month 0–12
-          const chartData = Array.from({ length: 13 }, (_, m) => ({
-            month: m === 0 ? 'Start' : `Mo ${m}`,
-            best:     best.balanceByMonth[m],
-            expected: expected.balanceByMonth[m],
-            worst:    worst.balanceByMonth[m],
-          }))
-
-          const scenarioCards = [
-            { run: best,     borderColor: C.accent, bgColor: `${C.accent}08` },
-            { run: expected, borderColor: C.gold,   bgColor: `${C.gold}08`   },
-            { run: worst,    borderColor: C.red,    bgColor: `${C.red}08`    },
-          ]
-
-          const hasComplianceReq = compGap !== null && !isExempt
-
-          return (
-            <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: '0 0 16px' }}>
-                What happens when you start earning?
-              </h2>
-
-              {/* 1. Scenario Cards */}
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
-                {scenarioCards.map(({ run, borderColor, bgColor }) => (
-                  <div key={run.label} style={{
-                    flex: '1 1 160px', borderRadius: 12,
-                    borderTop: `3px solid ${borderColor}`,
-                    border: `1px solid ${borderColor}30`,
-                    borderTopWidth: 3, borderTopColor: borderColor,
-                    background: bgColor,
-                    padding: '14px 16px',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                      <span style={{ fontSize: 16 }}>{run.icon}</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: C.text, fontFamily: FONT }}>{run.label}</span>
-                    </div>
-                    <div style={{ fontFamily: SERIF, fontSize: isMobile ? 18 : 22, fontWeight: 700, color: run.depletionMonth !== null ? C.red : C.forest, lineHeight: 1.1, marginBottom: 4 }}>
-                      {run.depletionMonth !== null
-                        ? `Depleted mo ${run.depletionMonth}`
-                        : run.savingsAtMonth12 !== null
-                        ? fmt(run.savingsAtMonth12)
-                        : '—'}
-                    </div>
-                    <div style={{ fontSize: 11, color: C.gray, fontFamily: FONT, lineHeight: 1.4 }}>
-                      {run.depletionMonth !== null
-                        ? `Savings run out at month ${run.depletionMonth}`
-                        : `Balance at month 12`}
-                    </div>
-                    <div style={{ fontSize: 11, color: C.textLight, marginTop: 4, fontFamily: FONT }}>
-                      {run.incomeStartMonth < 13
-                        ? `Income (${fmt(run.monthlyIncome)}/mo) starts month ${run.incomeStartMonth}`
-                        : 'No income in 12-month window'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 2. Runway Chart */}
-              <div style={{ width: '100%', height: 240, marginBottom: 8 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.lightGray} />
-                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: C.textLight, fontFamily: FONT }} />
-                    <YAxis
-                      tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`}
-                      tick={{ fontSize: 10, fill: C.textLight, fontFamily: FONT }}
-                      width={48}
-                    />
-                    <ReferenceLine y={0} stroke={C.gray} strokeDasharray="4 2" />
-                    <Tooltip
-                      formatter={(value, name) => [
-                        typeof value === 'number'
-                          ? new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(value)
-                          : String(value),
-                        name === 'best' ? '☀️ Best' : name === 'expected' ? '⚖️ Expected' : '⛈️ Worst',
-                      ]}
-                      contentStyle={{ fontFamily: FONT, fontSize: 12, borderRadius: 8, border: `1px solid ${C.border}` }}
-                    />
-                    <Legend
-                      formatter={(value: string) =>
-                        value === 'best' ? '☀️ Best case' : value === 'expected' ? '⚖️ Expected' : '⛈️ Worst case'
-                      }
-                      wrapperStyle={{ fontSize: 11, fontFamily: FONT, paddingTop: 4 }}
-                    />
-                    <Area type="monotone" dataKey="best"     stroke={C.accent} fill={C.accent} fillOpacity={0.15} strokeWidth={2} dot={false} />
-                    <Area type="monotone" dataKey="expected" stroke={C.gold}   fill={C.gold}   fillOpacity={0.15} strokeWidth={2} dot={false} />
-                    <Area type="monotone" dataKey="worst"    stroke={C.red}    fill={C.red}    fillOpacity={0.15} strokeWidth={2} dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* 3. Contextual Note */}
-              <p style={{ fontSize: 11, color: C.textLight, margin: 0, lineHeight: 1.6, fontStyle: 'italic' }}>
-                {hasComplianceReq
-                  ? `These scenarios model cash flow after arrival and assume you keep your IRCC-required funds available for your application. Income projections are estimates — actual timing may vary.`
-                  : `These scenarios model 12 months of cash flow starting from your current savings. Income projections are estimates based on typical job-search timelines for your pathway.`}
-              </p>
-            </div>
-          )
-        })()}
-
-        {/* ── AC-5: Risks & Actions ───────────────────────────────────────── */}
+        {/* ── 5. Risks + Actions ──────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 14, flexDirection: isMobile ? 'column' : 'row', marginBottom: 14 }}>
 
           {/* Risks */}
@@ -1545,39 +1076,58 @@ export function ResultsDashboard({ consultant }: Props) {
           )}
         </div>
 
-        {/* ── AC-6: Settlement Checklist ──────────────────────────────────── */}
-        <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <h2 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: '0 0 18px' }}>Your Settlement Checklist</h2>
-          {[
-            { title: 'Pre-Arrival',   items: checklist.preArrival, icon: '✈️', color: C.accent  },
-            { title: 'First Week',    items: checklist.firstWeek,  icon: '🏁', color: C.gold    },
-            { title: 'First 30 Days', items: checklist.first30,    icon: '📋', color: C.blue    },
-            { title: 'First 90 Days', items: checklist.first90,    icon: '🎯', color: C.purple  },
-          ].map(group => (
-            <div key={group.title} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                <span aria-hidden="true" style={{ fontSize: 14 }}>{group.icon}</span>
-                <span style={{ fontFamily: SERIF, fontSize: 15, color: group.color, fontWeight: 700 }}>{group.title}</span>
-              </div>
-              {group.items.map((item: ChecklistItem, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 5, paddingLeft: 4, alignItems: 'flex-start' }}>
-                  <CheckIcon color={group.color} />
-                  <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>
-                    {item.label}
-                    {item.articleSlug && (
-                      <a
-                        href={`/articles/${item.articleSlug}`}
-                        style={{ marginLeft: 5, color: C.accent, fontSize: 11, textDecoration: 'none', borderBottom: `1px solid ${C.accent}44`, whiteSpace: 'nowrap' }}
-                      >
-                        Learn more →
-                      </a>
-                    )}
-                  </span>
+        {/* ── 7. Settlement Checklist — collapsible accordion ─────────────── */}
+        {(() => {
+          const totalItems = checklist.preArrival.length + checklist.firstWeek.length + checklist.first30.length + checklist.first90.length
+          return (
+            <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, marginBottom: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+              <button
+                onClick={() => setChecklistOpen(!checklistOpen)}
+                aria-expanded={checklistOpen}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '16px 16px' : '18px 26px', border: 'none', background: C.white, cursor: 'pointer', fontFamily: FONT }}
+              >
+                <h2 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: 0 }}>Settlement Checklist</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: C.textLight }}>{totalItems} items · 4 periods</span>
+                  <ChevDown open={checklistOpen} />
                 </div>
-              ))}
+              </button>
+              {checklistOpen && (
+                <div style={{ padding: isMobile ? '0 16px 18px' : '0 26px 22px', borderTop: `1px solid ${C.border}` }}>
+                  {[
+                    { title: 'Pre-Arrival',   items: checklist.preArrival, icon: '✈️', color: C.accent  },
+                    { title: 'First Week',    items: checklist.firstWeek,  icon: '🏁', color: C.gold    },
+                    { title: 'First 30 Days', items: checklist.first30,    icon: '📋', color: C.blue    },
+                    { title: 'First 90 Days', items: checklist.first90,    icon: '🎯', color: C.purple  },
+                  ].map(group => (
+                    <div key={group.title} style={{ marginTop: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                        <span aria-hidden="true" style={{ fontSize: 14 }}>{group.icon}</span>
+                        <span style={{ fontFamily: SERIF, fontSize: 15, color: group.color, fontWeight: 700 }}>{group.title}</span>
+                      </div>
+                      {group.items.map((item: ChecklistItem, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 5, paddingLeft: 4, alignItems: 'flex-start' }}>
+                          <CheckIcon color={group.color} />
+                          <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>
+                            {item.label}
+                            {item.articleSlug && (
+                              <a
+                                href={`/articles/${item.articleSlug}`}
+                                style={{ marginLeft: 5, color: C.accent, fontSize: 11, textDecoration: 'none', borderBottom: `1px solid ${C.accent}44`, whiteSpace: 'nowrap' }}
+                              >
+                                Learn more →
+                              </a>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          )
+        })()}
 
         {/* ── AC-8: Action Buttons ────────────────────────────────────────── */}
         <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14 }}>
