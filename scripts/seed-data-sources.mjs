@@ -34,7 +34,7 @@ const client = createClient({ projectId, dataset, token, apiVersion: '2026-03-06
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** ISO datetime for "last verified" — today's run date. */
-const VERIFIED = '2026-03-25T00:00:00Z'
+const VERIFIED = '2026-03-28T00:00:00Z'
 
 function record(key, name, url, effectiveDate, category, appliesTo, notes) {
   return {
@@ -79,7 +79,7 @@ const SOURCES = [
   record(
     'ircc-proof-of-funds-sp',
     'IRCC Study Permit Financial Support Requirements',
-    'https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/study-permit-requirements.html',
+    'https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/financial-support.html',
     '2025-09-01',
     'regulatory',
     ['sp_living_1', 'sp_living_2', 'sp_living_3', 'sp_living_4', 'sp_living_5', 'sp_living_6', 'sp_living_7', 'sp_additional_member', 'sp_transport'],
@@ -110,8 +110,8 @@ const SOURCES = [
 
   record(
     'cmhc-toronto-rent',
-    'CMHC Rental Market Report — Toronto',
-    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/rental-market/rental-market-reports/rental-market-report-major-centres',
+    'CMHC Rental Market Report - Toronto',
+    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/rental-market-reports-major-centres',
     '2025-10-01',
     'authority',
     ['toronto_rent_studio', 'toronto_rent_1br', 'toronto_rent_2br'],
@@ -120,8 +120,8 @@ const SOURCES = [
 
   record(
     'cmhc-vancouver-rent',
-    'CMHC Rental Market Report — Vancouver',
-    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/rental-market/rental-market-reports/rental-market-report-major-centres',
+    'CMHC Rental Market Report - Vancouver',
+    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/rental-market-reports-major-centres',
     '2025-10-01',
     'authority',
     ['vancouver_rent_studio', 'vancouver_rent_1br', 'vancouver_rent_2br'],
@@ -130,8 +130,8 @@ const SOURCES = [
 
   record(
     'cmhc-calgary-rent',
-    'CMHC Rental Market Report — Calgary',
-    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/rental-market/rental-market-reports/rental-market-report-major-centres',
+    'CMHC Rental Market Report - Calgary',
+    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/rental-market-reports-major-centres',
     '2025-10-01',
     'authority',
     ['calgary_rent_studio', 'calgary_rent_1br', 'calgary_rent_2br'],
@@ -140,18 +140,18 @@ const SOURCES = [
 
   record(
     'cmhc-montreal-rent',
-    'CMHC Rental Market Report — Montréal',
-    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/rental-market/rental-market-reports/rental-market-report-major-centres',
+    'CMHC Rental Market Report - Montreal',
+    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/rental-market-reports-major-centres',
     '2025-10-01',
     'authority',
     ['montreal_rent_studio', 'montreal_rent_1br', 'montreal_rent_2br'],
-    'CMHC Rental Market Report (Montréal CMA). Purpose-built rental universe. Verify each October.',
+    'CMHC Rental Market Report (Montreal CMA). Purpose-built rental universe. Verify each October.',
   ),
 
   record(
     'cmhc-ottawa-rent',
-    'CMHC Rental Market Report — Ottawa',
-    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/rental-market/rental-market-reports/rental-market-report-major-centres',
+    'CMHC Rental Market Report - Ottawa',
+    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/rental-market-reports-major-centres',
     '2025-10-01',
     'authority',
     ['ottawa_rent_studio', 'ottawa_rent_1br', 'ottawa_rent_2br'],
@@ -160,8 +160,8 @@ const SOURCES = [
 
   record(
     'cmhc-halifax-rent',
-    'CMHC Rental Market Report — Halifax',
-    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/rental-market/rental-market-reports/rental-market-report-major-centres',
+    'CMHC Rental Market Report - Halifax',
+    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/rental-market-reports-major-centres',
     '2025-10-01',
     'authority',
     ['halifax_rent_studio', 'halifax_rent_1br', 'halifax_rent_2br'],
@@ -170,8 +170,8 @@ const SOURCES = [
 
   record(
     'cmhc-winnipeg-rent',
-    'CMHC Rental Market Report — Winnipeg',
-    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-research/rental-market/rental-market-reports/rental-market-report-major-centres',
+    'CMHC Rental Market Report - Winnipeg',
+    'https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/rental-market-reports-major-centres',
     '2025-10-01',
     'authority',
     ['winnipeg_rent_studio', 'winnipeg_rent_1br', 'winnipeg_rent_2br'],
@@ -182,52 +182,52 @@ const SOURCES = [
 
   record(
     'transit-toronto',
-    'TTC Monthly Pass — Toronto',
-    'https://www.ttc.ca/fares-and-passes/prices',
+    'TTC Fares and Passes - Toronto',
+    'https://www.ttc.ca/Fares-and-passes',
     '2025-01-01',
     'authority',
     ['toronto_transit_monthly'],
-    'Adult monthly Metropass (TTC). $156/month as of January 2025. Verify at ttc.ca/fares-and-passes/prices after each TTC fare update.',
+    'Adult TTC monthly pass on PRESTO: $156.00. Verify on the TTC fares and passes page after each fare update.',
   ),
 
   record(
     'transit-vancouver',
-    'TransLink Monthly Pass — Vancouver',
-    'https://www.translink.ca/transit-fares/fare-pricing/monthly-passes',
+    'TransLink Monthly Pass - Vancouver',
+    'https://www.translink.ca/monthlypass',
     '2025-01-01',
     'authority',
     ['vancouver_transit_monthly'],
-    'Zone 1 adult monthly pass (TransLink). $115/month. Student U-Pass rates differ significantly — use only for non-student budgets. Verify at translink.ca.',
+    'Adult 1-Zone monthly pass (Compass Card): $111.60. Student U-Pass rates differ significantly; use only for non-student budgets. Verify on the TransLink monthly pass page.',
   ),
 
   record(
     'transit-calgary',
-    'Calgary Transit Monthly Pass',
-    'https://www.calgarytransit.com/fares-passes/monthly-passes',
-    '2025-01-01',
+    'Calgary Transit Fares and Passes',
+    'https://www.calgarytransit.com/fares---passes.html',
+    '2026-01-01',
     'authority',
     ['calgary_transit_monthly'],
-    'Adult monthly pass (Calgary Transit). $112/month. Verify at calgarytransit.com.',
+    'Adult monthly pass: $126.00 on the Calgary Transit 2026 fares page. Verify after each fare update.',
   ),
 
   record(
     'transit-montreal',
-    'STM Monthly Pass — Montréal',
-    'https://www.stm.info/en/info/fares/monthly-passes',
+    'ARTM Transit Fares - Montreal',
+    'https://www.artm.quebec/en/fares/',
     '2025-01-01',
     'authority',
     ['montreal_transit_monthly'],
-    'Adult regular monthly pass (STM). $100/month. Verify at stm.info.',
+    'Use the ARTM all-modes fares page for Montreal transit pricing. Verify the current Zone A monthly fare before each major fare update.',
   ),
 
   record(
     'transit-ottawa',
-    'OC Transpo Monthly Pass — Ottawa',
-    'https://www.octranspo.com/en/fares/fare-tables/',
-    '2025-01-01',
+    'OC Transpo Fares - Ottawa',
+    'https://www.octranspo.com/en/fares/costs/',
+    '2025-12-18',
     'authority',
     ['ottawa_transit_monthly'],
-    'Adult regular monthly pass (OC Transpo). $125/month. Verify at octranspo.com.',
+    'Adult monthly pass: $138.50. Verify on the OC Transpo fares page after each fare update.',
   ),
 
   record(
@@ -237,17 +237,17 @@ const SOURCES = [
     '2025-01-01',
     'authority',
     ['halifax_transit_monthly'],
-    'Adult monthly pass (Halifax Transit). $82.50/month. Verify at halifax.ca/transportation/halifax-transit.',
+    'Adult monthly pass: $90.00. Verify on the Halifax Transit fares page after each fare update.',
   ),
 
   record(
     'transit-winnipeg',
-    'Winnipeg Transit Monthly Pass',
-    'https://www.winnipegtransit.com/en/fares-and-passes/',
+    'Winnipeg Transit Fares',
+    'https://info.winnipegtransit.com/en/fares/transit-fares',
     '2025-01-01',
     'authority',
     ['winnipeg_transit_monthly'],
-    'Adult monthly pass (Winnipeg Transit). $110/month. Verify at winnipegtransit.com.',
+    'Adult monthly pass: $119.35. Verify on the Winnipeg Transit fares page after each fare update.',
   ),
 
   // ── Estimate (1) ─────────────────────────────────────────────────────────────

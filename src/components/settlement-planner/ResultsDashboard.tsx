@@ -47,6 +47,7 @@ import { SourceBadge } from './SourceBadge'
 import { DataFreshnessBar } from './DataFreshnessBar'
 import { fetchDataSources } from '@/lib/settlement-engine/sources'
 import type { DataSource } from '@/lib/settlement-engine/types'
+import { CURRENCY_SYMBOLS, type SupportedCurrency } from '@/lib/settlement-engine/currency'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -330,6 +331,7 @@ export function ResultsDashboard({ consultant }: Props) {
 
   const [isMobile,             setIsMobile]             = useState(false)
   const [prepareOpen,          setPrepareOpen]          = useState(false)
+  const [minLoadDone,          setMinLoadDone]          = useState(false)
   const [baseline,             setBaseline]             = useState<CityBaseline | null>(null)
   const [baselineError,        setBaselineError]        = useState(false)
   const [openExplainer,        setOpenExplainer]        = useState<string | null>(null)
@@ -339,6 +341,12 @@ export function ResultsDashboard({ consultant }: Props) {
   const [sendPackage,          setSendPackage]          = useState<MapleReportPackage | null>(null)
   const [dataSources,          setDataSources]          = useState<Map<string, DataSource>>(new Map())
   const [checklistOpen,        setChecklistOpen]        = useState(false)
+
+  // ── Minimum loading screen duration (3 s) ───────────────────────────────────
+  useEffect(() => {
+    const t = setTimeout(() => setMinLoadDone(true), 3000)
+    return () => clearTimeout(t)
+  }, [])
 
   // ── Responsive ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -380,6 +388,7 @@ export function ResultsDashboard({ consultant }: Props) {
           scholarshipAmount: answers.studyPermit.scholarshipAmount,
           biometricsDone:    bioDone,
           feesPaid,
+          isSDS:             answers.studyPermit.isSDS ?? false,
         }
       : undefined
 
@@ -400,8 +409,18 @@ export function ResultsDashboard({ consultant }: Props) {
       furnishingLevel:       mapFurnishing(answers.furnishing),
       household:             { adults, children: answers.children ?? 0 },
       needsChildcare:        answers.childcare ?? false,
-      liquidSavings:         parseAmount(answers.savings),
+      liquidSavings:         Math.round(parseAmount(answers.savings) * (answers.exchangeRate ?? 1.0)),
+      ...(answers.inputCurrency && answers.inputCurrency !== 'CAD' ? {
+        inputCurrency: answers.inputCurrency,
+        exchangeRate:  answers.exchangeRate ?? 1.0,
+      } : {}),
       monthlyObligations:    parseAmount(answers.obligations),
+      fundsComposition: answers.fundsComposition
+        ? {
+            borrowed: parseAmount(answers.fundsComposition.borrowed),
+            gifted:   parseAmount(answers.fundsComposition.gifted),
+          }
+        : undefined,
       plansCar:              answers.car ?? false,
       customMonthlyExpenses: customMonthly,
       jobStatus:             mapJobStatus(answers.jobStatus),
@@ -551,19 +570,96 @@ export function ResultsDashboard({ consultant }: Props) {
   }
 
   // ── Loading / error guard ────────────────────────────────────────────────────
-  if (!baseline || !engineInput || !engineOutput) {
+  if (!minLoadDone || !baseline || !engineInput || !engineOutput) {
+    const clientName  = consultant?.displayName ?? null
+    const cityLabel   = answers.city
+      ? answers.city.charAt(0).toUpperCase() + answers.city.slice(1)
+      : null
+    const subLine = clientName && cityLabel
+      ? `Analyzing data for ${clientName} · ${cityLabel}`
+      : clientName
+        ? `Analyzing data for ${clientName}`
+        : cityLabel
+          ? `Analyzing data for ${cityLabel}`
+          : 'Analyzing your data…'
+
+    if (baselineError) {
+      return (
+        <div style={{
+          minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: C.forest, fontFamily: FONT, fontSize: 15, color: 'rgba(255,255,255,0.7)',
+        }}>
+          Unable to load city data. Please refresh.
+        </div>
+      )
+    }
+
     return (
-      <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: C.bg, fontFamily: FONT, fontSize: 15, color: C.gray,
-      }}>
-        {baselineError ? 'Unable to load city data. Please refresh.' : 'Preparing your plan…'}
-      </div>
+      <>
+        <style>{`
+          @keyframes mi-pulse {
+            0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,255,0.18); }
+            50%  { transform: scale(1.06); box-shadow: 0 0 0 14px rgba(255,255,255,0); }
+            100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+          }
+          @keyframes mi-fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+        <div style={{
+          minHeight: '100vh', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: C.forest, fontFamily: FONT,
+        }}>
+          {/* Animated icon */}
+          <div style={{
+            width: 80, height: 80, borderRadius: 22,
+            background: 'rgba(255,255,255,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 28,
+            animation: 'mi-pulse 2s ease-in-out infinite',
+          }}>
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 2L13.8 8.2L20 9L13.8 9.8L12 16L10.2 9.8L4 9L10.2 8.2L12 2Z"
+                fill="white" opacity="0.95"/>
+              <path d="M19 14L19.9 16.9L22 17.5L19.9 18.1L19 21L18.1 18.1L16 17.5L18.1 16.9L19 14Z"
+                fill="white" opacity="0.6"/>
+              <path d="M5 3L5.7 5.3L8 6L5.7 6.7L5 9L4.3 6.7L2 6L4.3 5.3L5 3Z"
+                fill="white" opacity="0.45"/>
+            </svg>
+          </div>
+
+          {/* Text */}
+          <div style={{ animation: 'mi-fade-in 0.6s ease both', textAlign: 'center' }}>
+            <div style={{
+              fontFamily: SERIF, fontSize: 22, fontWeight: 700,
+              color: C.white, marginBottom: 10, letterSpacing: '-0.01em',
+            }}>
+              Generating Settlement Plan…
+            </div>
+            <div style={{
+              fontSize: 13, color: 'rgba(255,255,255,0.55)', fontFamily: FONT,
+            }}>
+              {subLine}
+            </div>
+          </div>
+        </div>
+      </>
     )
   }
 
   // ── Derived values ───────────────────────────────────────────────────────────
   const savings       = engineInput.liquidSavings
+
+  // Original-currency display (US-22.1 AC-7)
+  const inputCurrency    = answers.inputCurrency as SupportedCurrency | undefined
+  const hasNonCAD        = !!(inputCurrency && inputCurrency !== 'CAD' && answers.exchangeRate)
+  const savingsOriginalAmt = hasNonCAD ? parseAmount(answers.savings) : null
+  const origSymbol         = hasNonCAD ? (CURRENCY_SYMBOLS[inputCurrency!] ?? inputCurrency) : null
+  const savingsOriginalStr = savingsOriginalAmt !== null
+    ? `${origSymbol}${savingsOriginalAmt.toLocaleString('en-CA', { maximumFractionDigits: 0 })}`
+    : null
   const gapPct        = Math.min(100, Math.round((savings / engineOutput.safeSavingsTarget) * 100))
   const runwayLabel   = `${engineOutput.runwayMonths} month${engineOutput.runwayMonths !== 1 ? 's' : ''}`
   const capacity      = parseAmount(answers.savingsCapacity)
@@ -904,7 +1000,12 @@ export function ResultsDashboard({ consultant }: Props) {
             }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.gray }}>
-            <span>Your savings: {fmt(savings)}</span>
+            <span>
+              Your savings: {fmt(savings)}
+              {savingsOriginalStr && (
+                <span style={{ color: C.textLight, marginLeft: 4 }}>({savingsOriginalStr})</span>
+              )}
+            </span>
             <span>Target: {fmt(engineOutput.safeSavingsTarget)}</span>
           </div>
           {engineOutput.savingsGap > 0 && monthsToClose && (
@@ -946,22 +1047,81 @@ export function ResultsDashboard({ consultant }: Props) {
             return it.label
           }
 
+          // ── Timing buckets for upfront items (US-20.4) ────────────────
+          const TIMING_GROUPS: Array<{
+            timing: string
+            label: string
+            headerColor: string
+            tipText?: string
+          }> = [
+            { timing: 'submission',        label: 'Due at Application Submission', headerColor: C.forest },
+            { timing: 'pre-landing',       label: 'Due Before Landing',             headerColor: C.gold,
+              tipText: 'The RPRF can be paid any time before landing. Paying early reduces last-minute pressure on savings.' },
+            { timing: 'pre-arrival-setup', label: 'Pre-Arrival Setup Costs',        headerColor: C.gold },
+            { timing: 'settlement',        label: 'Settlement Setup Costs',          headerColor: C.blue },
+          ]
+
+          const upfrontByTiming = TIMING_GROUPS
+            .map(g => ({
+              ...g,
+              items: engineOutput.upfrontBreakdown.filter(it => (it.timing ?? 'settlement') === g.timing && it.cad > 0),
+            }))
+            .filter(g => g.items.length > 0)
+
+          const hasTimingData = engineOutput.upfrontBreakdown.some(it => it.timing)
+
           return (
             <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
               <h2 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: '0 0 14px' }}>Cost Breakdown</h2>
-              {[
-                { label: 'Upfront Costs', items: engineOutput.upfrontBreakdown, total: engineOutput.upfront    },
-                { label: 'Monthly Costs', items: engineOutput.monthlyBreakdown,  total: engineOutput.monthlyMin },
-              ].map(section => {
-                const sectionSourceKeys = section.items.map(it => it.sourceKey).filter((k): k is string => Boolean(k))
-                return (
-                  <div key={section.label} style={{ marginBottom: 18 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>
-                      {section.label}
+
+              {/* ── Upfront costs split by timing ─────────────────────────── */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>
+                  Upfront Costs
+                </div>
+                {hasTimingData ? (
+                  /* Grouped by timing bucket */
+                  <>
+                    {upfrontByTiming.map(group => {
+                      const groupTotal = group.items.reduce((s, it) => s + it.cad, 0)
+                      return (
+                        <div key={group.timing} style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', border: `1px solid ${C.border}` }}>
+                          {/* Section header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', background: group.headerColor }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{group.label}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{fmt(groupTotal)}</span>
+                          </div>
+                          {group.items.map((it, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 14px', borderBottom: i < group.items.length - 1 ? `1px solid ${C.lightGray}` : 'none', background: C.white }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
+                                <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
+                                {it.sourceKey
+                                  ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} fallbackSource={it.source} />
+                                  : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
+                                }
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: C.forest, whiteSpace: 'nowrap' }}>{fmt(it.cad)}</span>
+                            </div>
+                          ))}
+                          {group.tipText && (
+                            <div style={{ padding: '7px 14px', background: '#FFFBEB' }}>
+                              <span style={{ fontSize: 11, color: C.gold, fontStyle: 'italic' }}>💡 {group.tipText}</span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', borderTop: `2px solid ${C.border}`, marginTop: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.forest }}>Total Upfront</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(engineOutput.upfront)}</span>
                     </div>
-                    <DataFreshnessBar sources={dataSources} sourceKeys={sectionSourceKeys} />
-                    {section.items.map((it, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < section.items.length - 1 ? `1px solid ${C.lightGray}` : 'none' }}>
+                  </>
+                ) : (
+                  /* Fallback: flat list (no timing data) */
+                  <>
+                    <DataFreshnessBar sources={dataSources} sourceKeys={engineOutput.upfrontBreakdown.map(it => it.sourceKey).filter((k): k is string => Boolean(k))} />
+                    {engineOutput.upfrontBreakdown.map((it, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < engineOutput.upfrontBreakdown.length - 1 ? `1px solid ${C.lightGray}` : 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
                           <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
                           {it.sourceKey
@@ -974,11 +1134,41 @@ export function ResultsDashboard({ consultant }: Props) {
                     ))}
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', borderTop: `2px solid ${C.border}`, marginTop: 4 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: C.forest }}>Total</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(section.total)}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(engineOutput.upfront)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* ── Monthly costs (unchanged) ─────────────────────────────── */}
+              {(() => {
+                const monthlySourceKeys = engineOutput.monthlyBreakdown.map(it => it.sourceKey).filter((k): k is string => Boolean(k))
+                return (
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>
+                      Monthly Costs
+                    </div>
+                    <DataFreshnessBar sources={dataSources} sourceKeys={monthlySourceKeys} />
+                    {engineOutput.monthlyBreakdown.map((it, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < engineOutput.monthlyBreakdown.length - 1 ? `1px solid ${C.lightGray}` : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
+                          <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
+                          {it.sourceKey
+                            ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} fallbackSource={it.source} />
+                            : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
+                          }
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: C.forest, whiteSpace: 'nowrap' }}>{fmt(it.cad)}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', borderTop: `2px solid ${C.border}`, marginTop: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.forest }}>Total</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(engineOutput.monthlyMin)}</span>
                     </div>
                   </div>
                 )
-              })}
+              })()}
+
               {isStudyPermit && (
                 <p style={{ fontSize: 11, color: C.textLight, margin: '0', fontStyle: 'italic' }}>
                   * IRCC proof-of-funds calculation includes a round-trip transport estimate. The upfront cost above reflects your one-way flight only.
@@ -1018,34 +1208,43 @@ export function ResultsDashboard({ consultant }: Props) {
               <div style={{ background: C.white, borderRadius: 10, border: `1px solid ${C.border}`, padding: '14px 16px', fontSize: 13, color: C.gray, lineHeight: 1.5 }}>
                 Your plan looks solid — no immediate actions required.
               </div>
-            ) : topActions.map((action, i) => (
-              <div key={action.id} style={{ background: C.white, borderRadius: 10, border: `1px solid ${C.border}`, padding: '14px 16px', marginBottom: 8, display: 'flex', gap: 12 }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.accent, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0, fontFamily: SERIF }}>
-                  {i + 1}
+            ) : topActions.map((action, i) => {
+              const isSDS = answers.studyPermit?.isSDS ?? false
+              const sdsGicLink = isSDS && action.id === 'ircc-gic'
+                ? 'https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/student-direct-stream.html'
+                : null
+              return (
+                <div key={action.id} style={{ background: C.white, borderRadius: 10, border: `1px solid ${C.border}`, padding: '14px 16px', marginBottom: 8, display: 'flex', gap: 12 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.accent, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0, fontFamily: SERIF }}>
+                    {i + 1}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.forest, marginBottom: 2 }}>{action.title}</div>
+                    <p style={{ fontSize: 12, color: C.text, margin: '0 0 6px', lineHeight: 1.5 }}>{action.description}</p>
+                    {action.impactCAD !== 0 && (
+                      <div style={{ fontSize: 11, fontWeight: 600, color: action.impactCAD > 0 ? C.accent : C.red }}>
+                        {action.impactCAD > 0
+                          ? `Potential savings: ${fmt(action.impactCAD)}`
+                          : `Estimated cost: ${fmt(Math.abs(action.impactCAD))}`}
+                      </div>
+                    )}
+                    {sdsGicLink ? (
+                      <a href={sdsGicLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                        IRCC SDS page <ArrowRight />
+                      </a>
+                    ) : action.articleSlug ? (
+                      <a href={`/articles/${action.articleSlug}`} style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                        Learn more <ArrowRight />
+                      </a>
+                    ) : action.link ? (
+                      <a href={action.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                        Learn more <ArrowRight />
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.forest, marginBottom: 2 }}>{action.title}</div>
-                  <p style={{ fontSize: 12, color: C.text, margin: '0 0 6px', lineHeight: 1.5 }}>{action.description}</p>
-                  {action.impactCAD !== 0 && (
-                    <div style={{ fontSize: 11, fontWeight: 600, color: action.impactCAD > 0 ? C.accent : C.red }}>
-                      {action.impactCAD > 0
-                        ? `Potential savings: ${fmt(action.impactCAD)}`
-                        : `Estimated cost: ${fmt(Math.abs(action.impactCAD))}`}
-                    </div>
-                  )}
-                  {action.articleSlug && (
-                    <a href={`/articles/${action.articleSlug}`} style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-                      Learn more <ArrowRight />
-                    </a>
-                  )}
-                  {action.link && !action.articleSlug && (
-                    <a href={action.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-                      Learn more <ArrowRight />
-                    </a>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 

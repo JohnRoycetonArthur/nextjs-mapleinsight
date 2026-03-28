@@ -1,0 +1,425 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Advisory Engine — Fixture A: EE Toronto $18K no job full advisory output matches snapshot 1`] = `
+{
+  "meetingGuide": {
+    "crossReferrals": [
+      {
+        "link": "/calculators/newcomer-budget",
+        "reason": "Build a month-by-month cash flow plan for the first 6 months after arrival",
+        "tool": "Newcomer Budget Calculator",
+      },
+      {
+        "link": "/calculators/tfsa-vs-rrsp",
+        "reason": "Plan first-year savings strategy once income is established in Canada",
+        "tool": "TFSA vs RRSP Calculator",
+      },
+      {
+        "link": "/tools/rrsp-refund",
+        "reason": "Model take-home pay scenarios at different Canadian salary levels",
+        "tool": "Income Tax Estimator",
+      },
+    ],
+    "questions": [
+      "Do you have any family or friends in Toronto who could provide temporary housing for the first 2–4 weeks? This could save $700–$1,400 in short-term accommodation costs.",
+      "How flexible is your arrival timeline? If you can delay by 3–6 months, the savings gap closes significantly even at a modest $500/month savings rate.",
+      "Are you open to starting in a smaller city for 6–12 months to build Canadian experience before moving to Toronto? The cost-of-living difference is substantial and could eliminate your savings gap.",
+      "Do you have professional contacts or LinkedIn connections in Canada who could assist with your job search? Pre-arrival networking significantly improves employment outcomes and reduces time-to-income.",
+    ],
+    "redFlags": [
+      {
+        "detail": "You plan to arrive in Toronto — one of Canada's most expensive cities — without secured income. Your 6-month financial runway may not be sufficient if employment takes longer than expected.",
+        "flag": "Income Uncertainty in High-Cost Market",
+      },
+      {
+        "detail": "Toronto is one of Canada's most expensive cities. Without secured income, the 6-month runway burns through $15,702 in living expenses. The client needs a clear income strategy before or immediately upon landing.",
+        "flag": "No income source in a high-cost city",
+      },
+    ],
+    "talkingPoints": [
+      "Address the $14,460 gap: lead with Strategies 1 & 2 as a package (combined impact: ~$21,612).",
+      "Confirm proof-of-funds compliance is met. Remind client that funds must remain accessible and documented through landing — do not use these funds before the COPR or permit is stamped.",
+      "Discuss the pre-arrival job search — the highest-impact action (see Scenario 4: Secure role at $72,000/year).",
+      "Present Scenario 1: Destination: Winnipeg as a Plan B — see Scenario Analysis for gap-reduction detail.",
+      "Run the Newcomer Budget Calculator together to build a month-by-month cash flow plan for the first 6 months — this gives the client a concrete financial roadmap to take away.",
+    ],
+  },
+  "programNotes": [
+    {
+      "color": "#1B7A4A",
+      "content": "IRCC requires $14,690 for this pathway. Client's $18,000 exceeds this by $3,310. After estimated application fees (~$2,583), the effective buffer drops to ~$727. Funds must remain accessible and documented through landing.",
+      "severity": "positive",
+      "source": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html",
+      "title": "Proof of Funds: Compliant",
+    },
+    {
+      "color": "#2563EB",
+      "content": "The Right of Permanent Residence Fee ($515 per adult) can be paid at any time before landing. Recommend paying early to avoid last-minute pressure on savings and to signal readiness to IRCC.",
+      "severity": "info",
+      "source": "https://ircc.canada.ca/english/information/fees/fees.asp",
+      "title": "RPRF Payment Timing",
+    },
+    {
+      "color": "#2563EB",
+      "content": "After receiving the Confirmation of Permanent Residence (COPR), the client typically has up to 12 months to complete landing. If the savings gap is a concern, they can use this window to build additional reserves — aligns with the delayed landing scenario above.",
+      "severity": "info",
+      "title": "COPR Landing Deadline Flexibility",
+    },
+    {
+      "color": "#1B7A4A",
+      "content": "Ontario: No waiting period — immediate OHIP coverage upon establishing residency. No private insurance bridge is required. This is a cost advantage vs. BC or Saskatchewan where a wait period applies.",
+      "severity": "positive",
+      "source": "https://www.ontario.ca/page/apply-ohip-and-get-health-card",
+      "title": "Ontario OHIP: No Waiting Period",
+    },
+  ],
+  "readiness": {
+    "color": "#E06B00",
+    "components": [
+      {
+        "label": "Savings Coverage",
+        "max": 10,
+        "score": 5.5,
+        "weight": "30%",
+      },
+      {
+        "label": "Income Stability",
+        "max": 10,
+        "score": 2,
+        "weight": "25%",
+      },
+      {
+        "label": "Housing Affordability",
+        "max": 10,
+        "score": 3,
+        "weight": "20%",
+      },
+      {
+        "label": "Runway Adequacy",
+        "max": 10,
+        "score": 6.5,
+        "weight": "15%",
+      },
+      {
+        "label": "Risk Profile",
+        "max": 10,
+        "score": 8,
+        "weight": "10%",
+      },
+    ],
+    "narrative": "This client's financial position requires significant improvement before safely proceeding. Their savings of $18,000 cover 55% of the recommended $32,460 safe target. IRCC proof-of-funds requirement met — see Program-Specific Notes. The absence of secured income in Toronto — one of Canada's highest-cost cities — creates significant runway risk.",
+    "score": 4.5,
+    "tier": "Needs Work",
+  },
+  "scenarios": [
+    {
+      "change": "Switch from Toronto to Winnipeg",
+      "delta": -4524,
+      "deltaLabel": "$4,524 lower target",
+      "details": "Winnipeg 1BR rent is $1,232/mo (vs $1,761 in Toronto) — a $529/mo savings. Transit is $119/mo. Total monthly cost drops significantly.",
+      "icon": "🔄",
+      "id": "city_swap",
+      "name": "Destination: Winnipeg",
+      "newGap": 9936,
+      "newTarget": 27936,
+      "positive": true,
+    },
+    {
+      "change": "Downgrade to a studio",
+      "delta": -2112,
+      "deltaLabel": "$2,112 lower target",
+      "details": "Switching to a studio saves ~$264/mo on rent and ~$528 on housing deposit. Over the 6-month runway, the safe target falls by $2,112.",
+      "icon": "🏢",
+      "id": "housing_down",
+      "name": "Housing: studio apartment",
+      "newGap": 12348,
+      "newTarget": 30348,
+      "positive": true,
+    },
+    {
+      "change": "Save for 3 more months before arriving",
+      "delta": -1500,
+      "deltaLabel": "Gap closes by $1,500",
+      "details": "At an assumed savings rate of $500/month, a 3-month delay adds $1,500 to liquid savings. Gap reduces from $14,460 to $12,960. Full gap closure requires ~29 months at this rate.",
+      "icon": "⏳",
+      "id": "delay_landing",
+      "name": "Delay landing by 3 months",
+      "newGap": 12960,
+      "newTarget": 32460,
+      "positive": true,
+    },
+    {
+      "change": "Land a job at $72,000 median salary",
+      "delta": -18615,
+      "deltaLabel": "Gap eliminated",
+      "details": "With a secured job at $72,000 gross (~$3,900/mo net), the runway assumption drops to 2 months. Safe target falls to $13,845 (upfront + 2 months buffer). Current savings already exceed this reduced target.",
+      "icon": "💼",
+      "id": "income_scenario",
+      "name": "Secure role at $72,000/year",
+      "newGap": 0,
+      "newTarget": 13845,
+      "positive": true,
+    },
+  ],
+  "strategies": [
+    {
+      "difficulty": "Moderate",
+      "impact": -12564,
+      "rationale": "Securing employment before landing is the highest-impact financial action. See Scenario 4 (Secure role at $72,000/year) for the full target reduction. Even a conditional offer significantly improves readiness.",
+      "timeline": "Start now",
+      "title": "Accelerate job search — apply pre-arrival",
+    },
+    {
+      "difficulty": "Moderate",
+      "impact": -9048,
+      "rationale": "See Scenario 1 (Destination: Winnipeg) for the gap impact. Land in Winnipeg for 6–12 months to build Canadian experience and credit history, then transfer to Toronto.",
+      "timeline": "Planning phase",
+      "title": "Consider a 'stepping stone' city strategy",
+    },
+    {
+      "difficulty": "Easy",
+      "impact": -6336,
+      "rationale": "Shared housing in Toronto averages ~$969/month vs $1,761 for a private unit. Over 6 months, this saves $4,752 on rent plus ~$1,584 on the reduced housing deposit.",
+      "timeline": "Immediate",
+      "title": "Start in shared housing for the first 6 months",
+    },
+    {
+      "difficulty": "Hard",
+      "impact": -4712,
+      "rationale": "If the client secures an employer willing to allow 1–2 months of remote work before relocation, they begin earning Canadian income while still benefiting from lower overseas living costs — effectively shrinking the savings gap.",
+      "timeline": "Job search phase",
+      "title": "Negotiate a remote start with a Canadian employer",
+    },
+    {
+      "difficulty": "Easy",
+      "impact": -400,
+      "rationale": "Organizations like Furniture Bank Toronto, Habitat for Humanity ReStores, and local newcomer settlement agencies provide free or low-cost furnishings. This can reduce setup costs from $500–$2,000 to near $0.",
+      "timeline": "Pre-arrival research",
+      "title": "Use settlement agency furniture banks",
+    },
+    {
+      "difficulty": "Easy",
+      "impact": 0,
+      "rationale": "Entering the pool sooner gives more lead time to save. If an ITA takes 6+ months, the client gains natural runway to close the savings gap at their current rate without delaying the immigration timeline.",
+      "timeline": "Now",
+      "title": "Enter the Express Entry pool immediately",
+    },
+  ],
+  "studyPermitAdvisory": undefined,
+}
+`;
+
+exports[`Advisory Engine — Fixture A: EE Toronto $18K no job word count — records baseline for deduplication comparison 1`] = `871`;
+
+exports[`Advisory Engine — Fixture B: Study Permit Vancouver $45K full advisory output matches snapshot 1`] = `
+{
+  "meetingGuide": {
+    "crossReferrals": [
+      {
+        "link": "/calculators/newcomer-budget",
+        "reason": "Build a month-by-month cash flow plan for the first 8 months after arrival",
+        "tool": "Newcomer Budget Calculator",
+      },
+      {
+        "link": "/calculators/tfsa-vs-rrsp",
+        "reason": "Plan first-year savings strategy once income is established in Canada",
+        "tool": "TFSA vs RRSP Calculator",
+      },
+      {
+        "link": "/tools/rrsp-refund",
+        "reason": "Model take-home pay scenarios at different Canadian salary levels",
+        "tool": "Income Tax Estimator",
+      },
+    ],
+    "questions": [
+      "Do you have any family or friends in Vancouver who could provide temporary housing for the first 2–4 weeks? This could save $700–$1,400 in short-term accommodation costs.",
+      "How flexible is your arrival timeline? If you can delay by 3–6 months, the savings gap closes significantly even at a modest $500/month savings rate.",
+      "Have you confirmed your institution and program are eligible for a Post-Graduation Work Permit (PGWP)? This dramatically affects your long-term immigration pathway.",
+    ],
+    "redFlags": [
+      {
+        "detail": "IRCC requires $52,895 in proof of funds for your study permit application (tuition + living expenses + $2,000 transport). You currently have $45,000, a shortfall of $7,895. Insufficient proof of funds is the #1 reason for study permit refusals.",
+        "flag": "Below IRCC Proof of Funds Minimum",
+      },
+      {
+        "detail": "You plan to arrive in Vancouver — one of Canada's most expensive cities — without secured income. Your 8-month financial runway may not be sufficient if employment takes longer than expected.",
+        "flag": "Income Uncertainty in High-Cost Market",
+      },
+    ],
+    "talkingPoints": [
+      "Client is financially ready. Focus the meeting on pre-arrival logistics: opening a Canadian bank account, rental application package, and temporary accommodation plan for the first 2–4 weeks.",
+      "Confirm proof-of-funds compliance is met. Remind client that funds must remain accessible and documented through landing — do not use these funds before the COPR or permit is stamped.",
+      "Walk through the IRCC proof-of-funds checklist and GIC documentation requirements. Confirm the Letter of Acceptance is from a Designated Learning Institution (DLI) and that the client understands the biometrics timeline.",
+      "Run the Newcomer Budget Calculator together to build a month-by-month cash flow plan for the first 8 months — this gives the client a concrete financial roadmap to take away.",
+    ],
+  },
+  "programNotes": [
+    {
+      "color": "#1B7A4A",
+      "content": "IRCC requirement: $42,000. Status: compliant ✓. Full details in Study Permit Advisory Block below.",
+      "severity": "positive",
+      "source": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/financial-support.html",
+      "title": "IRCC Proof of Funds: Compliant",
+    },
+    {
+      "color": "#2563EB",
+      "content": "Graduates of eligible Canadian institutions may qualify for a Post-Graduation Work Permit (PGWP) valid for up to 3 years. This is a common pathway to Canadian work experience and eventual permanent residency through CEC. Advise client to confirm their institution and program are PGWP-eligible.",
+      "severity": "info",
+      "source": "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/work/after-graduation.html",
+      "title": "Post-Graduation Work Permit (PGWP)",
+    },
+  ],
+  "readiness": {
+    "color": "#B8860B",
+    "components": [
+      {
+        "label": "Savings Coverage",
+        "max": 10,
+        "score": 10,
+        "weight": "30%",
+      },
+      {
+        "label": "Income Stability",
+        "max": 10,
+        "score": 4,
+        "weight": "25%",
+      },
+      {
+        "label": "Housing Affordability",
+        "max": 10,
+        "score": 3,
+        "weight": "20%",
+      },
+      {
+        "label": "Runway Adequacy",
+        "max": 10,
+        "score": 10,
+        "weight": "15%",
+      },
+      {
+        "label": "Risk Profile",
+        "max": 10,
+        "score": 3,
+        "weight": "10%",
+      },
+    ],
+    "narrative": "This client has moderate financial readiness. Their savings of $45,000 cover 100% of the recommended $45,000 safe target.",
+    "score": 6.4,
+    "tier": "Moderate",
+  },
+  "scenarios": [
+    {
+      "change": "Switch from Vancouver to Calgary",
+      "delta": -5600,
+      "deltaLabel": "$5,600 lower target",
+      "details": "Calgary 1BR rent is ~$1,660/mo (vs $2,350 in Vancouver) — a $690/mo savings. No provincial sales tax in Alberta (GST only at 5%).",
+      "icon": "🔄",
+      "id": "city_swap",
+      "name": "Destination: Calgary",
+      "newGap": 0,
+      "newTarget": 39400,
+      "positive": true,
+    },
+    {
+      "change": "Downgrade to a studio",
+      "delta": -3530,
+      "deltaLabel": "$3,530 lower target",
+      "details": "Switching to a studio saves ~$353/mo on rent and ~$706 on housing deposit. Over the 8-month runway, the safe target falls by $3,530.",
+      "icon": "🏢",
+      "id": "housing_down",
+      "name": "Housing: studio apartment",
+      "newGap": 0,
+      "newTarget": 41470,
+      "positive": true,
+    },
+    {
+      "change": "Save for 3 more months before arriving",
+      "delta": -1500,
+      "deltaLabel": "Gap closes by $1,500",
+      "details": "At an assumed savings rate of $500/month, a 3-month delay adds $1,500 to liquid savings. Gap reduces from $0 to $0. Full gap closure requires ~0 months at this rate.",
+      "icon": "⏳",
+      "id": "delay_landing",
+      "name": "Delay landing by 3 months",
+      "newGap": 0,
+      "newTarget": 45000,
+      "positive": true,
+    },
+    {
+      "change": "Land a job at $68,000 median salary",
+      "delta": -26665,
+      "deltaLabel": "Gap eliminated",
+      "details": "With a secured job at $68,000 gross (~$3,683/mo net), the runway assumption drops to 2 months. Safe target falls to $18,335 (upfront + 2 months buffer). Current savings already exceed this reduced target.",
+      "icon": "💼",
+      "id": "income_scenario",
+      "name": "Secure role at $68,000/year",
+      "newGap": 0,
+      "newTarget": 18335,
+      "positive": true,
+    },
+  ],
+  "strategies": [
+    {
+      "difficulty": "Moderate",
+      "impact": -12640,
+      "rationale": "Students in BC can work up to 24 hours per week off campus during regular academic sessions and full-time during scheduled breaks. On-campus work has no hourly limit. At $18.25/hr, 20 hrs/week generates ~$1,580/month — significantly extending financial runway. This income does not count toward IRCC proof of funds.",
+      "timeline": "After arrival",
+      "title": "Maximize off-campus part-time work (up to 24 hours/week)",
+    },
+    {
+      "difficulty": "Easy",
+      "impact": -10570,
+      "rationale": "Shared housing in Vancouver averages ~$1,293/month vs $2,350 for a private unit. Over 8 months, this saves $8,456 on rent plus ~$2,114 on the reduced housing deposit.",
+      "timeline": "Immediate",
+      "title": "Start in shared housing for the first 8 months",
+    },
+    {
+      "difficulty": "Easy",
+      "impact": -400,
+      "rationale": "Organizations like Furniture Bank Toronto, Habitat for Humanity ReStores, and local newcomer settlement agencies provide free or low-cost furnishings. This can reduce setup costs from $500–$2,000 to near $0.",
+      "timeline": "Pre-arrival research",
+      "title": "Use settlement agency furniture banks",
+    },
+  ],
+  "studyPermitAdvisory": {
+    "healthCoverage": {
+      "content": "BC provides MSP for international students after a 3-month waiting period. Bridge insurance is required during the gap — estimated cost $900. This should be included in upfront cost planning.",
+      "metric": "3-month wait",
+      "status": "at-risk",
+      "title": "Health Coverage Strategy",
+    },
+    "partTimeIncome": {
+      "content": "Students in BC may work up to 24 hours per week off campus during regular academic sessions, and full-time during scheduled breaks. On-campus work has no hourly limit. At $18.25/hr minimum wage, 20 hrs/week generates ~$1,580/month. This income does NOT count toward IRCC proof of funds. It is supplemental post-arrival cash flow only and depends on securing eligible employment.",
+      "metric": "~$1,580/month estimated",
+      "status": "info",
+      "title": "Part-Time Work Income Projection",
+    },
+    "proofOfFunds": {
+      "content": "Client meets the IRCC proof-of-funds requirement of $42,000 (tuition $28,000 + living $12,000 + transport $2,000). GIC status: planning to purchase. IRCC may verify funds at the port of entry.",
+      "metric": "$42,000 required",
+      "status": "compliant",
+      "title": "IRCC Proof of Funds Compliance",
+    },
+    "refusalRisk": {
+      "content": "1 refusal risk factor identified: (1) Biometrics not yet collected — required for most applicants. Each must be resolved before application submission.",
+      "status": "at-risk",
+      "title": "Key Risk: Study Permit Refusal",
+    },
+    "tuitionCosts": {
+      "content": "undergraduate program at $28,000/year. National benchmark: ~$41,746/year. Tuition is within typical range.",
+      "metric": "$28,000/year",
+      "status": "info",
+      "title": "Tuition & Program Costs",
+    },
+  },
+}
+`;
+
+exports[`Advisory Engine — Fixture B: Study Permit Vancouver $45K word count — records baseline for deduplication comparison 1`] = `825`;
+
+exports[`Deduplication — AC-3: Strategy cross-references EE: city-swap strategy does not restate scenario delta when claimed 1`] = `"See Scenario 1 (Destination: Winnipeg) for the gap impact. Land in Winnipeg for 6–12 months to build Canadian experience and credit history, then transfer to Toronto."`;
+
+exports[`Deduplication — AC-3: Strategy cross-references EE: job-search strategy does not restate the target-reduction dollar figure 1`] = `"Securing employment before landing is the highest-impact financial action. See Scenario 4 (Secure role at $72,000/year) for the full target reduction. Even a conditional offer significantly improves readiness."`;
+
+exports[`Deduplication — AC-4: Meeting guide cross-references EE: city-swap talking point references the scenario 1`] = `"Present Scenario 1: Destination: Winnipeg as a Plan B — see Scenario Analysis for gap-reduction detail."`;
+
+exports[`Deduplication — AC-4: Meeting guide cross-references EE: job-search talking point references the scenario 1`] = `"Discuss the pre-arrival job search — the highest-impact action (see Scenario 4: Secure role at $72,000/year)."`;

@@ -13,6 +13,7 @@ import { NextRequest, NextResponse }  from 'next/server'
 import { generatePdfBuffer }          from '@/lib/settlement-engine/pdf-generator'
 import type { MapleReportPackage }    from '@/lib/settlement-engine/export'
 
+export const runtime = 'nodejs'
 export const maxDuration = 30
 
 const MAX_BODY_BYTES = 500_000
@@ -51,7 +52,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const includeConsultantPages = mode === 'consultant' && pkg.consultantAdvisory != null
 
   // ── Generate PDF ────────────────────────────────────────────────────────
-  const pdfBuffer = await generatePdfBuffer(pkg, includeConsultantPages)
+  let pdfBuffer: Buffer
+  try {
+    pdfBuffer = await generatePdfBuffer(pkg, includeConsultantPages)
+  } catch (error) {
+    console.error(
+      `[pdf] Generation failed mode=${mode} consultant=${pkg.consultant?.slug ?? 'client'} ` +
+      `consultantPages=${includeConsultantPages} hasExecutablePath=${Boolean(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH)} ` +
+      `hasRemotePack=${Boolean(process.env.CHROMIUM_REMOTE_EXEC_PATH)}`,
+      error,
+    )
+    return NextResponse.json({ error: 'PDF generation failed' }, { status: 500 })
+  }
 
   // ── Build filename ──────────────────────────────────────────────────────
   const date     = new Date().toISOString().slice(0, 10).replace(/-/g, '')

@@ -624,6 +624,35 @@ export function generateProgramNotes(
     }
   }
 
+  // ── Funds Composition (US-20.2) ───────────────────────────────────────────
+  const borrowed = input.fundsComposition?.borrowed ?? 0
+  const gifted   = input.fundsComposition?.gifted   ?? 0
+  if (borrowed > 0 || gifted > 0) {
+    const parts: string[] = []
+    if (borrowed > 0) {
+      parts.push(
+        `${fmt(borrowed)} reported as borrowed. ` +
+        `IRCC requires Express Entry proof of funds to be legally accessible and not borrowed. ` +
+        `Borrowed amounts cannot be counted toward the settlement funds requirement. ` +
+        `Advise client to exclude borrowed funds from their proof-of-funds documentation.`
+      )
+    }
+    if (gifted > 0) {
+      parts.push(
+        `${fmt(gifted)} reported as gifted. ` +
+        `Gifted funds may be acceptable with a signed gift letter from the donor confirming the funds are not a loan. ` +
+        `Ensure the client obtains this letter before the application is submitted.`
+      )
+    }
+    notes.push({
+      title:    'Funds Composition',
+      severity: borrowed > 0 ? 'warning' : 'info',
+      color:    borrowed > 0 ? C.gold : C.blue,
+      content:  parts.join(' '),
+      source:   'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html',
+    })
+  }
+
   // ── Study Permit ──────────────────────────────────────────────────────────
   if (input.pathway === 'study-permit') {
     // Detailed advisory is in the separate StudyPermitAdvisory block;
@@ -641,7 +670,7 @@ export function generateProgramNotes(
           : irccCompliance.compliant
             ? `Client meets the IRCC study permit proof-of-funds requirement of ${fmt(irccCompliance.required)} (tuition ${fmt(irccCompliance.tuition)} + living ${fmt(irccCompliance.livingExpenses)} + transport ${fmt(irccCompliance.transport)}).`
             : `Client is ${fmt(irccCompliance.shortfall)} short of the IRCC proof-of-funds requirement of ${fmt(irccCompliance.required)}. Insufficient proof of funds is the leading cause of study permit refusals.`,
-        source: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/study-permit-requirements.html',
+        source: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/financial-support.html',
       })
     }
 
@@ -715,13 +744,17 @@ export function generateStudyPermitAdvisory(
   const prov       = input.province
 
   // ── 1. IRCC Proof of Funds Compliance ────────────────────────────────────
+  const sdsNote = sp.isSDS
+    ? ' Client is applying via the Student Direct Stream (SDS) — GIC is mandatory and processing target is ~20 days. Confirm eligibility: country of residence, IELTS 6.0+, unconditional letter of acceptance from a DLI, and up-to-date medical exam.'
+    : ''
+
   const proofOfFunds: StudyPermitAdvisorySubsection = {
     title:  'IRCC Proof of Funds Compliance',
     status: irccCompliance.compliant ? 'compliant' : irccCompliance.shortfall > 5_000 ? 'critical' : 'at-risk',
-    metric: `${fmt(irccCompliance.required)} required`,
+    metric: `${fmt(irccCompliance.required)} required${sp.isSDS ? ' · SDS' : ''}`,
     content: irccCompliance.compliant
-      ? `Client meets the IRCC proof-of-funds requirement of ${fmt(irccCompliance.required)} (tuition ${fmt(irccCompliance.tuition)} + living ${fmt(irccCompliance.livingExpenses)} + transport ${fmt(irccCompliance.transport)}). GIC status: ${sp.gicStatus === 'purchased' ? 'purchased ✓' : sp.gicStatus === 'planning' ? 'planning to purchase' : 'not purchasing — confirm alternative documentation is strong'}. IRCC may verify funds at the port of entry.`
-      : `Client is ${fmt(irccCompliance.shortfall)} short of the IRCC requirement of ${fmt(irccCompliance.required)}. This is the #1 reason for study permit refusals. Immediate action required: consider a GIC (${fmt(data.gicMinimum)} minimum from a designated bank) or documented scholarship/loan letters to bridge the gap.`,
+      ? `Client meets the IRCC proof-of-funds requirement of ${fmt(irccCompliance.required)} (tuition ${fmt(irccCompliance.tuition)} + living ${fmt(irccCompliance.livingExpenses)} + transport ${fmt(irccCompliance.transport)}). GIC status: ${sp.gicStatus === 'purchased' ? 'purchased ✓' : sp.gicStatus === 'planning' ? 'planning to purchase' : 'not purchasing — confirm alternative documentation is strong'}. IRCC may verify funds at the port of entry.${sdsNote}`
+      : `Client is ${fmt(irccCompliance.shortfall)} short of the IRCC requirement of ${fmt(irccCompliance.required)}. This is the #1 reason for study permit refusals. Immediate action required: consider a GIC (${fmt(data.gicMinimum)} minimum from a designated bank) or documented scholarship/loan letters to bridge the gap.${sdsNote}`,
   }
 
   // ── 2. Tuition & Program Costs ────────────────────────────────────────────
@@ -782,6 +815,7 @@ export function generateStudyPermitAdvisory(
   // ── 5. Key Risk: Study Permit Refusal ────────────────────────────────────
   const refusalFactors: string[] = []
   if (!irccCompliance.compliant)     refusalFactors.push('Insufficient proof of funds (primary refusal reason)')
+  if (sp.isSDS)                      refusalFactors.push('SDS applicant — GIC is mandatory; confirm all SDS eligibility criteria are met (country, IELTS 6.0+, DLI acceptance)')
   if (sp.gicStatus === 'not-purchasing') refusalFactors.push('No GIC — alternative proof of funds documentation must be strong')
   if (prov === 'QC')                 refusalFactors.push('Quebec requires CAQ approval before the federal study permit can be issued')
   if (tuition > benchmark * 1.5)    refusalFactors.push('Very high tuition relative to program benchmark may trigger officer scrutiny')
@@ -939,6 +973,85 @@ export function generateMeetingGuide(
   ]
 
   return { talkingPoints, questions, redFlags, crossReferrals }
+}
+
+// ─── Evidence Pack (US-20.3) ──────────────────────────────────────────────────
+
+export interface EvidencePackItem {
+  key:  string
+  text: string
+}
+
+export interface EvidencePackData {
+  /** null when proof of funds is not required for this pathway */
+  items:         EvidencePackItem[] | null
+  namingConvention: string[] | null
+  sourceLabel:   string
+  sourceUrl:     string
+}
+
+const EE_BANK_LETTER_ITEMS: EvidencePackItem[] = [
+  { key: 'holder-name',     text: "Account holder's full legal name (must match passport)" },
+  { key: 'account-numbers', text: 'Account number(s) for all accounts being used as proof' },
+  { key: 'open-dates',      text: 'Date each account was opened' },
+  { key: 'current-balance', text: 'Current balance in each account (as of letter date)' },
+  { key: 'avg-balance',     text: 'Average balance over the past 6 months' },
+  { key: 'outstanding-debts', text: 'Outstanding debts, loans, and credit card balances' },
+]
+
+const SP_EVIDENCE_ITEMS: EvidencePackItem[] = [
+  { key: 'bank-statements', text: 'Bank statements for the past 4 months (all accounts)' },
+  { key: 'gic-certificate', text: 'GIC certificate from a CIBC, Scotiabank, or other IRCC-approved institution' },
+  { key: 'scholarship',     text: 'Scholarship or award letters (if applicable)' },
+  { key: 'loan-approval',   text: 'Student loan approval letter (if applicable)' },
+  { key: 'tuition-receipt', text: 'Tuition payment receipt or letter of acceptance with fees' },
+  { key: 'housing-proof',   text: 'Proof of paid housing (e.g. homestay agreement, campus housing confirmation)' },
+]
+
+const EE_NAMING_CONVENTION: string[] = [
+  'LastName_FirstName_BankLetter_YYYY-MM-DD.pdf',
+  'LastName_FirstName_BankStatement_Month_YYYY.pdf',
+  'LastName_FirstName_GiftLetter_DonorName.pdf',
+]
+
+const SP_NAMING_CONVENTION: string[] = [
+  'LastName_FirstName_BankStatement_Month_YYYY.pdf',
+  'LastName_FirstName_GIC_Certificate.pdf',
+  'LastName_FirstName_ScholarshipLetter.pdf',
+]
+
+/**
+ * Returns pathway-specific proof-of-funds evidence pack data.
+ * Returns null items when proof of funds is not required (e.g. CEC, work-permit).
+ */
+export function generateEvidencePack(pathway: string): EvidencePackData {
+  // Express Entry FSW / FSTP — settlement funds required
+  if (pathway === 'express-entry-fsw' || pathway === 'express-entry-fstp') {
+    return {
+      items:            EE_BANK_LETTER_ITEMS,
+      namingConvention: EE_NAMING_CONVENTION,
+      sourceLabel:      'IRCC Proof of Funds Requirements — canada.ca',
+      sourceUrl:        'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html',
+    }
+  }
+
+  // Study Permit — different 6-item evidence pack
+  if (pathway === 'study-permit') {
+    return {
+      items:            SP_EVIDENCE_ITEMS,
+      namingConvention: SP_NAMING_CONVENTION,
+      sourceLabel:      'IRCC Study Permit Financial Requirements — canada.ca',
+      sourceUrl:        'https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/financial-support.html',
+    }
+  }
+
+  // All other pathways (CEC, work-permit, PNP, family-sponsorship, other)
+  return {
+    items:            null,
+    namingConvention: null,
+    sourceLabel:      '',
+    sourceUrl:        '',
+  }
 }
 
 // ─── Main: generateConsultantAdvisory ────────────────────────────────────────

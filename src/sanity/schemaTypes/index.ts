@@ -5,8 +5,9 @@ import {categoryType} from './categoryType'
 import {consultantType} from './consultantType'
 import {cityBaselineType} from './cityBaselineType'
 import {dataSourceType} from './dataSourceType'
+import {exchangeRateType} from './exchangeRateType'
 import {immigrationFeesType} from './immigrationFeesType'
 
 export const schema = {
-  types: [categoryType, authorType, articleType, calculatorType, consultantType, cityBaselineType, dataSourceType, immigrationFeesType],
+  types: [categoryType, authorType, articleType, calculatorType, consultantType, cityBaselineType, dataSourceType, exchangeRateType, immigrationFeesType],
 }

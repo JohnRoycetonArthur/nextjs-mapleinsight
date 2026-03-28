@@ -25,6 +25,7 @@ export interface StudyPermitInputs {
   scholarshipAmount: number  // reduces the savings gap
   biometricsDone:   boolean  // true if biometrics already collected
   feesPaid:         boolean  // true if permit + biometrics + medical already paid
+  isSDS?:           boolean  // true if applying via Student Direct Stream
 }
 
 // ─── Engine Input ─────────────────────────────────────────────────────────────
@@ -84,6 +85,12 @@ export interface EngineInput {
   plansCar: boolean         // monthly car cost adder if true
   customMonthlyExpenses: number // any other regular expenses
 
+  // Funds composition — borrowed/gifted portions of liquid savings (US-20.2)
+  fundsComposition?: {
+    borrowed: number     // amount of savings that is borrowed (may not qualify for IRCC EE proof-of-funds)
+    gifted:   number     // amount of savings that is gifted (requires gift letter documentation)
+  }
+
   // Job status (determines runway months)
   jobStatus: JobStatus
 
@@ -93,16 +100,27 @@ export interface EngineInput {
 
   // Study permit specific (only present when pathway === 'study-permit')
   studyPermit?: StudyPermitInputs
+
+  // Currency (optional — only when user selects non-CAD input currency, US-22.1)
+  inputCurrency?: string   // ISO 4217 code of the savings input (e.g. 'INR')
+  exchangeRate?: number    // 1 unit inputCurrency → CAD at time of entry
 }
 
 // ─── Breakdown ────────────────────────────────────────────────────────────────
 
+export type FeeTimingBucket =
+  | 'submission'       // Due at application submission (processing fee, biometrics, medical)
+  | 'pre-landing'      // Due before landing (RPRF for EE/PNP)
+  | 'pre-arrival-setup'// Pre-arrival setup (GIC, health bridge, tuition for study permit)
+  | 'settlement'       // Settlement setup (travel, housing deposit, furnishing)
+
 export interface BreakdownItem {
-  key: string        // machine-readable identifier
-  label: string      // human-readable label
-  cad: number        // amount in CAD
-  source: string     // data source (e.g. "ircc", "cmhc", "constant")
-  sourceKey?: string // catalog key linking to a dataSource document (e.g. "ircc-fee-schedule")
+  key: string             // machine-readable identifier
+  label: string           // human-readable label
+  cad: number             // amount in CAD
+  source: string          // data source (e.g. "ircc", "cmhc", "constant")
+  sourceKey?: string      // catalog key linking to a dataSource document (e.g. "ircc-fee-schedule")
+  timing?: FeeTimingBucket// cash-flow timing bucket (AC-4 — US-20.4)
 }
 
 // ─── Engine Output ────────────────────────────────────────────────────────────
