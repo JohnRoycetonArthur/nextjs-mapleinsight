@@ -322,6 +322,37 @@ const largeSavingsGap: RiskRule = {
   },
 }
 
+// ─── Rule 7: Borrowed Funds (Express Entry) ───────────────────────────────────
+
+const borrowedFunds: RiskRule = {
+  id: 'borrowedFunds',
+  evaluate({ input }): Risk | null {
+    const borrowed = input.fundsComposition?.borrowed ?? 0
+    if (borrowed <= 0) return null
+    // Only fires for Express Entry pathways (IRCC requirement applies)
+    if (!input.pathway.startsWith('express-entry')) return null
+    return {
+      id: 'borrowedFunds',
+      severity: 'high',
+      title: 'Possible non-qualifying funds',
+      description:
+        `IRCC requires Express Entry proof of funds to be legally accessible and not borrowed. ` +
+        `${fmtCAD(borrowed)} of your savings may not qualify. ` +
+        `Borrowed funds cannot be counted toward the IRCC settlement funds requirement (FSWP/FSTP/PNP). ` +
+        `Consult with your immigration advisor about documentation requirements.`,
+      actions: [
+        {
+          id:          'borrowedFunds-repay',
+          title:       'Exclude borrowed amounts from your proof of funds',
+          description: `Only funds that are legally yours and not encumbered by a repayment obligation can be shown as settlement funds. Repay or exclude ${fmtCAD(borrowed)} before the application.`,
+          impactCAD:    0,
+          link:        'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html',
+        },
+      ],
+    }
+  },
+}
+
 // ─── Study Permit Rule 1: IRCC Proof-of-Funds Compliance ─────────────────────
 
 const irccProofOfFundsCompliance: RiskRule = {
@@ -517,6 +548,43 @@ const quebecComplexity: RiskRule = {
   },
 }
 
+// ─── Rule: Exchange Rate Fluctuation Risk (US-22.1) ───────────────────────────
+
+const exchangeRateRisk: RiskRule = {
+  id: 'exchangeRateRisk',
+  evaluate({ input, output }): Risk | null {
+    if (!input.inputCurrency || input.inputCurrency === 'CAD') return null
+
+    // Find the active compliance floor (IRCC study permit or EE/PNP compliance)
+    const floor = output.irccFloor ?? output.complianceFloor
+    if (!floor || floor <= 0) return null
+
+    const savings = input.liquidSavings
+    // Warn only when savings are within 5% above the floor (compliant but barely)
+    if (savings < floor || savings >= floor * 1.05) return null
+
+    const bufferNeeded = Math.round(floor * 1.05 - savings)
+
+    return {
+      id:       'exchangeRateRisk',
+      severity: 'medium',
+      title:    'Exchange rate shift may push savings below IRCC threshold',
+      description:
+        `Your ${input.inputCurrency}-denominated savings convert to ${fmtCAD(savings)} CAD — ` +
+        `just above the ${fmtCAD(floor)} IRCC threshold. A 5% currency depreciation could push you below ` +
+        `this floor, causing a compliance gap. Convert funds to CAD before your application.`,
+      actions: [
+        {
+          id:          'exchangeRateRisk-convert',
+          title:       'Convert savings to CAD before applying',
+          description: `Lock in at least ${fmtCAD(Math.round(floor * 1.05))} CAD (${fmtCAD(bufferNeeded)} above the threshold) to absorb currency movement.`,
+          impactCAD:    0,
+        },
+      ],
+    }
+  },
+}
+
 // ─── All Rules (order matters for evaluation, not display) ────────────────────
 
 const ALL_RULES: RiskRule[] = [
@@ -526,6 +594,8 @@ const ALL_RULES: RiskRule[] = [
   studyPermitFunding,
   proofOfFundsMinimum,
   largeSavingsGap,
+  borrowedFunds,
+  exchangeRateRisk,
   // Study permit enhancements
   irccProofOfFundsCompliance,
   healthCoverageGapStudent,
@@ -563,6 +633,7 @@ export {
   studyPermitFunding,
   proofOfFundsMinimum,
   largeSavingsGap,
+  borrowedFunds,
   irccProofOfFundsCompliance,
   healthCoverageGapStudent,
   tuitionAffordability,

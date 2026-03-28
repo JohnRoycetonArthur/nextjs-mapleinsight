@@ -327,42 +327,42 @@ export function computeStudyPermitUpfront(
   const familySize = household.adults + household.children
   const items: BreakdownItem[] = []
 
-  // ── 1. Immigration fees ───────────────────────────────────────────────────
+  // ── 1. Immigration fees — Due at Submission ──────────────────────────────
   if (!studyPermit.feesPaid) {
-    items.push({ key: 'permit-fee',  label: 'Study permit application fee', cad: 150, source: 'ircc', sourceKey: 'ircc-study-permit-fees' })
+    items.push({ key: 'permit-fee', label: 'Study permit application fee', cad: 150, source: 'ircc', sourceKey: 'ircc-study-permit-fees', timing: 'submission' })
 
     if (!studyPermit.biometricsDone) {
       const bioFee = familySize >= 2 ? 170 : 85
-      items.push({ key: 'biometrics', label: `Biometrics fee (${familySize >= 2 ? 'family' : 'individual'})`, cad: bioFee, source: 'ircc', sourceKey: 'ircc-study-permit-fees' })
+      items.push({ key: 'biometrics', label: `Biometrics fee (${familySize >= 2 ? 'family' : 'individual'})`, cad: bioFee, source: 'ircc', sourceKey: 'ircc-study-permit-fees', timing: 'submission' })
     }
 
     const medical = familySize * 250
-    items.push({ key: 'medical-exam', label: `Medical exam (${familySize} person${familySize > 1 ? 's' : ''} × $250)`, cad: medical, source: 'ircc', sourceKey: 'ircc-study-permit-fees' })
+    items.push({ key: 'medical-exam', label: `Medical exam (${familySize} person${familySize > 1 ? 's' : ''} × $250)`, cad: medical, source: 'ircc', sourceKey: 'ircc-study-permit-fees', timing: 'submission' })
   }
 
-  // ── 2. Tuition (first year) ───────────────────────────────────────────────
-  items.push({ key: 'tuition', label: 'First year tuition', cad: studyPermit.tuitionAmount, source: 'user-input', sourceKey: 'user-input' })
+  // ── 2. Tuition (first year) — Pre-Arrival Setup ───────────────────────────
+  items.push({ key: 'tuition', label: 'First year tuition', cad: studyPermit.tuitionAmount, source: 'user-input', sourceKey: 'user-input', timing: 'pre-arrival-setup' })
 
-  // ── 3. GIC + processing fee ───────────────────────────────────────────────
+  // ── 3. GIC + processing fee — Pre-Arrival Setup ───────────────────────────
   if (studyPermit.gicStatus === 'planning') {
-    items.push({ key: 'gic', label: 'GIC (Guaranteed Investment Certificate)', cad: data.gicMinimum, source: 'ircc', sourceKey: 'ircc-proof-of-funds-sp' })
-    items.push({ key: 'gic-fee', label: 'GIC bank processing fee', cad: data.gicProcessingFee, source: 'bank', sourceKey: 'maple-estimate' })
+    items.push({ key: 'gic', label: 'GIC (Guaranteed Investment Certificate)', cad: data.gicMinimum, source: 'ircc', sourceKey: 'ircc-proof-of-funds-sp', timing: 'pre-arrival-setup' })
+    items.push({ key: 'gic-fee', label: 'GIC bank processing fee', cad: data.gicProcessingFee, source: 'bank', sourceKey: 'maple-estimate', timing: 'pre-arrival-setup' })
   }
   // 'purchased' → already committed (shown in breakdown as note, not added to upfront)
   // 'not-purchasing' → $0
 
-  // ── 4. Health insurance bridge coverage ───────────────────────────────────
+  // ── 4. Health insurance bridge coverage — Pre-Arrival Setup ───────────────
   const bridgeCost = getHealthBridgeCost(province, data)
   if (bridgeCost > 0) {
-    items.push({ key: 'health-bridge', label: 'Bridge health insurance (wait period)', cad: bridgeCost, source: 'provincial', sourceKey: 'maple-estimate' })
+    items.push({ key: 'health-bridge', label: 'Bridge health insurance (wait period)', cad: bridgeCost, source: 'provincial', sourceKey: 'maple-estimate', timing: 'pre-arrival-setup' })
   }
 
-  // ── 5. Travel (one-way settlement cost) ───────────────────────────────────
+  // ── 5. Travel — Settlement Setup ──────────────────────────────────────────
   const travel = input.travelEstimateOverride
     ?? computeOneWayFlight(input.departureRegion, household.adults, household.children)
-  items.push({ key: 'travel', label: 'One-way flight & travel', cad: travel, source: 'estimate', sourceKey: 'maple-estimate' })
+  items.push({ key: 'travel', label: 'One-way flight & travel', cad: travel, source: 'estimate', sourceKey: 'maple-estimate', timing: 'settlement' })
 
-  // ── 6. Housing deposit (varies by housing type) ───────────────────────────
+  // ── 6. Housing deposit — Settlement Setup ─────────────────────────────────
   const rent = rentFromBaseline(baseline, input.housingType)
   let deposit = 0
   let depositLabel = ''
@@ -390,13 +390,14 @@ export function computeStudyPermitUpfront(
       cad:       deposit,
       source:    baseline.isFallback ? 'national-average' : 'cmhc',
       sourceKey: baseline.isFallback ? 'maple-estimate' : `cmhc-${citySlug(baseline.cityName)}-rent`,
+      timing:    'settlement',
     })
   }
 
-  // ── 7. Setup / furnishing ($0 for staying-family) ─────────────────────────
+  // ── 7. Setup / furnishing — Settlement Setup ───────────────────────────────
   const setup = input.housingType === 'staying-family' ? 0 : FURNISHING_COST[input.furnishingLevel]
   if (setup > 0) {
-    items.push({ key: 'setup-essentials', label: `Setup & furnishing (${input.furnishingLevel})`, cad: setup, source: 'constant', sourceKey: 'maple-estimate' })
+    items.push({ key: 'setup-essentials', label: `Setup & furnishing (${input.furnishingLevel})`, cad: setup, source: 'constant', sourceKey: 'maple-estimate', timing: 'settlement' })
   }
 
   const total = items.reduce((sum, i) => sum + i.cad, 0)

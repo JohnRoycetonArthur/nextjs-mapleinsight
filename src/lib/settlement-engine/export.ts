@@ -46,6 +46,14 @@ export interface ReportResults {
   complianceRequirement?:  number
 }
 
+/** Overridden assumptions captured when a consultant adjusts defaults (US-21.2). */
+export interface AssumptionOverridesExport {
+  runway:   number   // months (1–12)
+  buffer:   number   // % as integer (0–25)
+  housing:  string   // 'studio' | '1br' | '2br' | '3br+'
+  feesPaid: boolean  // whether application fees are marked as already paid
+}
+
 export interface MapleReportPackage {
   schemaVersion:      string          // "1.0"
   engineVersion:      string          // e.g. "1.0.0"
@@ -58,6 +66,12 @@ export interface MapleReportPackage {
   narrative:          (NarrativeOutput & { monthlyIncome: number }) | null
   risks:              Risk[]
   consultantAdvisory: ConsultantAdvisory | null
+  /** Present only when the consultant has modified any default assumptions (AC-6). */
+  assumptionOverrides?: AssumptionOverridesExport
+  /** Present only when savings were entered in a non-CAD currency (US-22.1). */
+  inputCurrency?:    string   // ISO 4217 code (e.g. "INR")
+  exchangeRate?:     number   // 1 unit inputCurrency → CAD at time of entry
+  exchangeRateDate?: string   // ISO date when rate was fetched
 }
 
 // ─── generateReportPackage ────────────────────────────────────────────────────
@@ -72,13 +86,15 @@ export interface GenerateReportParams {
   monthlyIncome:         number
   risks:                 Risk[]
   narrative?:            (NarrativeOutput & { monthlyIncome: number }) | null
+  /** Pass when any assumption overrides are active (AC-6). */
+  assumptionOverrides?:  AssumptionOverridesExport | null
 }
 
 export function generateReportPackage(params: GenerateReportParams): MapleReportPackage {
   const {
     engineInput, engineOutput, answers, consultant,
     irccCompliance, complianceRequirement,
-    monthlyIncome, risks, narrative,
+    monthlyIncome, risks, narrative, assumptionOverrides,
   } = params
 
   const results: ReportResults = {
@@ -131,7 +147,7 @@ export function generateReportPackage(params: GenerateReportParams): MapleReport
     ? { slug: consultant.slug, displayName: consultant.displayName, companyName: consultant.companyName }
     : null
 
-  return {
+  const pkg: MapleReportPackage = {
     schemaVersion:      '1.0',
     engineVersion:      engineOutput.engineVersion,
     dataVersion:        engineOutput.dataVersion,
@@ -144,6 +160,20 @@ export function generateReportPackage(params: GenerateReportParams): MapleReport
     risks,
     consultantAdvisory,
   }
+
+  // Include assumptionOverrides only when active (AC-6)
+  if (assumptionOverrides) {
+    pkg.assumptionOverrides = assumptionOverrides
+  }
+
+  // Include currency fields only when non-CAD input was used (US-22.1)
+  if (params.answers.inputCurrency && params.answers.inputCurrency !== 'CAD') {
+    pkg.inputCurrency    = params.answers.inputCurrency
+    pkg.exchangeRate     = params.answers.exchangeRate
+    pkg.exchangeRateDate = params.answers.exchangeRateDate
+  }
+
+  return pkg
 }
 
 // ─── downloadReportPackage ────────────────────────────────────────────────────

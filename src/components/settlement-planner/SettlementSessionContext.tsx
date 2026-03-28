@@ -58,6 +58,13 @@ export interface WizardAnswers {
   savings?: string       // raw string, maps to liquidSavings
   obligations?: string   // raw string, maps to monthlyObligations
   savingsCapacity?: string
+  inputCurrency?: string      // ISO 4217 code (e.g. 'INR') — defaults to 'CAD'
+  exchangeRate?: number       // 1 unit inputCurrency → CAD (at time of wizard completion)
+  exchangeRateDate?: string   // ISO date when rate was fetched
+  fundsComposition?: {
+    borrowed: string     // raw string, maps to fundsComposition.borrowed in EngineInput
+    gifted:   string     // raw string, maps to fundsComposition.gifted in EngineInput
+  }
 
   // Step 6 — Lifestyle
   housing?: string       // 'studio'|'1br'|'2br'|'3br'
@@ -79,6 +86,7 @@ export interface WizardAnswers {
     tuitionAmount:     number
     gicStatus:         string   // 'planning'|'purchased'|'not_purchasing'
     scholarshipAmount: number
+    isSDS?:            boolean  // Student Direct Stream fast-track
     // Part-time income estimator (Step 4)
     partTimeHoursPerWeek?:             number
     partTimeHourlyRate?:               number

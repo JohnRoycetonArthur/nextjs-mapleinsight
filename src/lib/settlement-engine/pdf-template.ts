@@ -6,7 +6,7 @@
  * Client PDF  (mode = 'client'):    Page 1 (snapshot) + Page 2 (breakdown)
  * Consultant PDF (mode = 'consultant'): adds Pages 3–5 (advisory sections)
  *
- * Uses DM Serif Display + DM Sans via Google Fonts CDN.
+ * Uses PDF-safe fallback fonts to avoid runtime font fetches during server rendering.
  * All sections are pure functions over MapleReportPackage — no side effects.
  */
 
@@ -15,6 +15,8 @@ import type { ConsultantAdvisory } from './consultant-advisory'
 import type { TimelineItem }       from './narrative'
 import type { DataSource }         from './types'
 import { generateChecklist }       from './checklist'
+import { EXPRESS_ENTRY_DEFAULTS }  from './compliance'
+import { generateEvidencePack }    from './consultant-advisory'
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -66,8 +68,6 @@ const SEV_BG: Record<string, string> = {
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
-
 @page { size: letter; margin: 0; }
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -467,13 +467,39 @@ function renderRisksActions(pkg: MapleReportPackage): string {
 
 function renderCostBreakdown(pkg: MapleReportPackage): string {
   const { results } = pkg
-  const upfrontTotal  = results.upfrontBreakdown.reduce((s, i) => s + i.cad, 0)
-  const monthlyTotal  = results.monthlyBreakdown.reduce((s, i) => s + i.cad, 0)
+  const upfrontTotal = results.upfrontBreakdown.reduce((s, i) => s + i.cad, 0)
+  const monthlyTotal = results.monthlyBreakdown.reduce((s, i) => s + i.cad, 0)
+  const hasTimingData = results.upfrontBreakdown.some(i => i.timing)
 
-  const upfrontRows = results.upfrontBreakdown
-    .filter(i => i.cad > 0)
-    .map(i => `<tr><td>${esc(i.label)}</td><td style="text-align:right;">${esc(money(i.cad))}</td></tr>`)
-    .join('')
+  // Build upfront section — grouped by timing if available
+  let upfrontSection = ''
+  if (hasTimingData) {
+    const TIMING_GROUPS: Array<{ timing: string; label: string; color: string; tip?: string }> = [
+      { timing: 'submission',        label: 'Due at Application Submission', color: '#1B4F4A' },
+      { timing: 'pre-landing',       label: 'Due Before Landing',            color: '#B8860B',
+        tip: 'RPRF can be paid any time before landing.' },
+      { timing: 'pre-arrival-setup', label: 'Pre-Arrival Setup Costs',       color: '#B8860B' },
+      { timing: 'settlement',        label: 'Settlement Setup Costs',         color: '#2563EB' },
+    ]
+    for (const g of TIMING_GROUPS) {
+      const items = results.upfrontBreakdown.filter(i => (i.timing ?? 'settlement') === g.timing && i.cad > 0)
+      if (!items.length) continue
+      const groupTotal = items.reduce((s, i) => s + i.cad, 0)
+      upfrontSection += `
+        <tr style="background:${esc(g.color)};color:#fff;">
+          <td style="font-weight:700;font-size:8.5pt;">${esc(g.label)}</td>
+          <td style="text-align:right;font-weight:700;font-size:8.5pt;">${esc(money(groupTotal))}</td>
+        </tr>
+        ${items.map(i => `<tr><td style="padding-left:16px;">${esc(i.label)}</td><td style="text-align:right;">${esc(money(i.cad))}</td></tr>`).join('')}
+        ${g.tip ? `<tr><td colspan="2" style="font-size:7pt;color:#B8860B;font-style:italic;padding-left:16px;">💡 ${esc(g.tip)}</td></tr>` : ''}
+      `
+    }
+  } else {
+    upfrontSection = results.upfrontBreakdown
+      .filter(i => i.cad > 0)
+      .map(i => `<tr><td>${esc(i.label)}</td><td style="text-align:right;">${esc(money(i.cad))}</td></tr>`)
+      .join('')
+  }
 
   const monthlyRows = results.monthlyBreakdown
     .filter(i => i.cad > 0)
@@ -489,8 +515,8 @@ function renderCostBreakdown(pkg: MapleReportPackage): string {
           <table>
             <thead><tr><th>Category</th><th style="text-align:right;">CAD</th></tr></thead>
             <tbody>
-              ${upfrontRows}
-              <tr><td>Total Upfront</td><td style="text-align:right;">${esc(money(upfrontTotal))}</td></tr>
+              ${upfrontSection}
+              <tr><td><strong>Total Upfront</strong></td><td style="text-align:right;"><strong>${esc(money(upfrontTotal))}</strong></td></tr>
             </tbody>
           </table>
         </div>
@@ -609,9 +635,21 @@ function sourceTextLabel(
 /** Compliance status card — shown on Page 1 for study permit or EE/PNP pathways */
 function renderComplianceCard(pkg: MapleReportPackage): string {
   const { results, engineInput, answers } = pkg
-  // answers.pathway uses underscores ('study_permit'), engineInput.pathway uses hyphens ('study-permit')
-  const pathway = (answers.pathway ?? engineInput.pathway ?? '').replace(/_/g, '-')
+  // Prefer the normalized engine pathway so EE subclasses like FSW/FSTP/CEC
+  // do not get flattened back to the generic answers.pathway value.
+  const pathway = (engineInput.pathway ?? answers.pathway ?? '').replace(/_/g, '-')
   const savings = engineInput.liquidSavings
+
+  if (pathway === 'express-entry-cec') {
+    return `
+      <div style="background:#ECFDF5;border:2px solid #1B7A4A;border-radius:10px;padding:14px 20px;margin-bottom:14px;text-align:center;">
+        <div style="font-size:7.5pt;font-weight:700;color:#1B7A4A;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">IRCC Financial Requirement</div>
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:17pt;color:#1B7A4A;margin-bottom:4px;">✓ Proof of Funds: Exempt</div>
+        <div style="font-size:9pt;color:#374151;">CEC applicants with a valid job offer and current work authorization are exempt from the proof-of-funds requirement.</div>
+        <div style="font-size:7.5pt;color:#9CA3AF;margin-top:4px;">Source: IRCC — Express Entry CEC eligibility criteria</div>
+      </div>
+    `
+  }
 
   if (pathway === 'study-permit' && results.irccCompliance) {
     const { required, compliant, shortfall } = results.irccCompliance
@@ -633,24 +671,30 @@ function renderComplianceCard(pkg: MapleReportPackage): string {
     `
   }
 
-  const isEEorPNP = ['express-entry-fsw', 'express-entry-fstp', 'pnp'].includes(pathway)
+  const isEEorPNP = ['express-entry', 'express-entry-fsw', 'express-entry-fstp', 'pnp'].includes(pathway)
   if (isEEorPNP && results.complianceRequirement) {
     const required = results.complianceRequirement
-    const compliant = savings >= required
+    const shortfall = Math.max(0, required - savings)
+    const ratio = required > 0 ? shortfall / required : 0
+    const status = savings >= required ? 'compliant' : ratio <= 0.1 ? 'amber' : 'deficit'
     const surplus = savings - required
-    const bg = compliant ? '#ECFDF5' : '#FEF2F2'
-    const border = compliant ? '#1B7A4A' : '#FCA5A5'
-    const color = compliant ? '#1B7A4A' : '#B91C1C'
-    const headline = compliant ? '✓ Settlement Funds: Compliant' : '✗ Settlement Funds: Below Minimum'
-    const detail = compliant
+    const bg = status === 'compliant' ? '#ECFDF5' : status === 'amber' ? '#FFFBEB' : '#FEF2F2'
+    const border = status === 'compliant' ? '#1B7A4A' : status === 'amber' ? '#D97706' : '#C41E3A'
+    const color = status === 'compliant' ? '#1B7A4A' : status === 'amber' ? '#B8860B' : '#C41E3A'
+    const headline = status === 'compliant'
+      ? '✓ Meets Requirement'
+      : status === 'amber'
+        ? '⚠ Close to Minimum'
+        : '✗ Below IRCC Minimum'
+    const detail = status === 'compliant'
       ? `Your savings of ${money(savings)} exceed the IRCC minimum of ${money(required)} by ${money(surplus)}`
-      : `IRCC requires ${money(required)} — you need ${money(Math.abs(surplus))} more`
+      : `You need ${money(shortfall)} more to meet the IRCC minimum of ${money(required)}`
     return `
       <div style="background:${bg};border:2px solid ${border};border-radius:10px;padding:14px 20px;margin-bottom:14px;text-align:center;">
-        <div style="font-size:7.5pt;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">IRCC Settlement Funds Requirement</div>
+        <div style="font-size:7.5pt;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">IRCC Financial Requirement</div>
         <div style="font-family:'DM Serif Display',Georgia,serif;font-size:17pt;color:${color};margin-bottom:4px;">${esc(headline)}</div>
         <div style="font-size:9pt;color:#374151;">${esc(detail)}</div>
-        <div style="font-size:7.5pt;color:#9CA3AF;margin-top:4px;">Based on IRCC proof-of-funds table effective July 2025</div>
+        <div style="font-size:7.5pt;color:#9CA3AF;margin-top:4px;">Based on IRCC proof-of-funds table effective ${esc(EXPRESS_ENTRY_DEFAULTS.expressEntryEffectiveDate)}</div>
       </div>
     `
   }
@@ -751,12 +795,12 @@ function renderClientBreakdown(pkg: MapleReportPackage, dataSources?: Map<string
   const { results } = pkg
   const MAX_ROWS = 8
 
-  const upfrontItems = results.upfrontBreakdown.filter(i => i.cad > 0).slice(0, MAX_ROWS)
   const monthlyItems = results.monthlyBreakdown.filter(i => i.cad > 0).slice(0, MAX_ROWS)
   const upfrontTotal = results.upfrontBreakdown.reduce((s, i) => s + i.cad, 0)
   const monthlyTotal = results.monthlyBreakdown.reduce((s, i) => s + i.cad, 0)
+  const hasTimingData = results.upfrontBreakdown.some(i => i.timing)
 
-  const renderRows = (items: typeof upfrontItems) =>
+  const renderRows = (items: typeof monthlyItems) =>
     items.map(i => `
       <tr>
         <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6;font-size:8.5pt;color:#374151;">
@@ -772,6 +816,42 @@ function renderClientBreakdown(pkg: MapleReportPackage, dataSources?: Map<string
   const headStyle = 'padding:7px 10px;background:#F8FAFC;font-size:8.5pt;font-weight:700;color:#374151;border-bottom:1px solid #E5E7EB;'
   const totStyle  = 'padding:7px 10px;font-size:9pt;font-weight:700;color:#1B4F4A;border-top:2px solid #E5E7EB;background:#F9FAFB;'
 
+  // Build upfront table rows — grouped by timing if data is available
+  let upfrontTableContent = ''
+  if (hasTimingData) {
+    const TIMING_GROUPS: Array<{ timing: string; label: string; color: string; tip?: string }> = [
+      { timing: 'submission',        label: 'Due at Application Submission', color: '#1B4F4A' },
+      { timing: 'pre-landing',       label: 'Due Before Landing',            color: '#B8860B',
+        tip: 'RPRF can be paid any time before landing.' },
+      { timing: 'pre-arrival-setup', label: 'Pre-Arrival Setup Costs',       color: '#B8860B' },
+      { timing: 'settlement',        label: 'Settlement Setup Costs',         color: '#2563EB' },
+    ]
+    for (const g of TIMING_GROUPS) {
+      const items = results.upfrontBreakdown.filter(i => (i.timing ?? 'settlement') === g.timing && i.cad > 0)
+      if (!items.length) continue
+      const groupTotal = items.reduce((s, i) => s + i.cad, 0)
+      upfrontTableContent += `
+        <tr style="background:${esc(g.color)};">
+          <td style="padding:5px 10px;font-size:8pt;font-weight:700;color:#fff;">${esc(g.label)}</td>
+          <td style="padding:5px 10px;text-align:right;font-size:8pt;font-weight:700;color:#fff;white-space:nowrap;">${esc(money(groupTotal))}</td>
+        </tr>
+        ${items.slice(0, MAX_ROWS).map(i => `
+          <tr>
+            <td style="padding:5px 10px 5px 18px;border-bottom:1px solid #F3F4F6;font-size:8.5pt;color:#374151;">
+              ${esc(i.label)}${sourceTextLabel(i.sourceKey, i.source, dataSources)}
+            </td>
+            <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6;text-align:right;font-size:8.5pt;font-weight:600;color:#1B4F4A;white-space:nowrap;">
+              ${esc(money(i.cad))}
+            </td>
+          </tr>
+        `).join('')}
+        ${g.tip ? `<tr><td colspan="2" style="padding:4px 10px 4px 18px;font-size:7pt;color:#B8860B;font-style:italic;background:#FFFBEB;">💡 ${esc(g.tip)}</td></tr>` : ''}
+      `
+    }
+  } else {
+    upfrontTableContent = renderRows(results.upfrontBreakdown.filter(i => i.cad > 0).slice(0, MAX_ROWS))
+  }
+
   return `
     <div style="margin-bottom:16px;">
       <div style="font-family:'DM Serif Display',Georgia,serif;font-size:13pt;color:#1B4F4A;margin-bottom:10px;">Cost Breakdown</div>
@@ -779,7 +859,7 @@ function renderClientBreakdown(pkg: MapleReportPackage, dataSources?: Map<string
         <div style="${tblWrap}">
           <div style="${headStyle}">One-Time (Upfront)</div>
           <table style="width:100%;border-collapse:collapse;">
-            ${renderRows(upfrontItems)}
+            ${upfrontTableContent}
             <tr>
               <td style="${totStyle}">Total Upfront</td>
               <td style="${totStyle}text-align:right;">${esc(money(upfrontTotal))}</td>
@@ -1057,6 +1137,55 @@ function renderProgramNotes(advisory: ConsultantAdvisory): string {
   `
 }
 
+function renderEvidencePack(pathway: string): string {
+  const pack = generateEvidencePack(pathway)
+  if (!pack.items) return ''
+
+  const isStudyPermit = pathway === 'study-permit'
+  const sectionLabel  = isStudyPermit
+    ? 'Document Checklist (Study Permit)'
+    : 'Bank Letter Requirements (Express Entry)'
+
+  const checkItems = pack.items.map(it => `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #E5E7EB;">
+      <div style="width:14px;height:14px;border:2px solid #D1D5DB;border-radius:3px;flex-shrink:0;margin-top:1px;"></div>
+      <span style="font-size:8.5pt;color:#374151;line-height:1.4;">${esc(it.text)}</span>
+    </div>
+  `).join('')
+
+  const namingBlock = pack.namingConvention
+    ? `
+      <div style="font-size:8pt;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.04em;margin:14px 0 6px;">
+        Document Naming Convention
+      </div>
+      <div style="padding:10px 12px;background:#F3F4F6;border-radius:5px;font-family:'Courier New',monospace;font-size:7.5pt;color:#374151;line-height:1.6;">
+        ${pack.namingConvention.map(l => `<div>${esc(l)}</div>`).join('')}
+      </div>
+    `
+    : ''
+
+  const sourceLink = pack.sourceUrl
+    ? `<div style="font-size:7.5pt;color:#2563EB;margin-top:10px;">${esc(pack.sourceLabel)}</div>`
+    : ''
+
+  return `
+    <div class="section">
+      <h2>&#128203; Proof-of-Funds Evidence Pack</h2>
+      <p style="font-size:8.5pt;color:#6B7280;margin-bottom:10px;line-height:1.5;">
+        ${isStudyPermit
+          ? 'IRCC requires the following financial documents for a study permit application.'
+          : 'IRCC requires bank letters that include all of the following elements. Verify the client\'s documentation before submission.'}
+      </p>
+      <div style="font-size:8pt;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">
+        ${esc(sectionLabel)}
+      </div>
+      ${checkItems}
+      ${namingBlock}
+      ${sourceLink}
+    </div>
+  `
+}
+
 function renderMeetingGuide(advisory: ConsultantAdvisory): string {
   const { meetingGuide } = advisory
 
@@ -1234,6 +1363,7 @@ function buildPage4Consultant(pkg: MapleReportPackage, advisory: ConsultantAdvis
         ${renderStrategies(advisory)}
         <hr class="divider">
         ${renderProgramNotes(advisory)}
+        ${renderEvidencePack(pkg.answers.pathway ?? '')}
         <div class="page-footer">
           <span>Maple Insight · Consultant Report — Confidential</span>
           <span>Page ${p} of ${totalPages}</span>

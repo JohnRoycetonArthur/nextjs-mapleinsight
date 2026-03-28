@@ -15,6 +15,7 @@ import {
   ENGINE_VERSION,
   FURNISHING_COST,
   PHONE_INTERNET_BASELINE,
+  RPRF_PER_ADULT,
   RUNWAY_MONTHS,
   UTILITIES_BASELINE,
   computeOneWayFlight,
@@ -78,6 +79,8 @@ export function computeUpfront(
 
   const items: BreakdownItem[] = []
 
+  // ── Due at Submission ────────────────────────────────────────────────────
+
   // Immigration application fee
   items.push({
     key:       'immigration-fee',
@@ -85,6 +88,7 @@ export function computeUpfront(
     cad:       fees.applicationFee,
     source:    'ircc',
     sourceKey: 'ircc-fee-schedule',
+    timing:    'submission',
   })
 
   // Biometrics (skip if already paid)
@@ -95,8 +99,31 @@ export function computeUpfront(
       cad:       fees.biometricsFee,
       source:    'ircc',
       sourceKey: 'ircc-fee-schedule',
+      timing:    'submission',
     })
   }
+
+  // ── Due Before Landing (EE / PNP only) ───────────────────────────────────
+
+  const isEEorPNP = (
+    input.pathway === 'express-entry-fsw'  ||
+    input.pathway === 'express-entry-cec'  ||
+    input.pathway === 'express-entry-fstp' ||
+    input.pathway === 'pnp'
+  )
+  if (isEEorPNP) {
+    const rprf = RPRF_PER_ADULT * household.adults
+    items.push({
+      key:       'rprf',
+      label:     `Right of Permanent Residence Fee (${household.adults} adult${household.adults !== 1 ? 's' : ''} × $${RPRF_PER_ADULT})`,
+      cad:       rprf,
+      source:    'ircc',
+      sourceKey: 'ircc-fee-schedule',
+      timing:    'pre-landing',
+    })
+  }
+
+  // ── Settlement Setup ─────────────────────────────────────────────────────
 
   // Travel — regional one-way or default
   const travel = travelEstimateOverride
@@ -107,6 +134,7 @@ export function computeUpfront(
     cad:       travel,
     source:    'estimate',
     sourceKey: 'maple-estimate',
+    timing:    'settlement',
   })
 
   // Housing deposit ($0 for staying-family)
@@ -119,6 +147,7 @@ export function computeUpfront(
       cad:       deposit,
       source:    baseline.isFallback ? 'national-average' : 'cmhc',
       sourceKey: baseline.isFallback ? 'maple-estimate' : `cmhc-${citySlug(baseline.cityName)}-rent`,
+      timing:    'settlement',
     })
   }
 
@@ -131,6 +160,7 @@ export function computeUpfront(
       cad:       setup,
       source:    'constant',
       sourceKey: 'maple-estimate',
+      timing:    'settlement',
     })
   }
 

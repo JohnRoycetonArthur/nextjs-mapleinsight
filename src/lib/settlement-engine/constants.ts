@@ -4,6 +4,11 @@ import type { FurnishingLevel, HousingType, JobStatus } from './types'
 
 export const ENGINE_VERSION = '1.0.0'
 
+// ─── RPRF ─────────────────────────────────────────────────────────────────────
+
+/** Right of Permanent Residence Fee — per adult (EE FSW / FSTP / CEC, PNP). */
+export const RPRF_PER_ADULT = 515
+
 // ─── Buffer ───────────────────────────────────────────────────────────────────
 
 /** 10% contingency buffer applied to the full savings target. */

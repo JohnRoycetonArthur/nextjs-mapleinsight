@@ -1,18 +1,25 @@
 'use client'
 
 /**
- * Step 5: Savings & Obligations (US-11.6)
+ * Step 5: Savings & Obligations (US-11.6, US-20.2, US-22.1)
  *
  * Collects: liquid savings (required), monthly obligations (optional),
- * monthly savings capacity (optional).
+ * monthly savings capacity (optional), and funds composition
+ * (borrowed/gifted amounts — US-20.2).
  *
- * All inputs use "CAD $" prefix, inputMode="decimal", and allow comma
- * separators (digits, commas, and decimal points only).
+ * US-22.1: currency selector (CAD/USD/INR/CNY/PHP/NGN/GBP/EUR),
+ * transparent CAD conversion card, exchange-rate risk note.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
+import {
+  CURRENCY_SYMBOLS,
+  FALLBACK_RATES,
+  type SupportedCurrency,
+  fetchExchangeRate,
+} from '@/lib/settlement-engine/currency'
 
 // ─── Design primitives ────────────────────────────────────────────────────────
 
@@ -34,15 +41,18 @@ const Helper = ({ children }: { children: React.ReactNode }) => (
 // ─── Currency input ───────────────────────────────────────────────────────────
 
 function CurrencyInput({
-  id, value, onChange, placeholder = '0', error,
+  id, value, onChange, placeholder = '0', error, prefix = 'CA$',
 }: {
   id?: string
   value:       string
   onChange:    (v: string) => void
   placeholder?: string
   error?:       string
+  prefix?:      string
 }) {
   const [focused, setFocused] = useState(false)
+  const prefixWidth = prefix.length <= 3 ? 52 : prefix.length <= 4 ? 60 : 72
+
   return (
     <div style={{ maxWidth: 280 }}>
       <div style={{ position: 'relative' }}>
@@ -51,7 +61,7 @@ function CurrencyInput({
           fontSize: 13, fontWeight: 600, color: C.textLight, fontFamily: FONT,
           pointerEvents: 'none',
         }}>
-          CAD $
+          {prefix}
         </div>
         <input
           id={id}
@@ -65,7 +75,7 @@ function CurrencyInput({
           aria-invalid={!!error}
           aria-describedby={error && id ? `${id}-error` : undefined}
           style={{
-            width: '100%', padding: '12px 16px', paddingLeft: 62, borderRadius: 10,
+            width: '100%', padding: '12px 16px', paddingLeft: prefixWidth, borderRadius: 10,
             border: `1px solid ${error ? C.red : focused ? C.accent : C.border}`,
             boxShadow: focused ? `0 0 0 3px ${C.accent}18` : 'none',
             fontSize: 14, fontFamily: FONT, color: C.text,
@@ -83,6 +93,122 @@ function CurrencyInput({
   )
 }
 
+// ─── Toggle ───────────────────────────────────────────────────────────────────
+
+function Toggle({ label, checked, onChange }: {
+  label:    string
+  checked:  boolean
+  onChange: () => void
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={onChange}
+        style={{
+          width: 44, height: 24, borderRadius: 12,
+          background: checked ? C.gold : C.border,
+          position: 'relative', cursor: 'pointer', flexShrink: 0,
+          border: 'none', transition: 'background 0.2s', padding: 0,
+        }}
+      >
+        <div style={{
+          width: 20, height: 20, borderRadius: 10, background: C.white,
+          position: 'absolute', top: 2, left: checked ? 22 : 2,
+          transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+        }} />
+      </button>
+      <span style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: FONT }}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
+// ─── Currency selector ────────────────────────────────────────────────────────
+
+const CURRENCIES: SupportedCurrency[] = ['CAD', 'USD', 'INR', 'CNY', 'PHP', 'NGN', 'GBP', 'EUR']
+
+function CurrencySelector({
+  selected,
+  onChange,
+}: {
+  selected: SupportedCurrency
+  onChange: (c: SupportedCurrency) => void
+}) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: C.text, fontFamily: FONT, marginBottom: 8 }}>
+        Savings currency
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {CURRENCIES.map(c => {
+          const isActive = selected === c
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => onChange(c)}
+              aria-pressed={isActive}
+              style={{
+                padding: '5px 12px', borderRadius: 20, fontSize: 12,
+                fontFamily: FONT, cursor: 'pointer', fontWeight: isActive ? 700 : 400,
+                border: `1px solid ${isActive ? C.accent : C.border}`,
+                background: isActive ? '#ECFDF5' : C.white,
+                color: isActive ? C.accent : C.text,
+                transition: 'all 0.15s',
+              }}
+            >
+              {c}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── CAD conversion card ──────────────────────────────────────────────────────
+
+function ConversionCard({
+  currency,
+  rawAmount,
+  rate,
+  rateDate,
+}: {
+  currency: SupportedCurrency
+  rawAmount: string
+  rate: number
+  rateDate: string
+}) {
+  const num = parseFloat(rawAmount.replace(/,/g, '')) || 0
+  if (num <= 0) return null
+  const cad = Math.round(num * rate)
+
+  return (
+    <div style={{
+      marginTop: 10, padding: '12px 16px',
+      background: '#ECFDF5', borderRadius: 10,
+      border: `1px solid ${C.accent}40`,
+      display: 'flex', alignItems: 'center', gap: 10,
+    }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+      </svg>
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, fontFamily: FONT }}>
+          ≈ CA${cad.toLocaleString()} CAD
+        </div>
+        <div style={{ fontSize: 11, color: C.gray, fontFamily: FONT, marginTop: 1 }}>
+          1 {currency} = {rate} CAD &nbsp;·&nbsp; rate as of {rateDate}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -94,6 +220,75 @@ interface Props {
 // ─── Step 5: Savings & Obligations ───────────────────────────────────────────
 
 export function Step5Savings({ data, onChange, errors }: Props) {
+  const [showComposition, setShowComposition] = useState<boolean>(
+    () => !!(data.fundsComposition?.borrowed || data.fundsComposition?.gifted)
+  )
+
+  // ── Currency state ────────────────────────────────────────────────────────
+  const [selectedCurrency, setSelectedCurrency] = useState<SupportedCurrency>(
+    () => (data.inputCurrency as SupportedCurrency) ?? 'CAD'
+  )
+  const [rateDate, setRateDate] = useState<string>(
+    () => data.exchangeRateDate ?? new Date().toISOString().slice(0, 10)
+  )
+
+  // Fetch rate and propagate to WizardAnswers when currency changes
+  useEffect(() => {
+    if (selectedCurrency === 'CAD') {
+      onChange('inputCurrency', 'CAD')
+      onChange('exchangeRate', 1.0)
+      onChange('exchangeRateDate', undefined)
+      setRateDate(new Date().toISOString().slice(0, 10))
+      return
+    }
+    let cancelled = false
+    fetchExchangeRate(selectedCurrency).then(rec => {
+      if (cancelled) return
+      onChange('inputCurrency', selectedCurrency)
+      onChange('exchangeRate', rec.rateToCAD)
+      onChange('exchangeRateDate', rec.sourceDate)
+      setRateDate(rec.sourceDate)
+    }).catch(() => {
+      if (cancelled) return
+      const fallback = FALLBACK_RATES[selectedCurrency] ?? 1.0
+      const today = new Date().toISOString().slice(0, 10)
+      onChange('inputCurrency', selectedCurrency)
+      onChange('exchangeRate', fallback)
+      onChange('exchangeRateDate', today)
+      setRateDate(today)
+    })
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCurrency])
+
+  const activeRate    = data.exchangeRate ?? 1.0
+  const isNonCAD      = selectedCurrency !== 'CAD'
+  const savingsPrefix = isNonCAD
+    ? `${CURRENCY_SYMBOLS[selectedCurrency] ?? selectedCurrency} `
+    : 'CA$'
+
+  const borrowed = data.fundsComposition?.borrowed ?? ''
+  const gifted   = data.fundsComposition?.gifted   ?? ''
+
+  function handleToggle() {
+    const next = !showComposition
+    setShowComposition(next)
+    if (!next) {
+      onChange('fundsComposition', undefined)
+    }
+  }
+
+  function handleBorrowed(v: string) {
+    onChange('fundsComposition', { borrowed: v, gifted })
+  }
+
+  function handleGifted(v: string) {
+    onChange('fundsComposition', { borrowed, gifted: v })
+  }
+
+  const borrowedNum = parseFloat(borrowed.replace(/,/g, '')) || 0
+  const giftedNum   = parseFloat(gifted.replace(/,/g, ''))   || 0
+
   return (
     <div>
       <h2 style={{ fontFamily: SERIF, fontSize: 24, color: C.forest, margin: '0 0 6px' }}>
@@ -105,15 +300,105 @@ export function Step5Savings({ data, onChange, errors }: Props) {
 
       {/* ── Liquid savings (required) (AC-1, AC-2) ────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
-        <Label htmlFor="savings-input">Liquid savings available for the move (CAD) *</Label>
+        <Label htmlFor="savings-input">
+          Liquid savings available for the move *
+        </Label>
+
+        {/* Currency selector (US-22.1) */}
+        <CurrencySelector
+          selected={selectedCurrency}
+          onChange={c => setSelectedCurrency(c)}
+        />
+
         <CurrencyInput
           id="savings-input"
           value={data.savings ?? ''}
           onChange={v => onChange('savings', v)}
           placeholder="e.g. 18,000"
           error={errors.savings}
+          prefix={savingsPrefix}
         />
-        <Helper>Include cash, savings accounts, and easily accessible investments.</Helper>
+
+        {/* CAD conversion card — shown when non-CAD currency is selected */}
+        {isNonCAD && (
+          <ConversionCard
+            currency={selectedCurrency}
+            rawAmount={data.savings ?? ''}
+            rate={activeRate}
+            rateDate={rateDate}
+          />
+        )}
+
+        <Helper>
+          {isNonCAD
+            ? `Enter your savings in ${selectedCurrency}. We'll convert to CAD using the rate above.`
+            : 'Include cash, savings accounts, and easily accessible investments.'}
+        </Helper>
+      </div>
+
+      {/* ── Funds composition toggle (US-20.2 AC-1) ───────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <Toggle
+          label="Are any of your savings borrowed or gifted?"
+          checked={showComposition}
+          onChange={handleToggle}
+        />
+
+        {showComposition && (
+          <div style={{
+            padding: 20, background: '#FFFBEB', borderRadius: 12,
+            border: `1px solid ${C.gold}50`, marginTop: 4,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.gold, marginBottom: 12, fontFamily: FONT }}>
+              Funds Composition (Optional)
+            </div>
+
+            {/* Amount borrowed (AC-2) */}
+            <div style={{ marginBottom: 16 }}>
+              <Label htmlFor="borrowed-input">Amount borrowed</Label>
+              <CurrencyInput
+                id="borrowed-input"
+                value={borrowed}
+                onChange={handleBorrowed}
+                placeholder="0"
+              />
+              <Helper>Loans taken specifically for immigration funds.</Helper>
+            </div>
+
+            {/* Amount gifted (AC-2) */}
+            <div style={{ marginBottom: borrowedNum > 0 || giftedNum > 0 ? 16 : 0 }}>
+              <Label htmlFor="gifted-input">Amount gifted</Label>
+              <CurrencyInput
+                id="gifted-input"
+                value={gifted}
+                onChange={handleGifted}
+                placeholder="0"
+              />
+              <Helper>Gifts from family or friends.</Helper>
+            </div>
+
+            {/* Gifted funds info note (AC-4) */}
+            {giftedNum > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '12px 16px', background: '#EFF6FF', borderRadius: 10,
+                border: '1px solid #BFDBFE', marginTop: 12,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.blue, fontFamily: FONT }}>
+                    Gifted funds — documentation required
+                  </div>
+                  <div style={{ fontSize: 11, color: C.text, marginTop: 2, lineHeight: 1.5, fontFamily: FONT }}>
+                    Gifted funds may be accepted with proper documentation. A signed gift letter from the donor confirming the gift is not a loan is recommended.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Monthly obligations (optional) (AC-1, AC-3) ───────────────────── */}

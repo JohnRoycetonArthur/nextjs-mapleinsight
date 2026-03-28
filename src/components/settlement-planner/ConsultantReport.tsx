@@ -18,6 +18,10 @@ import type { WizardAnswers } from './SettlementSessionContext'
 import { DataFreshnessBar } from './DataFreshnessBar'
 import { DataFreshnessIndicator } from './DataFreshnessIndicator'
 import { fetchDataSources } from '@/lib/settlement-engine/sources'
+import { EvidencePackSection } from './EvidencePackSection'
+import { generateEvidencePack } from '@/lib/settlement-engine/consultant-advisory'
+import { ScenarioBuilder } from './ScenarioBuilder'
+import { useAssumptionOverrides } from '@/hooks/useAssumptionOverrides'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -56,12 +60,6 @@ const MapleLeaf = ({ size = 14, color = C.red }: { size?: number; color?: string
   </svg>
 )
 
-const ArrowUp = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="12" y1="19" x2="12" y2="5"/>
-    <polyline points="5 12 12 5 19 12"/>
-  </svg>
-)
 
 const AlertIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -103,6 +101,78 @@ function SectionTitle({ icon, children }: { icon: string; children: React.ReactN
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
       <span style={{ fontSize: 20 }} aria-hidden="true">{icon}</span>
       <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: 0, fontWeight: 700 }}>{children}</h2>
+    </div>
+  )
+}
+
+function CollapsibleSectionCard({
+  icon,
+  title,
+  defaultOpen = false,
+  children,
+  mb = 20,
+}: {
+  icon: string
+  title: React.ReactNode
+  defaultOpen?: boolean
+  children: React.ReactNode
+  mb?: number
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <div style={{
+      background: C.white,
+      borderRadius: 14,
+      border: `1px solid ${C.border}`,
+      marginBottom: mb,
+      boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+      overflow: 'hidden',
+    }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          padding: '24px 30px',
+          border: 'none',
+          background: 'transparent',
+          cursor: 'pointer',
+          textAlign: 'left',
+          fontFamily: FONT,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span style={{ fontSize: 20 }} aria-hidden="true">{icon}</span>
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: 0, fontWeight: 700 }}>
+            {title}
+          </h2>
+        </div>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={C.gray}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}
+          aria-hidden="true"
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      {open && (
+        <div style={{ padding: '0 30px 28px' }}>
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -193,7 +263,18 @@ export function ConsultantReport({
     irccCompliance ?? undefined,
   ), [engineInput, engineOutput, monthlyIncome, risks, complianceRequirement, irccCompliance])
 
-  const { readiness, scenarios, strategies, programNotes, studyPermitAdvisory, meetingGuide } = advisory
+  const { readiness, strategies, programNotes, studyPermitAdvisory, meetingGuide } = advisory
+
+  // Assumption overrides (US-21.2)
+  const assumptionOverrides = useAssumptionOverrides(engineInput, engineOutput)
+
+  // Derive display values — use overridden target/gap when active
+  const displayTarget = assumptionOverrides.isModified
+    ? assumptionOverrides.overrideResult.safeTarget
+    : engineOutput.safeSavingsTarget
+  const displayGap = assumptionOverrides.isModified
+    ? assumptionOverrides.overrideResult.gap
+    : engineOutput.savingsGap
 
   // Derived display values
   const city         = (answers.city ?? 'Toronto').charAt(0).toUpperCase() + (answers.city ?? 'toronto').slice(1)
@@ -262,17 +343,33 @@ export function ConsultantReport({
               </div>
             </div>
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              {[
-                { l: 'Savings',  v: fmt(engineInput.liquidSavings),          c: undefined },
-                { l: 'Target',   v: fmt(engineOutput.safeSavingsTarget),      c: undefined },
-                { l: 'Gap',      v: engineOutput.savingsGap > 0 ? fmt(engineOutput.savingsGap) : 'None ✓',
-                  c: engineOutput.savingsGap > 0 ? C.red : C.accent },
-              ].map(m => (
-                <div key={m.l} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>{m.l}</div>
-                  <div style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: m.c ?? C.forest }}>{m.v}</div>
+              {/* Savings — never overridden */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>Savings</div>
+                <div style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: C.forest }}>{fmt(engineInput.liquidSavings)}</div>
+              </div>
+              {/* Target — shows overridden value + badge when active */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                  Target
+                  {assumptionOverrides.isModified && (
+                    <span style={{ fontSize: 8, fontWeight: 700, color: C.gold, background: '#FFFBEB', border: `1px solid ${C.gold}40`, padding: '0px 4px', borderRadius: 3 }}>MOD</span>
+                  )}
                 </div>
-              ))}
+                <div style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: assumptionOverrides.isModified ? C.gold : C.forest }}>{fmt(displayTarget)}</div>
+              </div>
+              {/* Gap — shows overridden value + badge when active */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                  Gap
+                  {assumptionOverrides.isModified && (
+                    <span style={{ fontSize: 8, fontWeight: 700, color: C.gold, background: '#FFFBEB', border: `1px solid ${C.gold}40`, padding: '0px 4px', borderRadius: 3 }}>MOD</span>
+                  )}
+                </div>
+                <div style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: displayGap > 0 ? C.red : C.accent }}>
+                  {displayGap > 0 ? fmt(displayGap) : 'None ✓'}
+                </div>
+              </div>
             </div>
           </div>
           {/* ── Data freshness bar (AC-1, AC-2) ─────────────────────────── */}
@@ -325,82 +422,23 @@ export function ConsultantReport({
           </div>
         </SectionCard>
 
-        {/* ══ SECTION 2: Alternative Scenario Analysis ══════════════════════ */}
-        <SectionCard>
-          <SectionTitle icon="🔮">Alternative Scenario Analysis</SectionTitle>
-          {engineOutput.savingsGap === 0 ? (
-            /* AC-4: gap = 0 — compact info card instead of full scenarios */
-            <div style={{
-              display: 'flex', alignItems: 'flex-start', gap: 12,
-              background: '#EFF6FF', borderRadius: 12,
-              border: `1px solid ${C.blue}30`, padding: '16px 20px',
-            }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>
-                  Alternative scenarios available but not critical
-                </div>
-                <div style={{ fontSize: 12, color: C.gray, lineHeight: 1.6 }}>
-                  Client is financially prepared. Scenarios can be explored to optimise further if desired.
-                </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <p style={{ fontSize: 13, color: C.gray, margin: '0 0 18px', lineHeight: 1.6 }}>
-                These scenarios show how specific changes to the client&apos;s plan would affect their financial readiness. Use them as discussion starters.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-                {scenarios.map(s => (
-                  <div key={s.id} style={{
-                    borderRadius: 12, border: `1px solid ${C.border}`, padding: '18px',
-                    background: C.white, position: 'relative', overflow: 'hidden',
-                  }}>
-                    {/* Delta badge */}
-                    <div style={{ position: 'absolute', top: 0, right: 0, background: '#16a34a12', padding: '4px 12px 4px 14px', borderBottomLeftRadius: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: '#16a34a' }}>
-                        <ArrowUp/> {s.deltaLabel}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 20, marginBottom: 8 }}>{s.icon}</div>
-                    <div style={{ fontFamily: SERIF, fontSize: 15, color: C.forest, fontWeight: 700, marginBottom: 4, paddingRight: 90 }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: C.gray, lineHeight: 1.6, marginBottom: 12 }}>{s.details}</div>
-                    <div style={{ display: 'flex', gap: 18 }}>
-                      <div>
-                        <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>New Target</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: C.forest, fontFamily: SERIF }}>{fmt(s.newTarget)}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, color: C.textLight, fontWeight: 600, textTransform: 'uppercase' }}>New Gap</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: s.newGap === 0 ? C.accent : C.gold, fontFamily: SERIF }}>
-                          {s.newGap === 0 ? 'None ✓' : fmt(s.newGap)}
-                        </div>
-                      </div>
-                    </div>
-                    {/* AC-5: scenario closes gap — show note */}
-                    {s.newGap === 0 && (
-                      <div style={{
-                        marginTop: 10, display: 'flex', alignItems: 'center', gap: 6,
-                        fontSize: 11, fontWeight: 700, color: C.accent,
-                      }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                        Gap eliminated under this scenario
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </SectionCard>
+
+        {/* ══ SECTION 2b: Scenario Builder (US-21.1) ══════════════════════ */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <span style={{ fontSize: 20 }} aria-hidden="true">🔮</span>
+            <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: 0, fontWeight: 700 }}>
+              Interactive Scenario Builder
+            </h2>
+          </div>
+          <p style={{ fontSize: 13, color: C.gray, margin: '0 0 16px', lineHeight: 1.6 }}>
+            Adjust destination, housing, landing timeline, and job status to model combined &ldquo;what-if&rdquo; scenarios. All changes recalculate instantly.
+          </p>
+          <ScenarioBuilder engineInput={engineInput} engineOutput={engineOutput} />
+        </div>
 
         {/* ══ SECTION 3: Gap Closure Strategies ════════════════════════════ */}
-        <SectionCard>
-          <SectionTitle icon="🎯">Gap Closure Strategies</SectionTitle>
+        <CollapsibleSectionCard icon={'\u{1F3AF}'} title="Gap Closure Strategies" defaultOpen={false}>
           {engineOutput.savingsGap === 0 ? (
             /* AC-3: gap = 0 — replace strategies with green success card */
             <div style={{
@@ -457,11 +495,10 @@ export function ConsultantReport({
               ))}
             </>
           )}
-        </SectionCard>
+        </CollapsibleSectionCard>
 
         {/* ══ SECTION 4: Program-Specific Notes ════════════════════════════ */}
-        <SectionCard>
-          <SectionTitle icon="📋">{pathwayLabel} — Program-Specific Notes</SectionTitle>
+        <CollapsibleSectionCard icon={'\u{1F4CB}'} title={`${pathwayLabel} - Program-Specific Notes`} defaultOpen={false}>
           {programNotes.map((n, i) => {
             const sevMap: Record<string, { bg: string; border: string }> = {
               warning:  { bg: '#FDF6E3', border: C.gold   },
@@ -482,6 +519,14 @@ export function ConsultantReport({
               </div>
             )
           })}
+
+          {/* ── Proof-of-Funds Evidence Pack (US-20.3) ──────────────────── */}
+          {(() => {
+            const pack = generateEvidencePack(engineInput.pathway)
+            return pack.items ? (
+              <EvidencePackSection pack={pack} pathway={engineInput.pathway} />
+            ) : null
+          })()}
 
           {/* ── Study Permit Advisory Block ─────────────────────────────── */}
           {studyPermitAdvisory && (
@@ -512,11 +557,10 @@ export function ConsultantReport({
               })}
             </div>
           )}
-        </SectionCard>
+        </CollapsibleSectionCard>
 
         {/* ══ SECTION 5: Meeting Preparation Guide ══════════════════════════ */}
-        <SectionCard>
-          <SectionTitle icon="🤝">Meeting Preparation Guide</SectionTitle>
+        <CollapsibleSectionCard icon={'\u{1F91D}'} title="Meeting Preparation Guide" defaultOpen={false}>
 
           {/* Talking Points */}
           <div style={{ marginBottom: 24 }}>
@@ -566,35 +610,8 @@ export function ConsultantReport({
             </div>
           )}
 
-        </SectionCard>
+        </CollapsibleSectionCard>
 
-        {/* ── Recommended Tools (web-only — excluded from PDF per AC-7) ──── */}
-        {meetingGuide.crossReferrals && meetingGuide.crossReferrals.length > 0 && (
-          <>
-            <div style={{ borderTop: `1px solid ${C.border}`, margin: '8px 0 24px' }} aria-hidden="true"/>
-            <div style={{
-              background: C.white, borderRadius: 12, border: `1px dashed ${C.border}`,
-              padding: isMobile ? '18px 16px' : '22px 24px', marginBottom: 20,
-              opacity: 0.92,
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>
-                Recommended Maple Insight Tools
-              </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {meetingGuide.crossReferrals.map((cr, i) => (
-                  <a key={i} href={cr.link} style={{
-                    flex: '1 1 180px', padding: '10px 14px', borderRadius: 8,
-                    border: `1px solid ${C.border}`, background: C.lightGray,
-                    textDecoration: 'none', display: 'block',
-                  }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 2 }}>{cr.tool}</div>
-                    <div style={{ fontSize: 11, color: C.textLight, lineHeight: 1.4 }}>{cr.reason}</div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
 
         {/* ── Data footer ────────────────────────────────────────────────── */}
         <div style={{ background: C.lightGray, borderRadius: 10, padding: '14px 18px', fontSize: 11, color: C.textLight, lineHeight: 1.7 }}>
