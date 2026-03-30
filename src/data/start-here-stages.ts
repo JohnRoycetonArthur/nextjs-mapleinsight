@@ -1,9 +1,12 @@
+import React from 'react'
+import { startHereIcons } from './start-here-icons'
+
 export interface Stage {
   id: string;
   order: number;
   title: string;
   subtitle: string;
-  icon: string;
+  icon: React.ReactNode;
   description: string;
   articles: Array<{ title: string; url: string }>;
   calculators: Array<{ title: string; url: string }>;
@@ -17,7 +20,7 @@ export const STAGES: Stage[] = [
     order: 1,
     title: "First 90 Days",
     subtitle: "Getting settled",
-    icon: "🏦",
+    icon: startHereIcons.firstNinetyDays,
     description:
       "Open your first Canadian bank account, get a SIN, understand the basics of credit, and set up the essential financial foundations you'll need from day one.",
     articles: [
@@ -37,7 +40,7 @@ export const STAGES: Stage[] = [
     order: 2,
     title: "Tax Season",
     subtitle: "Filing with confidence",
-    icon: "📋",
+    icon: startHereIcons.taxSeason,
     description:
       "Learn how Canadian taxes work, understand your obligations even in your first partial year, and discover credits and deductions that newcomers commonly miss.",
     articles: [
@@ -58,7 +61,7 @@ export const STAGES: Stage[] = [
     order: 3,
     title: "Growing Your Money",
     subtitle: "Save & invest wisely",
-    icon: "📈",
+    icon: startHereIcons.growingYourMoney,
     description:
       "Start saving and investing with the right accounts for your goals — TFSA, RRSP, and FHSA each serve a different purpose. Learn which ones work best for you.",
     articles: [
@@ -79,7 +82,7 @@ export const STAGES: Stage[] = [
     order: 4,
     title: "Big Decisions",
     subtitle: "Life's milestones",
-    icon: "🏠",
+    icon: startHereIcons.bigDecisions,
     description:
       "Planning to buy a home, start a family, or bring family members to Canada? Understand the financial implications of life's major milestones.",
     articles: [

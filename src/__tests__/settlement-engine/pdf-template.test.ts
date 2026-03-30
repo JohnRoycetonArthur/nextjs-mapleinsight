@@ -93,4 +93,12 @@ describe('renderPdfTemplate compliance cards', () => {
     expect(html).toContain('Proof of Funds: Exempt')
     expect(html).toContain('CEC applicants with a valid job offer and current work authorization are exempt')
   })
+
+  it('renders public-mode CTA and branding when requested', () => {
+    const html = renderPdfTemplate(makePackage(), false, undefined, 'public')
+
+    expect(html).toContain('Maple Insight')
+    expect(html).toContain('What to Do Next')
+    expect(html).not.toContain('Schedule Your Plan Review')
+  })
 })

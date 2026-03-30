@@ -101,7 +101,6 @@ function DesktopGroupCard({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 20,
             flexShrink: 0,
           }}
           aria-hidden="true"

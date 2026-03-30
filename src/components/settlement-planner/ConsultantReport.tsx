@@ -9,11 +9,12 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
+import { TriangleWarning, Link, CircleArrowLeft, CircleArrowDown, SquareChartLine, Sparkle, ClipboardCheck, Crosshairs, Clipboard, Users } from 'nucleo-glass-icons/react'
 import { generateConsultantAdvisory } from '@/lib/settlement-engine/consultant-advisory'
 import type { EngineInput, EngineOutput, DataSource } from '@/lib/settlement-engine/types'
 import type { Risk } from '@/lib/settlement-engine/risks'
 import type { IRCCComplianceResult } from '@/lib/settlement-engine/study-permit'
-import type { ConsultantBranding } from './wizard/WizardShell'
+import type { ConsultantBranding } from './types'
 import type { WizardAnswers } from './SettlementSessionContext'
 import { DataFreshnessBar } from './DataFreshnessBar'
 import { DataFreshnessIndicator } from './DataFreshnessIndicator'
@@ -61,27 +62,6 @@ const MapleLeaf = ({ size = 14, color = C.red }: { size?: number; color?: string
 )
 
 
-const AlertIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-    <line x1="12" y1="9" x2="12" y2="13"/>
-    <line x1="12" y1="17" x2="12.01" y2="17"/>
-  </svg>
-)
-
-const LinkIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-    <polyline points="15 3 21 3 21 9"/>
-    <line x1="10" y1="14" x2="21" y2="3"/>
-  </svg>
-)
-
-const ChevronLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="15 18 9 12 15 6"/>
-  </svg>
-)
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -96,10 +76,10 @@ function SectionCard({ children, mb = 20 }: { children: React.ReactNode; mb?: nu
   )
 }
 
-function SectionTitle({ icon, children }: { icon: string; children: React.ReactNode }) {
+function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-      <span style={{ fontSize: 20 }} aria-hidden="true">{icon}</span>
+      <span aria-hidden="true">{icon}</span>
       <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: 0, fontWeight: 700 }}>{children}</h2>
     </div>
   )
@@ -112,7 +92,7 @@ function CollapsibleSectionCard({
   children,
   mb = 20,
 }: {
-  icon: string
+  icon: React.ReactNode
   title: React.ReactNode
   defaultOpen?: boolean
   children: React.ReactNode
@@ -148,25 +128,14 @@ function CollapsibleSectionCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <span style={{ fontSize: 20 }} aria-hidden="true">{icon}</span>
+          <span aria-hidden="true">{icon}</span>
           <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: 0, fontWeight: 700 }}>
             {title}
           </h2>
         </div>
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={C.gray}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}
-          aria-hidden="true"
-        >
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+        <span style={{ display: 'inline-flex', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} aria-hidden="true">
+          <CircleArrowDown size={18} stopColor1={C.gray} stopColor2="#374151" />
+        </span>
       </button>
       {open && (
         <div style={{ padding: '0 30px 28px' }}>
@@ -306,7 +275,7 @@ export function ConsultantReport({
               }}
               aria-label="Back to client view"
             >
-              <ChevronLeft />
+              <CircleArrowLeft size={16} stopColor1="#374151" stopColor2="#6B7280" />
               Client View
             </button>
           </div>
@@ -384,7 +353,7 @@ export function ConsultantReport({
 
         {/* ══ SECTION 1: Financial Readiness Assessment ════════════════════ */}
         <SectionCard>
-          <SectionTitle icon="📊">Financial Readiness Assessment</SectionTitle>
+          <SectionTitle icon={<SquareChartLine size={20} stopColor1={C.accent} stopColor2="#1B4F4A" />}>Financial Readiness Assessment</SectionTitle>
           {(() => {
             const allKeys = [
               ...engineOutput.upfrontBreakdown,
@@ -426,7 +395,7 @@ export function ConsultantReport({
         {/* ══ SECTION 2b: Scenario Builder (US-21.1) ══════════════════════ */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            <span style={{ fontSize: 20 }} aria-hidden="true">🔮</span>
+            <Sparkle size={20} stopColor1={C.purple} stopColor2="#7C3AED" />
             <h2 style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, margin: 0, fontWeight: 700 }}>
               Interactive Scenario Builder
             </h2>
@@ -438,7 +407,7 @@ export function ConsultantReport({
         </div>
 
         {/* ══ SECTION 3: Gap Closure Strategies ════════════════════════════ */}
-        <CollapsibleSectionCard icon={'\u{1F3AF}'} title="Gap Closure Strategies" defaultOpen={false}>
+        <CollapsibleSectionCard icon={<Crosshairs size={20} stopColor1={C.accent} stopColor2="#1B4F4A" />} title="Gap Closure Strategies" defaultOpen={false}>
           {engineOutput.savingsGap === 0 ? (
             /* AC-3: gap = 0 — replace strategies with green success card */
             <div style={{
@@ -446,9 +415,7 @@ export function ConsultantReport({
               background: '#ECFDF5', borderRadius: 12,
               border: `1px solid ${C.accent}40`, padding: '16px 20px',
             }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
+              <ClipboardCheck size={18} stopColor1={C.accent} stopColor2="#1B4F4A" />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.accent, marginBottom: 4 }}>
                   Client meets safe target
@@ -498,7 +465,7 @@ export function ConsultantReport({
         </CollapsibleSectionCard>
 
         {/* ══ SECTION 4: Program-Specific Notes ════════════════════════════ */}
-        <CollapsibleSectionCard icon={'\u{1F4CB}'} title={`${pathwayLabel} - Program-Specific Notes`} defaultOpen={false}>
+        <CollapsibleSectionCard icon={<Clipboard size={20} stopColor1={C.blue} stopColor2="#1D4ED8" />} title={`${pathwayLabel} - Program-Specific Notes`} defaultOpen={false}>
           {programNotes.map((n, i) => {
             const sevMap: Record<string, { bg: string; border: string }> = {
               warning:  { bg: '#FDF6E3', border: C.gold   },
@@ -513,7 +480,7 @@ export function ConsultantReport({
                 <p style={{ fontSize: 13, color: C.text, margin: 0, lineHeight: 1.65 }}>{n.content}</p>
                 {n.source && (
                   <a href={n.source} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 6 }}>
-                    IRCC Source <LinkIcon/>
+                    IRCC Source <Link size={11} stopColor1={C.blue} stopColor2="#1D4ED8" />
                   </a>
                 )}
               </div>
@@ -560,7 +527,7 @@ export function ConsultantReport({
         </CollapsibleSectionCard>
 
         {/* ══ SECTION 5: Meeting Preparation Guide ══════════════════════════ */}
-        <CollapsibleSectionCard icon={'\u{1F91D}'} title="Meeting Preparation Guide" defaultOpen={false}>
+        <CollapsibleSectionCard icon={<Users size={20} stopColor1={C.forest} stopColor2="#163F3B" />} title="Meeting Preparation Guide" defaultOpen={false}>
 
           {/* Talking Points */}
           <div style={{ marginBottom: 24 }}>
@@ -601,7 +568,7 @@ export function ConsultantReport({
               {meetingGuide.redFlags.map((rf, i) => (
                 <div key={i} style={{ background: '#FEF2F2', borderRadius: 10, borderLeft: `4px solid ${C.red}`, padding: '12px 16px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <AlertIcon/>
+                    <TriangleWarning size={15} stopColor1={C.red} stopColor2="#A3172E" />
                     <span style={{ fontSize: 13, fontWeight: 700, color: C.red }}>{rf.flag}</span>
                   </div>
                   <p style={{ fontSize: 12, color: C.text, margin: 0, lineHeight: 1.6 }}>{rf.detail}</p>

@@ -15,6 +15,7 @@ import { chromium }          from 'playwright-core'
 import { renderPdfTemplate } from './pdf-template'
 import type { MapleReportPackage } from './export'
 import type { DataSource } from './types'
+import type { PlannerMode } from '@/components/settlement-planner/types'
 
 // ─── Internal: browser launcher ───────────────────────────────────────────────
 
@@ -121,8 +122,9 @@ export async function generatePdfBuffer(
   pkg: MapleReportPackage,
   includeConsultantPages = false,
   dataSources?: Map<string, DataSource>,
+  mode: PlannerMode = 'consultant',
 ): Promise<Buffer> {
-  const html    = renderPdfTemplate(pkg, includeConsultantPages, dataSources)
+  const html    = renderPdfTemplate(pkg, includeConsultantPages, dataSources, mode)
   const browser = await launchBrowser()
   let page = null as Awaited<ReturnType<typeof browser.newPage>> | null
 

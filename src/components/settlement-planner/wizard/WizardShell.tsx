@@ -15,9 +15,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import {
+  usePlannerMode,
   useSettlementSession,
   type WizardAnswers,
 } from '../SettlementSessionContext'
+import {
+  Archive,
+  ArrowBack,
+  ArrowRightAlt,
+  Delete,
+  Lock,
+} from '@material-symbols-svg/react'
+import type { ConsultantBranding } from '../types'
 import { DesktopStepper } from './DesktopStepper'
 import { MobileProgress } from './MobileProgress'
 import { Step1Household }  from './steps/Step1Household'
@@ -28,48 +37,19 @@ import { Step5Savings }     from './steps/Step5Savings'
 import { Step6Lifestyle }   from './steps/Step6Lifestyle'
 import { C, FONT, SERIF, TOTAL_STEPS, WIZARD_STEPS } from './constants'
 import { ResultsDashboard } from '../ResultsDashboard'
+import {
+  trackPlannerComplete,
+  trackPlannerStart,
+  trackPlannerStepComplete,
+} from '@/lib/settlement-engine/analytics'
 
 // ─── Consultant branding shape (minimal — what the header needs) ───────────────
 
-export interface ConsultantBranding {
-  slug:         string
-  displayName:  string
-  companyName:  string | null
-  logo:         { asset: { url: string } } | null
-  theme:        { accentColor: string | null } | null
-}
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
+// ─── Brand icon ───────────────────────────────────────────────────────────────
 
 const MapleLeaf = ({ size = 11, color = C.red }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true">
     <path d="M12 0L13.5 6.5L17 4L15.5 8.5L22 9L17 12L20 16L14 14L12 24L10 14L4 16L7 12L2 9L8.5 8.5L7 4L10.5 6.5Z" />
-  </svg>
-)
-
-const LockIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-  </svg>
-)
-
-const ChevLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-  </svg>
-)
-
-const ChevRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-  </svg>
-)
-
-const TrashIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
   </svg>
 )
 
@@ -129,14 +109,17 @@ interface Props {
 }
 
 export function WizardShell({ consultant, onComplete }: Props) {
-  const { session, updateAnswers, setStep, clearSession } = useSettlementSession()
+  const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession } = useSettlementSession()
   const { currentStep, answers } = session
+  const mode = usePlannerMode()
+  const isPublicMode = mode === 'public'
 
   const [isMobile,    setIsMobile]    = useState(false)
   const [completed,   setCompleted]   = useState<Set<number>>(new Set())
   const [errors,      setErrors]      = useState<StepErrors>({})
   const [showClear,   setShowClear]   = useState(false)
   const [showResults, setShowResults] = useState(false)
+  const [hasTrackedStart, setHasTrackedStart] = useState(false)
 
   // ── Responsive breakpoint ─────────────────────────────────────────────────
   useEffect(() => {
@@ -157,6 +140,12 @@ export function WizardShell({ consultant, onComplete }: Props) {
     }
   }, [currentStep])
 
+  useEffect(() => {
+    if (showResults || hasTrackedStart) return
+    trackPlannerStart({ mode })
+    setHasTrackedStart(true)
+  }, [hasTrackedStart, mode, showResults])
+
   // ── Navigation handlers ───────────────────────────────────────────────────
 
   const onChange = useCallback((key: keyof WizardAnswers, value: unknown) => {
@@ -171,6 +160,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
   }, [updateAnswers])
 
   const goNext = useCallback(() => {
+    const stepKey = WIZARD_STEPS[currentStep - 1]?.key ?? 'step'
     const stepErrors = validateStep(currentStep, answers)
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors)
@@ -180,13 +170,28 @@ export function WizardShell({ consultant, onComplete }: Props) {
     setCompleted(prev => new Set([...prev, currentStep]))
 
     if (currentStep >= TOTAL_STEPS) {
+      trackPlannerStepComplete({
+        mode,
+        step: currentStep,
+        step_name: stepKey,
+      })
+      trackPlannerComplete({
+        mode,
+        destination: answers.city ?? null,
+        pathway: answers.pathway ?? null,
+      })
       onComplete?.(answers)
       setShowResults(true)
       return
     }
+    trackPlannerStepComplete({
+      mode,
+      step: currentStep,
+      step_name: stepKey,
+    })
     setStep(currentStep + 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [currentStep, answers, setStep, onComplete])
+  }, [answers, currentStep, mode, onComplete, setStep])
 
   const goBack = useCallback(() => {
     setErrors({})
@@ -198,12 +203,24 @@ export function WizardShell({ consultant, onComplete }: Props) {
     clearSession()
     setCompleted(new Set())
     setErrors({})
+    setHasTrackedStart(false)
     setShowClear(false)
+  }, [clearSession])
+
+  const handleStartOver = useCallback(() => {
+    clearSession()
+    setCompleted(new Set())
+    setErrors({})
+    setHasTrackedStart(false)
+    setShowClear(false)
+    setShowResults(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [clearSession])
 
   // ── Step meta ─────────────────────────────────────────────────────────────
   const stepMeta   = WIZARD_STEPS[currentStep - 1]
-  const accentColor = consultant?.theme?.accentColor ?? stepMeta.color
+  const effectiveConsultant = isPublicMode ? null : consultant ?? sessionConsultant
+  const accentColor = effectiveConsultant?.theme?.accentColor ?? stepMeta.color
 
   // ── Step content ──────────────────────────────────────────────────────────
   const renderStep = () => {
@@ -226,65 +243,65 @@ export function WizardShell({ consultant, onComplete }: Props) {
   }
 
   // ── Header logo or initials ───────────────────────────────────────────────
-  const logoUrl  = consultant?.logo?.asset?.url
-  const name     = consultant?.companyName ?? consultant?.displayName ?? 'Maple Insight'
+  const logoUrl  = effectiveConsultant?.logo?.asset?.url
+  const name     = effectiveConsultant?.companyName ?? effectiveConsultant?.displayName ?? 'Maple Insight'
   const abbr     = initials(name)
 
   if (showResults) {
-    return <ResultsDashboard consultant={consultant} />
+    return <ResultsDashboard consultant={effectiveConsultant} onStartOver={handleStartOver} />
   }
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT, paddingBottom: 80 }}>
 
       {/* ── Compact wizard header ──────────────────────────────────────────── */}
-      <nav
-        style={{
-          background:   C.white,
-          borderBottom: `1px solid ${C.border}`,
-          padding:      isMobile ? '0 16px' : '0 32px',
-          position:     'sticky',
-          top:           0,
-          zIndex:        100,
-        }}
-        aria-label="Wizard header"
-      >
-        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 52 }}>
-          {/* Left: consultant branding */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt={name}
-                width={28}
-                height={28}
-                style={{ borderRadius: 7, objectFit: 'contain' }}
-              />
-            ) : (
-              <div style={{
-                width: 28, height: 28, borderRadius: 7,
-                background: `linear-gradient(135deg, ${C.forest}, ${accentColor})`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontWeight: 800, fontSize: 11, fontFamily: SERIF,
-              }}>
-                {abbr}
-              </div>
-            )}
-            {!isMobile && (
-              <span style={{ fontFamily: SERIF, fontSize: 14, color: C.forest }}>{name}</span>
-            )}
-            <span style={{ fontSize: 11, color: C.textLight }}>|</span>
-            <span style={{ fontSize: 11, color: C.textLight }}>Settlement Planner</span>
-          </div>
+      {!isPublicMode && (
+        <nav
+          style={{
+            background:   C.white,
+            borderBottom: `1px solid ${C.border}`,
+            padding:      isMobile ? '0 16px' : '0 32px',
+            position:     'sticky',
+            top:           0,
+            zIndex:        100,
+          }}
+          aria-label="Wizard header"
+        >
+          <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 52 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt={name}
+                  width={28}
+                  height={28}
+                  style={{ borderRadius: 7, objectFit: 'contain' }}
+                />
+              ) : (
+                <div style={{
+                  width: 28, height: 28, borderRadius: 7,
+                  background: `linear-gradient(135deg, ${C.forest}, ${accentColor})`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontWeight: 800, fontSize: 11, fontFamily: SERIF,
+                }}>
+                  {abbr}
+                </div>
+              )}
+              {!isMobile && (
+                <span style={{ fontFamily: SERIF, fontSize: 14, color: C.forest }}>{name}</span>
+              )}
+              <span style={{ fontSize: 11, color: C.textLight }}>|</span>
+              <span style={{ fontSize: 11, color: C.textLight }}>Settlement Planner</span>
+            </div>
 
-          {/* Right: Powered by Maple Insight */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: C.textLight }}>
-            <span>Powered by</span>
-            <MapleLeaf size={11} />
-            <span style={{ fontFamily: SERIF, fontSize: 11, color: C.forest, fontWeight: 700 }}>Maple Insight</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: C.textLight }}>
+              <span>Powered by</span>
+              <MapleLeaf size={11} />
+              <span style={{ fontFamily: SERIF, fontSize: 11, color: C.forest, fontWeight: 700 }}>Maple Insight</span>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       {/* ── Progress indicator ────────────────────────────────────────────── */}
       <div style={{ background: C.white, borderBottom: `1px solid ${C.border}`, padding: isMobile ? '0 16px' : '16px 24px' }}>
@@ -307,7 +324,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
           background: '#E8F5EE', borderRadius: 7, padding: '4px 11px',
           marginBottom: 22, fontSize: 11, color: C.accent, fontWeight: 600,
         }}>
-          <LockIcon /> Your data stays in your browser
+          <Lock size={12} color="#1B7A4A" /> Your data stays in your browser
         </div>
 
         {renderStep()}
@@ -328,7 +345,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
           }}
         >
           <div style={{ background: C.white, borderRadius: 20, padding: '40px 32px', maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 16px' }}>🗑️</div>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><Delete size={24} color={C.red} /></div>
             <h3 id="clear-dialog-title" style={{ fontFamily: SERIF, fontSize: 20, color: C.forest, textAlign: 'center', margin: '0 0 10px' }}>Clear all data?</h3>
             <p style={{ fontSize: 14, color: C.gray, textAlign: 'center', lineHeight: 1.65, margin: '0 0 24px', fontFamily: FONT }}>
               All your answers will be removed and the wizard will restart from step 1. This cannot be undone.
@@ -376,7 +393,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
                   cursor: 'pointer', fontFamily: FONT,
                 }}
               >
-                <ChevLeft /> Back
+                <ArrowBack size={16} color="#374151" /> Back
               </button>
             )}
             <button
@@ -389,7 +406,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
                 fontSize: 11, cursor: 'pointer', fontFamily: FONT,
               }}
             >
-              <TrashIcon /> Clear
+              <Archive size={13} color="#C41E3A" /> Clear
             </button>
           </div>
 
@@ -422,7 +439,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
                 e.currentTarget.style.boxShadow = `0 2px 8px ${accentColor}44`
               }}
             >
-              {currentStep === TOTAL_STEPS ? 'See My Plan' : 'Next'} <ChevRight />
+              {currentStep === TOTAL_STEPS ? 'See My Plan' : 'Next'} <ArrowRightAlt size={16} color="#FFFFFF" />
             </button>
           </div>
         </div>

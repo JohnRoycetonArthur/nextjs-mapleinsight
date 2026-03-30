@@ -1,3 +1,6 @@
+import React from 'react'
+import { stepIcons } from './step-icons'
+
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 export const C = {
@@ -25,17 +28,17 @@ export interface StepMeta {
   num:   number
   key:   string
   title: string
-  icon:  string
+  icon:  React.ReactNode
   color: string
 }
 
 export const WIZARD_STEPS: StepMeta[] = [
-  { num: 1, key: 'household',   title: 'Household',    icon: '👥', color: C.accent  },
-  { num: 2, key: 'immigration', title: 'Immigration',  icon: '🛂', color: C.gold    },
-  { num: 3, key: 'destination', title: 'Destination',  icon: '📍', color: C.blue    },
-  { num: 4, key: 'income',      title: 'Work & Income', icon: '💼', color: C.purple },
-  { num: 5, key: 'savings',     title: 'Savings',      icon: '🏦', color: C.red     },
-  { num: 6, key: 'lifestyle',   title: 'Lifestyle',    icon: '🏠', color: C.accent  },
+  { num: 1, key: 'household',   title: 'Household',    icon: stepIcons.household,   color: C.accent  },
+  { num: 2, key: 'immigration', title: 'Immigration',  icon: stepIcons.immigration, color: C.gold    },
+  { num: 3, key: 'destination', title: 'Destination',  icon: stepIcons.destination, color: C.blue    },
+  { num: 4, key: 'income',      title: 'Work & Income', icon: stepIcons.income,     color: C.purple  },
+  { num: 5, key: 'savings',     title: 'Savings',      icon: stepIcons.savings,     color: C.red     },
+  { num: 6, key: 'lifestyle',   title: 'Lifestyle',    icon: stepIcons.lifestyle,   color: C.accent  },
 ]
 
 export const TOTAL_STEPS = WIZARD_STEPS.length

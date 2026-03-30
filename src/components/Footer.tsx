@@ -1,5 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { BrandMark } from "./BrandMark";
+
+const NAV_LINKS = [
+  { href: "/settlement-planner/plan", label: "Settlement Planner" },
+  { href: "/articles",                label: "Articles"           },
+  { href: "/tools",                   label: "Calculators"        },
+  { href: "/for-consultants",         label: "For Consultants"    },
+  { href: "/glossary",                label: "Glossary"           },
+  { href: "/about",                   label: "About"              },
+];
 
 export function Footer() {
   return (
@@ -8,14 +19,15 @@ export function Footer() {
         style={{
           maxWidth: 1100,
           margin: "0 auto",
-          padding: "32px 24px",
+          padding: "48px 24px 32px",
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           flexWrap: "wrap",
-          gap: 16,
+          gap: 24,
         }}
       >
+        {/* Brand */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <BrandMark size={16} />
           <span
@@ -29,39 +41,44 @@ export function Footer() {
           </span>
         </div>
 
+        {/* Nav links */}
         <div
           style={{
-            fontSize: 13,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px 20px",
+            fontSize: 12,
+            alignItems: "center",
+          }}
+        >
+          {NAV_LINKS.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              style={{
+                color: "rgba(255,255,255,0.5)",
+                textDecoration: "none",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.8)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+            >
+              {l.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Legal + copyright */}
+        <div
+          style={{
+            fontSize: 12,
             fontFamily: "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)",
             display: "flex",
             flexDirection: "column",
-            gap: 8,
+            gap: 6,
             alignItems: "flex-end",
           }}
         >
-          {/* Nav links row */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0 8px",
-              alignItems: "center",
-              color: "rgba(255,255,255,0.45)",
-            }}
-          >
-            <Link
-              href="/recommended-tools"
-              style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}
-            >
-              Recommended Tools
-            </Link>
-            <span>·</span>
-            <Link href="/about" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
-              About
-            </Link>
-          </div>
-
-          {/* Legal links row */}
           <div
             style={{
               display: "flex",
@@ -83,16 +100,11 @@ export function Footer() {
               Disclaimer
             </Link>
             <span>·</span>
-            <Link
-              href="/affiliate-disclosure"
-              style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}
-            >
+            <Link href="/affiliate-disclosure" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "underline" }}>
               Affiliate Disclosure
             </Link>
           </div>
-
-          {/* Copyright row */}
-          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
+          <span style={{ color: "rgba(255,255,255,0.35)" }}>
             © 2026 Maple Insight Canada · Educational content only · Not financial advice
           </span>
         </div>

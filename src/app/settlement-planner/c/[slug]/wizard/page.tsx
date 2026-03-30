@@ -3,7 +3,8 @@ import { createClient } from '@sanity/client'
 import { redirect } from 'next/navigation'
 import { apiVersion, dataset, projectId } from '@/sanity/env'
 import { SettlementSessionProvider } from '@/components/settlement-planner/SettlementSessionContext'
-import { WizardShell, type ConsultantBranding } from '@/components/settlement-planner/wizard/WizardShell'
+import { WizardShell } from '@/components/settlement-planner/wizard/WizardShell'
+import type { ConsultantBranding } from '@/components/settlement-planner/types'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -36,7 +37,7 @@ export default async function WizardPage({ params }: Props) {
   }
 
   return (
-    <SettlementSessionProvider slug={params.slug}>
+    <SettlementSessionProvider slug={params.slug} consultant={consultant}>
       <WizardShell consultant={consultant} />
     </SettlementSessionProvider>
   )

@@ -1,14 +1,7 @@
 'use client'
 
 import { C, FONT, SERIF, WIZARD_STEPS } from './constants'
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-)
+import { TaskAlt } from '@material-symbols-svg/react'
 
 // ─── DesktopStepper ───────────────────────────────────────────────────────────
 
@@ -55,7 +48,7 @@ export function DesktopStepper({ currentStep, completedSteps }: Props) {
                 aria-current={active ? 'step' : undefined}
               >
                 {done ? (
-                  <CheckIcon />
+                  <TaskAlt size={14} color="#FFFFFF" />
                 ) : (
                   <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: active ? '#fff' : C.textLight }}>
                     {s.num}

@@ -5,10 +5,13 @@ export interface ChecklistItemData {
   linkType: "article" | "calculator";
 }
 
+import React from 'react'
+import { checklistIcons } from './checklist-icons'
+
 export interface ChecklistGroupData {
   period: string;
   subtitle: string;
-  icon: string;
+  icon: React.ReactNode;
   color: string;
   lightColor: string;
   items: ChecklistItemData[];
@@ -18,7 +21,7 @@ export const CHECKLIST_DATA: ChecklistGroupData[] = [
   {
     period: "Month 1",
     subtitle: "Getting started",
-    icon: "🚀",
+    icon: checklistIcons.month1,
     color: "#1B7A4A",
     lightColor: "#E8F5EE",
     items: [
@@ -32,7 +35,7 @@ export const CHECKLIST_DATA: ChecklistGroupData[] = [
   {
     period: "Month 2–3",
     subtitle: "Building foundations",
-    icon: "🧱",
+    icon: checklistIcons.month23,
     color: "#B8860B",
     lightColor: "#FDF6E3",
     items: [
@@ -45,7 +48,7 @@ export const CHECKLIST_DATA: ChecklistGroupData[] = [
   {
     period: "Month 4–6",
     subtitle: "Growing & saving",
-    icon: "📈",
+    icon: checklistIcons.month46,
     color: "#2563EB",
     lightColor: "#EFF6FF",
     items: [
@@ -57,7 +60,7 @@ export const CHECKLIST_DATA: ChecklistGroupData[] = [
   {
     period: "Month 7–12",
     subtitle: "Looking ahead",
-    icon: "🏠",
+    icon: checklistIcons.month712,
     color: "#9333EA",
     lightColor: "#F5F0FF",
     items: [
