@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
+import { CloudDownload, PaperPlane, File, Calendar, CircleArrowDown, CircleArrowRight, ClipboardCheck, Clipboard, Rocket, Crosshairs } from 'nucleo-glass-icons/react'
 import {
   generateVerdict,
   computeTimeToDepletion,
@@ -17,7 +18,7 @@ import {
   modelIncomeScenarios,
   type NarrativeOutput,
 } from '@/lib/settlement-engine/narrative'
-import { useSettlementSession } from './SettlementSessionContext'
+import { usePlannerMode, useSettlementSession } from './SettlementSessionContext'
 import { fetchCityBaseline } from '@/lib/settlement-engine/baselines'
 import { runEngine } from '@/lib/settlement-engine/calculate'
 import { evaluateRisks, type RiskContext } from '@/lib/settlement-engine/risks'
@@ -38,7 +39,7 @@ import type {
   HousingType,
   FurnishingLevel,
 } from '@/lib/settlement-engine/types'
-import type { ConsultantBranding } from './wizard/WizardShell'
+import type { ConsultantBranding } from './types'
 import { ConsultantReport } from './ConsultantReport'
 import { generateReportPackage, downloadReportPackage, type MapleReportPackage } from '@/lib/settlement-engine/export'
 import { generateChecklist, type ChecklistItem } from '@/lib/settlement-engine/checklist'
@@ -48,6 +49,8 @@ import { DataFreshnessBar } from './DataFreshnessBar'
 import { fetchDataSources } from '@/lib/settlement-engine/sources'
 import type { DataSource } from '@/lib/settlement-engine/types'
 import { CURRENCY_SYMBOLS, type SupportedCurrency } from '@/lib/settlement-engine/currency'
+import { PublicModeSaveCard } from './PublicModeSaveCard'
+import { WhatToDoNext } from './WhatToDoNext'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -203,62 +206,16 @@ const MapleLeaf = ({ size = 14, color = C.red }: { size?: number; color?: string
   </svg>
 )
 
-const DownloadIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/>
-    <line x1="12" y1="15" x2="12" y2="3"/>
-  </svg>
-)
-
-const SendIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="22" y1="2" x2="11" y2="13"/>
-    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-  </svg>
-)
-
-const FileIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-  </svg>
-)
-
-const CalendarIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-    <line x1="16" y1="2" x2="16" y2="6"/>
-    <line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="3" y1="10" x2="21" y2="10"/>
-  </svg>
-)
-
 const ChevDown = ({ open }: { open: boolean }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-    style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-    aria-hidden="true"
-  >
-    <polyline points="6 9 12 15 18 9"/>
-  </svg>
-)
-
-const ArrowRight = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-    style={{ marginLeft: 3 }} aria-hidden="true"
-  >
-    <line x1="5" y1="12" x2="19" y2="12"/>
-    <polyline points="12 5 19 12 12 19"/>
-  </svg>
+  <span style={{ display: 'inline-flex', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} aria-hidden="true">
+    <CircleArrowDown size={16} stopColor1="#374151" stopColor2="#6B7280" />
+  </span>
 )
 
 const CheckIcon = ({ color = C.accent }: { color?: string }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-    style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true"
-  >
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-    <polyline points="22 4 12 14.01 9 11.01"/>
-  </svg>
+  <span style={{ flexShrink: 0, marginTop: 2, display: 'inline-flex' }} aria-hidden="true">
+    <ClipboardCheck size={14} stopColor1={color} stopColor2={color} />
+  </span>
 )
 
 // ─── MetricTile ───────────────────────────────────────────────────────────────
@@ -321,13 +278,16 @@ function MetricTile({ label, value, sub, color, isMobile, explainerId, openExpla
 
 interface Props {
   consultant?: ConsultantBranding | null
+  onStartOver?: () => void
 }
 
 // ─── ResultsDashboard ─────────────────────────────────────────────────────────
 
-export function ResultsDashboard({ consultant }: Props) {
+export function ResultsDashboard({ consultant, onStartOver }: Props) {
   const { session }  = useSettlementSession()
   const { answers }  = session
+  const mode = usePlannerMode()
+  const isPublicMode = mode === 'public'
 
   const [isMobile,             setIsMobile]             = useState(false)
   const [prepareOpen,          setPrepareOpen]          = useState(false)
@@ -552,8 +512,28 @@ export function ResultsDashboard({ consultant }: Props) {
     }
   }, [engineInput, engineOutput, irccCompliance, complianceRequirement, answers])
 
+  function buildReportPackage(
+    reportConsultant: { slug: string; displayName: string; companyName: string | null } | null,
+  ) {
+    if (!engineInput || !engineOutput) return null
+
+    return generateReportPackage({
+      engineInput,
+      engineOutput,
+      answers,
+      consultant: reportConsultant,
+      irccCompliance,
+      complianceRequirement,
+      monthlyIncome: narrativeData?.monthlyIncome ?? 0,
+      risks:         topRisks,
+      narrative:     narrativeData ?? null,
+    })
+  }
+
+  const publicReportPackage = isPublicMode ? buildReportPackage(null) : null
+
   // ── Consultant Report view ───────────────────────────────────────────────────
-  if (showConsultantReport && consultant && engineInput && engineOutput) {
+  if (!isPublicMode && showConsultantReport && consultant && engineInput && engineOutput) {
     return (
       <ConsultantReport
         engineInput={engineInput}
@@ -718,20 +698,16 @@ export function ResultsDashboard({ consultant }: Props) {
 
   // ─── Report Package download (US-13.2) ────────────────────────────────────
   function handleDownloadReport() {
-    if (!engineInput || !engineOutput) return
-    const pkg = generateReportPackage({
-      engineInput,
-      engineOutput,
-      answers,
-      consultant: consultant
-        ? { slug: consultant.displayName.toLowerCase().replace(/\s+/g, '-'), displayName: consultant.displayName, companyName: consultant.companyName ?? null }
+    const pkg = buildReportPackage(
+      consultant
+        ? {
+            slug: consultant.displayName.toLowerCase().replace(/\s+/g, '-'),
+            displayName: consultant.displayName,
+            companyName: consultant.companyName ?? null,
+          }
         : null,
-      irccCompliance,
-      complianceRequirement,
-      monthlyIncome:  narrativeData?.monthlyIncome ?? 0,
-      risks:          topRisks,
-      narrative:      narrativeData ?? null,
-    })
+    )
+    if (!pkg) return
     const slug = consultant
       ? consultant.displayName.toLowerCase().replace(/\s+/g, '-')
       : 'plan'
@@ -743,19 +719,16 @@ export function ResultsDashboard({ consultant }: Props) {
     if (!engineInput || !engineOutput || pdfLoading) return
     setPdfLoading(true)
     try {
-      const pkg = generateReportPackage({
-        engineInput,
-        engineOutput,
-        answers,
-        consultant: consultant
-          ? { slug: consultant.displayName.toLowerCase().replace(/\s+/g, '-'), displayName: consultant.displayName, companyName: consultant.companyName ?? null }
+      const pkg = buildReportPackage(
+        consultant
+          ? {
+              slug: consultant.displayName.toLowerCase().replace(/\s+/g, '-'),
+              displayName: consultant.displayName,
+              companyName: consultant.companyName ?? null,
+            }
           : null,
-        irccCompliance,
-        complianceRequirement,
-        monthlyIncome: narrativeData?.monthlyIncome ?? 0,
-        risks:         topRisks,
-        narrative:     narrativeData ?? null,
-      })
+      )
+      if (!pkg) return
       const res = await fetch('/api/reports/generate-pdf?mode=client', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -782,20 +755,12 @@ export function ResultsDashboard({ consultant }: Props) {
 
   // ─── Open Send modal (US-14.2) ────────────────────────────────────────────
   function handleOpenSendModal() {
-    if (!engineInput || !engineOutput) return
-    const pkg = generateReportPackage({
-      engineInput,
-      engineOutput,
-      answers,
-      consultant: consultant
+    const pkg = buildReportPackage(
+      consultant
         ? { slug: consultant.slug, displayName: consultant.displayName, companyName: consultant.companyName ?? null }
         : null,
-      irccCompliance,
-      complianceRequirement,
-      monthlyIncome: narrativeData?.monthlyIncome ?? 0,
-      risks:         topRisks,
-      narrative:     narrativeData ?? null,
-    })
+    )
+    if (!pkg) return
     setSendPackage(pkg)
     setShowSendModal(true)
   }
@@ -805,6 +770,7 @@ export function ResultsDashboard({ consultant }: Props) {
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
 
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
+      {!isPublicMode && (
       <nav style={{ background: C.white, borderBottom: `1px solid ${C.border}`, padding: '0 24px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 52 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -821,7 +787,7 @@ export function ResultsDashboard({ consultant }: Props) {
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {consultant && engineInput && engineOutput && (
+            {!isPublicMode && consultant && engineInput && engineOutput && (
               <button
                 onClick={() => setShowConsultantReport(true)}
                 style={{
@@ -844,6 +810,7 @@ export function ResultsDashboard({ consultant }: Props) {
           </div>
         </div>
       </nav>
+      )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <header style={{
@@ -853,7 +820,7 @@ export function ResultsDashboard({ consultant }: Props) {
       }}>
         <div style={{ maxWidth: 760, margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <h1 style={{ fontFamily: SERIF, fontSize: isMobile ? 24 : 32, fontWeight: 700, color: '#fff', margin: '0 0 6px', lineHeight: 1.15 }}>
-            Your Settlement Plan
+            {isPublicMode ? 'Your Personalized Canada Settlement Plan' : 'Your Settlement Plan'}
           </h1>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
             <span>{cityLabel}{provinceName ? `, ${provinceName}` : ''}</span>
@@ -862,6 +829,11 @@ export function ResultsDashboard({ consultant }: Props) {
             <span>·</span>
             <span>{householdLabel}</span>
           </div>
+          {isPublicMode && (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', margin: '10px 0 0', lineHeight: 1.6 }}>
+              Built by Maple Insight to help newcomers plan with more clarity and confidence.
+            </p>
+          )}
         </div>
       </header>
 
@@ -1230,15 +1202,15 @@ export function ResultsDashboard({ consultant }: Props) {
                     )}
                     {sdsGicLink ? (
                       <a href={sdsGicLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-                        IRCC SDS page <ArrowRight />
+                        IRCC SDS page <CircleArrowRight size={11} stopColor1={C.blue} stopColor2="#1D4ED8" style={{ marginLeft: 3 }} />
                       </a>
                     ) : action.articleSlug ? (
                       <a href={`/articles/${action.articleSlug}`} style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-                        Learn more <ArrowRight />
+                        Learn more <CircleArrowRight size={11} stopColor1={C.blue} stopColor2="#1D4ED8" style={{ marginLeft: 3 }} />
                       </a>
                     ) : action.link ? (
                       <a href={action.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: C.blue, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-                        Learn more <ArrowRight />
+                        Learn more <CircleArrowRight size={11} stopColor1={C.blue} stopColor2="#1D4ED8" style={{ marginLeft: 3 }} />
                       </a>
                     ) : null}
                   </div>
@@ -1249,6 +1221,9 @@ export function ResultsDashboard({ consultant }: Props) {
         </div>
 
         {/* ── AC-7: Consultant Post-Review Callout ────────────────────────── */}
+        {isPublicMode ? (
+          <WhatToDoNext />
+        ) : (
         <div style={{
           background: C.white, borderRadius: 14,
           borderTop: `1px solid ${C.red}20`,
@@ -1260,7 +1235,7 @@ export function ResultsDashboard({ consultant }: Props) {
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <CalendarIcon />
+              <Calendar size={20} stopColor1={C.red} stopColor2="#A3172E" />
             </div>
             <div>
               <h3 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: '0 0 6px', fontWeight: 700 }}>
@@ -1305,6 +1280,7 @@ export function ResultsDashboard({ consultant }: Props) {
           )}
         </div>
 
+        )}
         {/* ── 7. Settlement Checklist — collapsible accordion ─────────────── */}
         {(() => {
           const totalItems = checklist.preArrival.items.length + checklist.firstWeek.items.length + checklist.first30.items.length + checklist.first90.items.length
@@ -1324,14 +1300,14 @@ export function ResultsDashboard({ consultant }: Props) {
               {checklistOpen && (
                 <div style={{ padding: isMobile ? '0 16px 18px' : '0 26px 22px', borderTop: `1px solid ${C.border}` }}>
                   {[
-                    { title: 'Pre-Arrival',   period: checklist.preArrival, icon: '✈️', color: C.accent  },
-                    { title: 'First Week',    period: checklist.firstWeek,  icon: '🏁', color: C.gold    },
-                    { title: 'First 30 Days', period: checklist.first30,    icon: '📋', color: C.blue    },
-                    { title: 'First 90 Days', period: checklist.first90,    icon: '🎯', color: C.purple  },
+                    { title: 'Pre-Arrival',   period: checklist.preArrival, icon: <Rocket        size={14} stopColor1={C.accent} stopColor2="#1B4F4A" />, color: C.accent  },
+                    { title: 'First Week',    period: checklist.firstWeek,  icon: <ClipboardCheck size={14} stopColor1={C.gold}   stopColor2="#92720A" />, color: C.gold    },
+                    { title: 'First 30 Days', period: checklist.first30,    icon: <Clipboard      size={14} stopColor1={C.blue}   stopColor2="#1D4ED8" />, color: C.blue    },
+                    { title: 'First 90 Days', period: checklist.first90,    icon: <Crosshairs     size={14} stopColor1={C.purple} stopColor2="#7C3AED" />, color: C.purple  },
                   ].map(group => (
                     <div key={group.title} style={{ marginTop: 16 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                        <span aria-hidden="true" style={{ fontSize: 14 }}>{group.icon}</span>
+                        <span aria-hidden="true">{group.icon}</span>
                         <span style={{ fontFamily: SERIF, fontSize: 15, color: group.color, fontWeight: 700 }}>{group.title}</span>
                       </div>
                       {group.period.items.map((item: ChecklistItem, i) => (
@@ -1366,6 +1342,9 @@ export function ResultsDashboard({ consultant }: Props) {
         })()}
 
         {/* ── AC-8: Action Buttons ────────────────────────────────────────── */}
+        {isPublicMode ? (
+          publicReportPackage ? <PublicModeSaveCard reportPackage={publicReportPackage} onStartNewPlan={onStartOver} /> : null
+        ) : (
         <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14 }}>
           <h3 style={{ fontFamily: SERIF, fontSize: 16, color: C.forest, margin: '0 0 14px' }}>Save or Share Your Plan</h3>
           <div style={{ display: 'flex', gap: 8, flexDirection: isMobile ? 'column' : 'row' }}>
@@ -1374,24 +1353,25 @@ export function ResultsDashboard({ consultant }: Props) {
               disabled={pdfLoading}
               style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '13px 18px', borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.forest, fontWeight: 700, fontSize: 13, cursor: pdfLoading ? 'wait' : 'pointer', fontFamily: FONT, opacity: pdfLoading ? 0.7 : 1 }}
             >
-              <DownloadIcon /> {pdfLoading ? 'Generating…' : 'Download PDF'}
+              <CloudDownload size={15} stopColor1="#374151" stopColor2="#1B4F4A" /> {pdfLoading ? 'Generating…' : 'Download PDF'}
             </button>
             <button
               onClick={handleDownloadReport}
               style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '13px 18px', borderRadius: 10, border: `1px solid ${C.border}`, background: C.white, color: C.forest, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}
             >
-              <FileIcon /> Report Package
+              <File size={15} stopColor1="#374151" stopColor2="#1B4F4A" /> Report Package
             </button>
             {consultant?.slug && (
               <button
                 onClick={handleOpenSendModal}
                 style={{ flex: 1.3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '13px 18px', borderRadius: 10, border: 'none', background: C.red, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT, boxShadow: `0 2px 8px ${C.red}33` }}
               >
-                <SendIcon /> Send to Consultant
+                <PaperPlane size={15} stopColor1="#FFFFFF" stopColor2="rgba(255,255,255,0.7)" /> Send to Consultant
               </button>
             )}
           </div>
         </div>
+        )}
 
         {/* ── AC-9: Data Sources Footer ───────────────────────────────────── */}
         <div style={{ background: C.lightGray, borderRadius: 10, padding: '14px 18px', fontSize: 11, color: C.textLight, lineHeight: 1.6 }}>
@@ -1399,12 +1379,16 @@ export function ResultsDashboard({ consultant }: Props) {
           <br />
           <strong style={{ color: C.gray }}>Engine:</strong> v{engineOutput.engineVersion} · Data: {engineOutput.dataVersion}
           <br />
-          <strong style={{ color: C.gray }}>Disclaimer:</strong> This is a financial planning tool, not immigration or financial advice. Actual costs may vary. Consult your immigration representative for program-specific guidance.
+          <strong style={{ color: C.gray }}>Disclaimer:</strong>{' '}
+          {isPublicMode
+            ? 'This is a financial planning tool, not immigration, legal, or financial advice. Actual costs vary by city, household, and personal situation. Consider consulting a Registered Canadian Immigration Consultant (RCIC) for program-specific guidance.'
+            : 'This is a financial planning tool, not immigration or financial advice. Actual costs may vary. Consult your immigration representative for program-specific guidance.'}
         </div>
 
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────────────── */}
+      {!isPublicMode && (
       <footer style={{ borderTop: `1px solid ${C.border}`, background: C.white, padding: isMobile ? '24px 16px' : '32px 24px', marginTop: 20 }}>
         <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: 10, fontSize: 11, color: C.textLight }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -1414,6 +1398,7 @@ export function ResultsDashboard({ consultant }: Props) {
           <div>© 2026 · Educational content only · Not financial or immigration advice</div>
         </div>
       </footer>
+      )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap');

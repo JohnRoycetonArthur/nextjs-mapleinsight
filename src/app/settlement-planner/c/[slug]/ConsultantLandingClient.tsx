@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import {
+  WalletContent,
+  SquareChartLine,
+  Roadmap,
+  Lock,
+  Gauge,
+  ClipboardCheck,
+  CircleArrowRight,
+} from 'nucleo-glass-icons/react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -19,7 +28,7 @@ const C = {
   bg:        '#FAFBFC',
 }
 
-// ─── Inline SVG icons ────────────────────────────────────────────────────────
+// ─── Brand icon ──────────────────────────────────────────────────────────────
 
 const MapleLeaf = ({ size = 16, color = C.red }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} aria-hidden="true">
@@ -27,34 +36,10 @@ const MapleLeaf = ({ size = 16, color = C.red }: { size?: number; color?: string
   </svg>
 )
 
-const LockIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-)
-
-const ClockIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-  </svg>
-)
-
-const CheckMark = ({ color = C.accent }: { color?: string }) => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-  </svg>
-)
-
-const ArrowRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 6 }} aria-hidden="true">
-    <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-  </svg>
-)
-
 // ─── Feature card ─────────────────────────────────────────────────────────────
 
 interface FeatureCardProps {
-  icon:  string
+  icon:  React.ReactNode
   title: string
   desc:  string
 }
@@ -79,7 +64,7 @@ function FeatureCard({ icon, title, desc }: FeatureCardProps) {
       <div style={{
         width: 40, height: 40, borderRadius: 10, background: '#E8F5EE',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 20, marginBottom: 14,
+        marginBottom: 14,
       }}>
         {icon}
       </div>
@@ -292,17 +277,17 @@ export function ConsultantLandingClient({ consultant }: Props) {
         {/* ── Feature cards ── */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
           <FeatureCard
-            icon="💰"
+            icon={<WalletContent size={24} stopColor1="#1B7A4A" stopColor2="#1B4F4A" />}
             title="Cost Estimates"
             desc="Upfront move costs and monthly survival estimates using official CMHC rent data and transit prices for your city."
           />
           <FeatureCard
-            icon="📊"
+            icon={<SquareChartLine size={24} stopColor1="#2563EB" stopColor2="#0F766E" />}
             title="Savings Gap Analysis"
             desc="See exactly how much more you need to save, with a recommended safe target and a timeline to close the gap."
           />
           <FeatureCard
-            icon="✅"
+            icon={<Roadmap size={24} stopColor1="#C41E3A" stopColor2="#B8860B" />}
             title="Action Checklist"
             desc="A personalized pre-arrival and first-90-days checklist based on your destination and immigration pathway."
           />
@@ -363,7 +348,7 @@ export function ConsultantLandingClient({ consultant }: Props) {
             border: `1px solid ${C.accent}20`, padding: '18px 18px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-              <span style={{ color: C.accent }}><LockIcon /></span>
+              <Lock size={16} stopColor1="#1B7A4A" stopColor2="#1B4F4A" />
               <span style={{
                 fontSize: 14, fontWeight: 700, color: C.forest,
                 fontFamily: "var(--font-dm-serif, 'DM Serif Display', Georgia, serif)",
@@ -382,7 +367,7 @@ export function ConsultantLandingClient({ consultant }: Props) {
             border: `1px solid ${C.gold}20`, padding: '18px 18px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-              <span style={{ fontSize: 15 }} aria-hidden="true">⚖️</span>
+              <Gauge size={16} stopColor1="#B8860B" stopColor2="#92720A" />
               <span style={{
                 fontSize: 14, fontWeight: 700, color: C.gold,
                 fontFamily: "var(--font-dm-serif, 'DM Serif Display', Georgia, serif)",
@@ -402,7 +387,7 @@ export function ConsultantLandingClient({ consultant }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 6, marginBottom: 16, color: C.textLight, fontSize: 13,
           }}>
-            <ClockIcon />
+            <Gauge size={15} stopColor1="#9CA3AF" stopColor2="#6B7280" />
             <span>Takes about 8–12 minutes</span>
           </div>
 
@@ -416,7 +401,7 @@ export function ConsultantLandingClient({ consultant }: Props) {
                 display: 'flex', alignItems: 'center', gap: 5,
                 fontSize: 12, color: C.gray, fontWeight: 500,
               }}>
-                <CheckMark /> {label}
+                <ClipboardCheck size={15} stopColor1="#1B7A4A" stopColor2="#1B4F4A" /> {label}
               </div>
             ))}
           </div>
@@ -492,7 +477,7 @@ function CtaButton({ href, color }: { href: string; color: string }) {
       onMouseLeave={() => setHovered(false)}
     >
       Start Planning
-      <ArrowRight />
+      <CircleArrowRight size={16} stopColor1="#FFFFFF" stopColor2="#FFFFFF" />
     </Link>
   )
 }

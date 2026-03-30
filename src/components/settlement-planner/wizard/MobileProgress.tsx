@@ -19,7 +19,7 @@ export function MobileProgress({ currentStep }: Props) {
     <div style={{ padding: '12px 0' }} role="navigation" aria-label="Wizard progress">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: s.color, display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT }}>
-          <span style={{ fontSize: 14 }} aria-hidden="true">{s.icon}</span>
+          <span aria-hidden="true">{s.icon}</span>
           Step {currentStep}: {s.title}
         </span>
         <span style={{ fontSize: 11, color: C.textLight, fontFamily: FONT }}>

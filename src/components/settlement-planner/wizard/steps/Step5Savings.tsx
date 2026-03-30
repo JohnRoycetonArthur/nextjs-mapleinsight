@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { CurrencyExchange, Info } from '@material-symbols-svg/react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 import {
@@ -194,9 +195,7 @@ function ConversionCard({
       border: `1px solid ${C.accent}40`,
       display: 'flex', alignItems: 'center', gap: 10,
     }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-      </svg>
+      <CurrencyExchange size={16} color={C.accent} style={{ flexShrink: 0 }} />
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, fontFamily: FONT }}>
           ≈ CA${cad.toLocaleString()} CAD
@@ -384,9 +383,7 @@ export function Step5Savings({ data, onChange, errors }: Props) {
                 padding: '12px 16px', background: '#EFF6FF', borderRadius: 10,
                 border: '1px solid #BFDBFE', marginTop: 12,
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
+                <Info size={14} color={C.blue} style={{ flexShrink: 0, marginTop: 1 }} />
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: C.blue, fontFamily: FONT }}>
                     Gifted funds — documentation required

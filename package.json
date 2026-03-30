@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.4.2",
+    "@material-symbols-svg/react": "^0.3.0",
     "@portabletext/react": "^6.0.3",
     "@sanity/client": "^7.16.0",
     "@sanity/image-url": "^1.2.0",
@@ -22,6 +23,7 @@
     "dotenv": "^17.3.1",
     "gray-matter": "^4.0.3",
     "next": "14.2.5",
+    "nucleo-glass-icons": "^0.1.11",
     "openai": "^6.25.0",
     "playwright-core": "^1.58.2",
     "react": "18.3.1",

@@ -112,7 +112,7 @@ export function StartHereHero() {
                 backdropFilter: "blur(4px)",
               }}
             >
-              <span style={{ fontSize: 16 }} aria-hidden="true">{s.icon}</span>
+              <span aria-hidden="true">{s.icon}</span>
               <span
                 style={{
                   fontSize: 12,

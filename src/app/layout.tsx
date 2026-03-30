@@ -37,6 +37,7 @@ const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = headers().get('x-pathname') ?? ''
   const isConsultantRoute = pathname.startsWith('/settlement-planner/c/')
+  const isPublicWizardRoute = pathname.startsWith('/settlement-planner/plan/wizard')
 
   return (
     <html lang="en">
@@ -44,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleTagManager gtmId={gtmId} />
         {!isConsultantRoute && <Header />}
         <main className="min-h-[70vh]">{children}</main>
-        {!isConsultantRoute && <Footer />}
+        {!isConsultantRoute && !isPublicWizardRoute && <Footer />}
       </body>
     </html>
   );

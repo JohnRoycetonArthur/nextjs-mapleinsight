@@ -17,6 +17,12 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@sanity/client'
 import { apiVersion, dataset, projectId } from '@/sanity/env'
+import {
+  Commute,
+  DirectionsCar,
+  DirectionsSubway,
+  Warning,
+} from '@material-symbols-svg/react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 
@@ -65,9 +71,9 @@ const PROVINCE_OPTIONS = [
 ]
 
 const TRANSIT_OPTIONS = [
-  { value: 'public', label: 'Public Transit', icon: '🚇' },
-  { value: 'car',    label: 'Car',             icon: '🚗' },
-  { value: 'both',   label: 'Both',            icon: '🚇🚗' },
+  { value: 'public', label: 'Public Transit', icon: <DirectionsSubway size={20} color={C.accent} /> },
+  { value: 'car',    label: 'Car',             icon: <DirectionsCar size={20} color={C.accent} /> },
+  { value: 'both',   label: 'Both',            icon: <Commute size={20} color={C.accent} /> },
 ]
 
 // ─── Live baseline data shape (from Sanity) ───────────────────────────────────
@@ -296,7 +302,7 @@ export function Step3Destination({ data, onChange, errors, isMobile }: Props) {
         }}>
           {/* Warning */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 16, flexShrink: 0 }} aria-hidden="true">⚠️</span>
+            <Warning size={16} color={C.gold} />
             <p style={{ fontSize: 12, color: '#7A6010', margin: 0, lineHeight: 1.55, fontFamily: FONT, fontWeight: 500 }}>
               Estimates will use conservative national averages for cities not in our database
               (avg. 1BR $1,600/mo · transit $130/mo). Your plan may underestimate costs in
@@ -359,7 +365,7 @@ export function Step3Destination({ data, onChange, errors, isMobile }: Props) {
                   minHeight: 44,
                 }}
               >
-                <span style={{ fontSize: 20, display: 'block', marginBottom: 4 }} aria-hidden="true">
+                <span style={{ display: 'block', marginBottom: 4 }} aria-hidden="true">
                   {o.icon}
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: active ? C.accent : C.forest }}>

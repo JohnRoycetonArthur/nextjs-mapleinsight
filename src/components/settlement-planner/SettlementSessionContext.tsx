@@ -19,6 +19,7 @@ import React, {
   useRef,
   useState,
 } from 'react'
+import type { ConsultantBranding, PlannerMode } from './types'
 // ─── Session data shape ───────────────────────────────────────────────────────
 
 /** All answers the wizard collects — all fields are optional until submitted. */
@@ -96,10 +97,11 @@ export interface WizardAnswers {
 
 export interface SessionData {
   slug: string
+  mode: PlannerMode
   timestamp: number
   currentStep: number
   answers: WizardAnswers
-  /** Schema version — bump when shape changes to invalidate stale sessions. */
+  /** Schema version - bump when shape changes to invalidate stale sessions. */
   schemaVersion: number
 }
 
@@ -155,9 +157,10 @@ function eraseSession(slug: string, timestamp: number): void {
   removeStorage(dataKey(slug, timestamp))
 }
 
-function freshSession(slug: string): SessionData {
+function freshSession(slug: string, mode: PlannerMode): SessionData {
   return {
     slug,
+    mode,
     timestamp:     Date.now(),
     currentStep:   1,
     answers:       {},
@@ -169,6 +172,8 @@ function freshSession(slug: string): SessionData {
 
 export interface SettlementSessionContextValue {
   session:       SessionData
+  mode: PlannerMode
+  consultant: ConsultantBranding | null
   isRestored:    boolean   // true once mount restoration check is complete
   storageAvailable: boolean
 
@@ -183,11 +188,19 @@ const SettlementSessionContext = createContext<SettlementSessionContextValue | n
 
 interface Props {
   slug:     string
+  mode?: PlannerMode
+  consultant?: ConsultantBranding | null
   children: React.ReactNode
 }
 
-export function SettlementSessionProvider({ slug, children }: Props) {
-  const [session, setSession]             = useState<SessionData>(() => freshSession(slug))
+export function SettlementSessionProvider({
+  slug,
+  mode = 'consultant',
+  consultant = null,
+  children,
+}: Props) {
+  const effectiveConsultant = mode === 'public' ? null : consultant
+  const [session, setSession]             = useState<SessionData>(() => freshSession(slug, mode))
   const [isRestored, setIsRestored]       = useState(false)
   const [storageAvailable, setStorageAvailable] = useState(true)
 
@@ -206,12 +219,10 @@ export function SettlementSessionProvider({ slug, children }: Props) {
     }
 
     const saved = loadSession(slug)
-    if (saved) {
-      setSession(saved)
-    }
+    setSession(saved ? { ...saved, slug, mode } : freshSession(slug, mode))
     setIsRestored(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug])
+  }, [slug, mode])
 
   // ── Task 5: Auto-save after each state change (debounced) ───────────────────
   useEffect(() => {
@@ -244,13 +255,22 @@ export function SettlementSessionProvider({ slug, children }: Props) {
   const clearSession = useCallback(() => {
     setSession(prev => {
       eraseSession(prev.slug, prev.timestamp)
-      return freshSession(prev.slug)
+      return freshSession(prev.slug, mode)
     })
-  }, [])
+  }, [mode])
 
   return (
     <SettlementSessionContext.Provider
-      value={{ session, isRestored, storageAvailable, updateAnswers, setStep, clearSession }}
+      value={{
+        session,
+        mode,
+        consultant: effectiveConsultant,
+        isRestored,
+        storageAvailable,
+        updateAnswers,
+        setStep,
+        clearSession,
+      }}
     >
       {children}
     </SettlementSessionContext.Provider>
@@ -265,4 +285,8 @@ export function useSettlementSession(): SettlementSessionContextValue {
     throw new Error('useSettlementSession must be used inside <SettlementSessionProvider>')
   }
   return ctx
+}
+
+export function usePlannerMode(): PlannerMode {
+  return useSettlementSession().mode
 }

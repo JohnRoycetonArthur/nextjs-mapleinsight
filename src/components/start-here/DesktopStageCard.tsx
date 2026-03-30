@@ -94,7 +94,7 @@ export function DesktopStageCard({ stage, index, isVisible }: DesktopStageCardPr
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-          <span style={{ fontSize: 28 }} role="img" aria-hidden="true">
+          <span role="img" aria-hidden="true">
             {stage.icon}
           </span>
           <div>

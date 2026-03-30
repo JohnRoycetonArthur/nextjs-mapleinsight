@@ -19,7 +19,14 @@
  * is shown.
  */
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import {
+  Assignment,
+  QueryStats,
+  School,
+  Search,
+  TaskAlt,
+} from '@material-symbols-svg/react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 import { searchOccupations } from '@/lib/simulator/occupationSearch'
@@ -69,12 +76,12 @@ const CITY_ID_MAP: Record<string, string> = {
 
 // ─── Job status options ───────────────────────────────────────────────────────
 
-const JOB_OPTIONS = [
-  { value: 'secured_30',  label: 'Job secured',              desc: 'Start date within 30 days of arrival',        icon: '✅', color: C.accent  },
-  { value: 'offer_30_90', label: 'Job offer, delayed start', desc: 'Start date 30–90 days after arrival',          icon: '📋', color: C.gold    },
-  { value: 'no_offer',    label: 'No job offer yet',         desc: 'Still searching or plan to search on arrival', icon: '🔍', color: C.red     },
-  { value: 'student',     label: 'Student',                  desc: 'Income uncertain or part-time only',           icon: '🎓', color: C.purple  },
-] as const
+const JOB_OPTIONS: { value: string; label: string; desc: string; icon: React.ReactNode; color: string }[] = [
+  { value: 'secured_30',  label: 'Job secured',              desc: 'Start date within 30 days of arrival',        icon: <TaskAlt size={20} color={C.accent} />, color: C.accent  },
+  { value: 'offer_30_90', label: 'Job offer, delayed start', desc: 'Start date 30–90 days after arrival',          icon: <Assignment size={20} color={C.gold} />, color: C.gold    },
+  { value: 'no_offer',    label: 'No job offer yet',         desc: 'Still searching or plan to search on arrival', icon: <Search size={20} color={C.red} />, color: C.red     },
+  { value: 'student',     label: 'Student',                  desc: 'Income uncertain or part-time only',           icon: <School size={20} color={C.purple} />, color: C.purple  },
+]
 
 const RUNWAY_LABEL: Record<string, string> = {
   secured_30: '2 months', offer_30_90: '3 months', no_offer: '6 months', student: '6 months',
@@ -197,14 +204,6 @@ function ConfidenceBadge({ tier }: { tier: string }) {
   )
 }
 
-// ─── Search icon ──────────────────────────────────────────────────────────────
-
-const SearchIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-)
-
 // ─── Per-tier net monthly (local state, not persisted) ────────────────────────
 
 interface TierNetMonthly { low: number; mid: number; high: number }
@@ -227,6 +226,8 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
   const [dropdownOpen, setDropdownOpen]   = useState(false)
   const [tierNet, setTierNet]             = useState<TierNetMonthly | null>(null)
   const dropdownRef                       = useRef<HTMLDivElement>(null)
+  const partTimeEstimatorRef              = useRef<HTMLDivElement>(null)
+  const previousPartTimeVisibility        = useRef(false)
 
   // Study permit path flag (uses session value with underscore)
   const isStudyPermitPath = data.pathway === 'study_permit'
@@ -273,6 +274,20 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
   const ptHours  = data.studyPermit?.partTimeHoursPerWeek ?? 20
   const ptRate   = data.studyPermit?.partTimeHourlyRate   ?? defaultRate
   const ptMonthly = partTimeOn ? Math.round(ptHours * ptRate * 4.33) : 0
+
+  useEffect(() => {
+    const isVisible = isStudentPermit || showPartTimeForStudyPermit
+    const wasVisible = previousPartTimeVisibility.current
+    previousPartTimeVisibility.current = isVisible
+
+    if (!isVisible || wasVisible || !partTimeEstimatorRef.current) return
+
+    const timeoutId = window.setTimeout(() => {
+      partTimeEstimatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 220)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isStudentPermit, showPartTimeForStudyPermit])
 
   // ── Close dropdown on outside click ─────────────────────────────────────────
   useEffect(() => {
@@ -392,7 +407,7 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
                   cursor: 'pointer', transition: 'all 0.15s', fontFamily: FONT, minHeight: 44,
                 }}
               >
-                <span style={{ fontSize: 20, display: 'block', marginBottom: 6 }} aria-hidden="true">{o.icon}</span>
+                <span style={{ display: 'block', marginBottom: 6 }} aria-hidden="true">{o.icon}</span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: active ? o.color : C.forest, display: 'block', lineHeight: 1.3 }}>
                   {o.label}
                 </span>
@@ -493,7 +508,7 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
             }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <span style={{ fontSize: 16 }} aria-hidden="true">🔮</span>
+                <QueryStats size={16} color="#9333EA" />
                 <span style={{ fontSize: 15, fontWeight: 700, color: C.purple, fontFamily: SERIF }}>
                   Income Estimator
                 </span>
@@ -510,7 +525,7 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
                     position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
                     color: C.textLight, pointerEvents: 'none',
                   }}>
-                    <SearchIcon />
+                    <Search size={14} color="#9CA3AF" />
                   </span>
                   <input
                     id="occ-search"
@@ -682,7 +697,9 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
 
       {/* ── Study permit: part-time income estimator (§4.2) ─────────────────── */}
       {(isStudentPermit || showPartTimeForStudyPermit) && (
-        <div style={{
+        <div
+          ref={partTimeEstimatorRef}
+          style={{
           background: `${C.accent}05`, border: `1px solid ${C.accent}20`,
           borderRadius: 14, padding: isMobile ? '18px 16px' : '20px 22px',
         }}>

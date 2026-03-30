@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "./ArrowRight";
+import { ClipboardCheck, CircleArrowRight } from "nucleo-glass-icons/react";
 import { trackEvent } from "@/lib/analytics";
 
 export function ChecklistPromo() {
@@ -34,11 +34,10 @@ export function ChecklistPromo() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 26,
             flexShrink: 0,
           }}
         >
-          ✓
+          <ClipboardCheck size={26} stopColor1="#C41E3A" stopColor2="#A3172E" />
         </div>
 
         {/* Text */}
@@ -98,7 +97,7 @@ export function ChecklistPromo() {
           onClick={() => trackEvent("checklist_promo_click", { source: "start_here" })}
         >
           Open Checklist
-          <ArrowRight />
+          <CircleArrowRight size={14} stopColor1="#FFFFFF" stopColor2="rgba(255,255,255,0.7)" style={{ marginLeft: 4 }} />
         </Link>
       </div>
     </section>

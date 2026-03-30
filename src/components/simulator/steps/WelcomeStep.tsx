@@ -50,7 +50,7 @@ export function WelcomeStep({ value, onChange, error }: Props) {
                 fontFamily: F.body, width: '100%',
               }}
             >
-              <span aria-hidden="true" style={{ fontSize: 28, flexShrink: 0 }}>{stage.icon}</span>
+              <span aria-hidden="true" style={{ flexShrink: 0 }}>{stage.icon}</span>
               <div style={{ flex: 1 }}>
                 <div style={{
                   fontFamily: F.heading, fontSize: 17, fontWeight: 700,

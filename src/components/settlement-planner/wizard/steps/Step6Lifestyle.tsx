@@ -17,6 +17,21 @@
 import { C, FONT, SERIF } from '../constants'
 import { STUDY_PERMIT_DEFAULTS } from '@/lib/settlement-engine/study-permit'
 import type { WizardAnswers } from '../../SettlementSessionContext'
+import {
+  Add,
+  Apartment,
+  Bed,
+  Close,
+  FamilyGroup,
+  FamilyHome,
+  Handshake,
+  HomeWork,
+  House,
+  Info,
+  Lock,
+  School,
+  TaskAlt,
+} from '@material-symbols-svg/react'
 
 // ─── Design primitives ────────────────────────────────────────────────────────
 
@@ -63,38 +78,21 @@ const Toggle = ({
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const XIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-)
-const PlusIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-)
-const LockIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-  </svg>
-)
-
 // ─── Housing / furnishing config ──────────────────────────────────────────────
 
 const HOUSING = [
-  { value: 'studio', label: 'Studio',      icon: '🏢' },
-  { value: '1br',    label: '1 Bedroom',   icon: '🛏️' },
-  { value: '2br',    label: '2 Bedrooms',  icon: '🏠' },
-  { value: '3br',    label: '3+ Bedrooms', icon: '🏡' },
-  { value: 'staying-family', label: 'Staying with Family / Friends', icon: '🤝' },
+  { value: 'studio', label: 'Studio',      icon: <Apartment size={22} color={C.accent} /> },
+  { value: '1br',    label: '1 Bedroom',   icon: <Bed size={22} color={C.accent} /> },
+  { value: '2br',    label: '2 Bedrooms',  icon: <House size={22} color={C.accent} /> },
+  { value: '3br',    label: '3+ Bedrooms', icon: <HomeWork size={22} color={C.accent} /> },
+  { value: 'staying-family', label: 'Staying with Family / Friends', icon: <Handshake size={22} color={C.accent} /> },
 ]
 
 const STUDENT_HOUSING = [
-  { value: 'shared-room',    label: 'Shared Room / House',          icon: '🏠', desc: 'Share a house or apartment with roommates. Most affordable option.' },
-  { value: 'on-campus',      label: 'On-Campus Residence',          icon: '🏫', desc: 'University dormitory or student housing. Convenient, may include meal plan.' },
-  { value: 'homestay',       label: 'Homestay',                     icon: '👨‍👩‍👧', desc: 'Live with a Canadian host family. Often includes meals.' },
-  { value: 'staying-family', label: 'Staying with Family / Friends', icon: '🤝', desc: 'Live with relatives or friends at no rental cost.' },
+  { value: 'shared-room',    label: 'Shared Room / House',          icon: <House size={20} color={C.accent} />, desc: 'Share a house or apartment with roommates. Most affordable option.' },
+  { value: 'on-campus',      label: 'On-Campus Residence',          icon: <School size={20} color={C.accent} />, desc: 'University dormitory or student housing. Convenient, may include meal plan.' },
+  { value: 'homestay',       label: 'Homestay',                     icon: <FamilyHome size={20} color={C.accent} />, desc: 'Live with a Canadian host family. Often includes meals.' },
+  { value: 'staying-family', label: 'Staying with Family / Friends', icon: <FamilyGroup size={20} color={C.accent} />, desc: 'Live with relatives or friends at no rental cost.' },
 ]
 
 const FURNISHING = [
@@ -382,7 +380,7 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
                     background: `${C.gold}18`, borderRadius: 5, padding: '3px 7px',
                     whiteSpace: 'nowrap',
                   }}>
-                    <LockIcon /> Required
+                    <Lock size={11} color={C.gold} /> Required
                   </div>
                 </div>
 
@@ -392,7 +390,7 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
                   borderRadius: 10, padding: '12px 14px', marginBottom: 16,
                   display: 'flex', alignItems: 'flex-start', gap: 8,
                 }}>
-                  <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }} aria-hidden="true">ℹ️</span>
+                  <Info size={14} color="#7A6010" style={{ flexShrink: 0, marginTop: 1 }} />
                   <p style={{ fontSize: 12, color: '#7A6010', margin: 0, lineHeight: 1.6, fontFamily: FONT }}>
                     International students in <strong>{provinceName}</strong> are required to have{' '}
                     <strong>{hiMechanism}</strong>. This cost is typically added to your tuition fees by your
@@ -409,7 +407,7 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
                 borderRadius: 10, padding: '12px 14px', marginBottom: 16,
                 display: 'flex', alignItems: 'flex-start', gap: 8,
               }}>
-                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }} aria-hidden="true">ℹ️</span>
+                <Info size={14} color="#7A6010" style={{ flexShrink: 0, marginTop: 1 }} />
                 <p style={{ fontSize: 12, color: '#7A6010', margin: 0, lineHeight: 1.6, fontFamily: FONT }}>
                   <strong>{provinceName}</strong> provides provincial health coverage (
                   <strong>{hiMechanism}</strong>) after{' '}
@@ -427,7 +425,7 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
                 borderRadius: 10, padding: '12px 14px', marginBottom: 16,
                 display: 'flex', alignItems: 'flex-start', gap: 8,
               }}>
-                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }} aria-hidden="true">✅</span>
+                <TaskAlt size={14} color={C.accent} style={{ flexShrink: 0, marginTop: 1 }} />
                 <p style={{ fontSize: 12, color: C.accent, margin: 0, lineHeight: 1.6, fontFamily: FONT }}>
                   <strong>Good news</strong> — international students in <strong>{provinceName}</strong> are
                   eligible for provincial health coverage (<strong>{hiMechanism}</strong>) with no waiting period.
@@ -485,7 +483,7 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
                 color: C.red, flexShrink: 0,
               }}
             >
-              <XIcon />
+              <Close size={12} color={C.red} />
             </button>
           </div>
         ))}
@@ -501,7 +499,7 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
             cursor: 'pointer', fontFamily: FONT,
           }}
         >
-          <PlusIcon /> Add expense
+          <Add size={14} color={C.accent} /> Add expense
         </button>
       </div>
     </div>

@@ -16,7 +16,25 @@
  * user switches away from Study Permit.
  */
 
-import { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import {
+  AltRoute,
+  Assignment,
+  Cancel,
+  Category,
+  FactCheck,
+  FamilyGroup,
+  Forum,
+  Help,
+  Info,
+  LibraryBooks,
+  Lock,
+  School,
+  ShieldLock,
+  Target,
+  TravelExplore,
+  Work,
+} from '@material-symbols-svg/react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 
@@ -97,11 +115,11 @@ function CurrencyInput({
 
 // ─── Pathway data ─────────────────────────────────────────────────────────────
 
-const PATHWAYS = [
+const PATHWAYS: { value: string; label: string; icon: React.ReactNode; desc: string; color: string; irccKey: string }[] = [
   {
     value: 'express_entry',
     label: 'Express Entry',
-    icon:  '🚀',
+    icon:  <TravelExplore size={20} color={C.accent} />,
     desc:  'Apply as a skilled worker through the federal points-based system (FSW, CEC, or Skilled Trades).',
     color: C.accent,
     irccKey: 'express-entry-fsw',
@@ -109,7 +127,7 @@ const PATHWAYS = [
   {
     value: 'pnp',
     label: 'Provincial Nominee',
-    icon:  '🏛️',
+    icon:  <AltRoute size={20} color={C.blue} />,
     desc:  'Nominated by a province or territory for permanent residence through a stream matching your profile.',
     color: C.blue,
     irccKey: 'pnp',
@@ -117,7 +135,7 @@ const PATHWAYS = [
   {
     value: 'study_permit',
     label: 'Study Permit',
-    icon:  '🎓',
+    icon:  <School size={20} color={C.purple} />,
     desc:  'Study at a designated learning institution in Canada as an international student.',
     color: C.purple,
     irccKey: 'study-permit',
@@ -125,7 +143,7 @@ const PATHWAYS = [
   {
     value: 'work_permit',
     label: 'Work Permit',
-    icon:  '💼',
+    icon:  <Work size={20} color={C.gold} />,
     desc:  'Work in Canada temporarily under an LMIA-based, intra-company transfer, or open work permit.',
     color: C.gold,
     irccKey: 'work-permit',
@@ -133,7 +151,7 @@ const PATHWAYS = [
   {
     value: 'family',
     label: 'Family Sponsorship',
-    icon:  '👨‍👩‍👧',
+    icon:  <FamilyGroup size={20} color={C.red} />,
     desc:  'Sponsored for permanent residence by a Canadian citizen or permanent resident family member.',
     color: C.red,
     irccKey: 'family-sponsorship',
@@ -141,7 +159,7 @@ const PATHWAYS = [
   {
     value: 'refugee',
     label: 'Refugee / Protected',
-    icon:  '🛡️',
+    icon:  <ShieldLock size={20} color={C.forest} />,
     desc:  'Protected person status through a refugee claim, government sponsorship, or private sponsorship.',
     color: C.forest,
     irccKey: 'other',
@@ -149,7 +167,7 @@ const PATHWAYS = [
   {
     value: 'other',
     label: 'Other / Not Sure',
-    icon:  '❓',
+    icon:  <Help size={20} color={C.gray} />,
     desc:  'Another pathway or still exploring options — we\'ll use general federal fee defaults.',
     color: C.gray,
     irccKey: 'other',
@@ -175,32 +193,32 @@ const TUITION_LABELS: Record<string, string> = {
   language_school: '$8,000',
 }
 
-const PROGRAM_LEVELS = [
-  { value: 'undergraduate',   label: 'Undergraduate', icon: '🎓', desc: 'Bachelor\'s degree program at a university' },
-  { value: 'graduate',        label: 'Graduate',       icon: '📜', desc: 'Master\'s or doctoral program' },
-  { value: 'college_diploma', label: 'College / Diploma', icon: '🏫', desc: 'College certificate or diploma program' },
-  { value: 'language_school', label: 'Language School', icon: '🗣️', desc: 'ESL, FSL, or other language training' },
+const PROGRAM_LEVELS: { value: string; label: string; icon: React.ReactNode; desc: string }[] = [
+  { value: 'undergraduate',   label: 'Undergraduate',    icon: <School size={20} color={C.purple} />, desc: 'Bachelor\'s degree program at a university' },
+  { value: 'graduate',        label: 'Graduate',         icon: <LibraryBooks size={20} color={C.purple} />, desc: 'Master\'s or doctoral program' },
+  { value: 'college_diploma', label: 'College / Diploma', icon: <Category size={20} color={C.purple} />, desc: 'College certificate or diploma program' },
+  { value: 'language_school', label: 'Language School',  icon: <Forum size={20} color={C.purple} />, desc: 'ESL, FSL, or other language training' },
 ]
 
-const GIC_OPTIONS = [
+const GIC_OPTIONS: { value: string; label: string; icon: React.ReactNode; desc: string; detail: string }[] = [
   {
     value: 'planning',
     label: 'Planning to purchase',
-    icon:  '📋',
+    icon:  <Assignment size={18} color={C.purple} />,
     desc:  'I will buy a GIC before applying.',
     detail: 'The engine will add the IRCC minimum GIC amount ($22,895) and bank processing fee (~$200) to your upfront costs.',
   },
   {
     value: 'purchased',
     label: 'Already purchased',
-    icon:  '✅',
+    icon:  <FactCheck size={18} color={C.purple} />,
     desc:  'I have already bought a GIC.',
     detail: 'Your GIC is committed — it will be noted in your plan as secured funds, not added as a new cost.',
   },
   {
     value: 'not_purchasing',
     label: 'Not purchasing',
-    icon:  '🚫',
+    icon:  <Cancel size={18} color={C.purple} />,
     desc:  'I am not using a GIC.',
     detail: 'GIC costs will be excluded. Note: a GIC is required for the Student Direct Stream (SDS) fast-track.',
   },
@@ -208,13 +226,7 @@ const GIC_OPTIONS = [
 
 // ─── GIC tooltip pill ─────────────────────────────────────────────────────────
 
-const InfoIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/>
-    <line x1="12" y1="8" x2="12.01" y2="8"/>
-  </svg>
-)
+const InfoIcon = () => <Info size={13} color="#2563EB" />
 
 // ─── Study permit sub-form ────────────────────────────────────────────────────
 
@@ -242,7 +254,7 @@ function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) 
     >
       {/* Sub-form header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <span style={{ fontSize: 22 }} aria-hidden="true">📚</span>
+        <School size={22} color={C.purple} />
         <div>
           <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: C.forest }}>
             Study Permit Details
@@ -277,7 +289,7 @@ function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) 
                 minHeight: 44,
               }}
             >
-              <span style={{ fontSize: 20, display: 'block', marginBottom: 4 }}>{pl.icon}</span>
+              <span style={{ display: 'block', marginBottom: 4 }}>{pl.icon}</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: sp.programLevel === pl.value ? C.purple : C.forest, display: 'block', lineHeight: 1.2 }}>{pl.label}</span>
               <span style={{ fontSize: 11, color: C.gray, display: 'block', marginTop: 3, lineHeight: 1.3 }}>{pl.desc}</span>
             </button>
@@ -364,7 +376,7 @@ function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) 
                   minHeight: 44, opacity: isDisabled ? 0.45 : 1,
                 }}
               >
-                <span style={{ fontSize: 18, display: 'block', marginBottom: 5 }}>{g.icon}</span>
+                <span style={{ display: 'block', marginBottom: 5 }}>{g.icon}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: sp.gicStatus === g.value ? C.purple : C.forest, display: 'block', lineHeight: 1.2 }}>{g.label}</span>
                 <span style={{ fontSize: 11, color: C.gray, display: 'block', marginTop: 4, lineHeight: 1.4 }}>{g.desc}</span>
                 {sp.gicStatus === g.value && !isDisabled && (
@@ -526,6 +538,29 @@ export function Step2Immigration({ data, onChange, errors, isMobile }: Props) {
   const ee              = data.expressEntry ?? DEFAULT_EXPRESS_ENTRY
   const showJobOffer    = isExpressEntry && (ee.subClass === 'cec' || ee.subClass === 'fst')
   const showWorkAuth    = isExpressEntry && ee.subClass === 'cec' && ee.hasJobOffer
+  const expressEntryRef = useRef<HTMLDivElement>(null)
+  const studyPermitRef  = useRef<HTMLDivElement>(null)
+  const previousPathway = useRef<string | undefined>(data.pathway)
+
+  useEffect(() => {
+    const previous = previousPathway.current
+    previousPathway.current = data.pathway
+
+    const target = data.pathway === 'express_entry'
+      ? expressEntryRef.current
+      : data.pathway === 'study_permit'
+        ? studyPermitRef.current
+        : null
+
+    if (!target) return
+    if (previous === data.pathway && previous !== undefined) return
+
+    const timeoutId = window.setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 220)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [data.pathway])
 
   const handlePathwayChange = (pathwayValue: string) => {
     onChange('pathway', pathwayValue)
@@ -583,7 +618,7 @@ export function Step2Immigration({ data, onChange, errors, isMobile }: Props) {
                 minHeight: 44,
               }}
             >
-              <span style={{ fontSize: 20, display: 'block', marginBottom: 6 }} aria-hidden="true">{p.icon}</span>
+              <span style={{ display: 'block', marginBottom: 6 }} aria-hidden="true">{p.icon}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: C.forest, display: 'block', lineHeight: 1.3 }}>{p.label}</span>
               <span style={{ fontSize: 12, color: C.gray, display: 'block', marginTop: 3, lineHeight: 1.4 }}>{p.desc}</span>
             </button>
@@ -606,13 +641,15 @@ export function Step2Immigration({ data, onChange, errors, isMobile }: Props) {
         }}
       >
         {isExpressEntry && (
-          <div style={{
+          <div
+            ref={expressEntryRef}
+            style={{
             background: C.white, borderRadius: 14, border: `1px solid ${C.border}`,
             padding: 20, marginBottom: 16,
           }}>
             {/* Sub-class header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 20 }} aria-hidden="true">🎯</span>
+              <Target size={20} color={C.gold} />
               <div>
                 <Label>Which Express Entry class are you applying under?</Label>
                 <Helper>This determines whether proof of funds is required.</Helper>
@@ -669,12 +706,14 @@ export function Step2Immigration({ data, onChange, errors, isMobile }: Props) {
         }}
       >
         {(isStudyPermit || data.studyPermit) && (
-          <StudyPermitSubForm
-            sp={data.studyPermit ?? DEFAULT_STUDY_PERMIT}
-            onSPChange={handleStudyPermitChange}
-            isMobile={isMobile}
-            errors={errors}
-          />
+          <div ref={studyPermitRef}>
+            <StudyPermitSubForm
+              sp={data.studyPermit ?? DEFAULT_STUDY_PERMIT}
+              onSPChange={handleStudyPermitChange}
+              isMobile={isMobile}
+              errors={errors}
+            />
+          </div>
         )}
       </div>
 
