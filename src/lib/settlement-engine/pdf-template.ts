@@ -670,14 +670,15 @@ function renderComplianceCard(pkg: MapleReportPackage): string {
 
   if (pathway === 'study-permit' && results.irccCompliance) {
     const { required, compliant, shortfall } = results.irccCompliance
-    const surplus = savings - required
+    const scholarship = engineInput.studyPermit?.scholarshipAmount ?? 0
+    const available = savings + scholarship
     const bg = compliant ? '#ECFDF5' : '#FEF2F2'
     const border = compliant ? '#1B7A4A' : '#FCA5A5'
     const color = compliant ? '#1B7A4A' : '#B91C1C'
-    const headline = compliant ? '✓ Meets Requirement' : '✗ Does Not Meet Requirement'
+    const headline = compliant ? '✓ Funds Sufficient' : '✗ Shortfall Detected'
     const detail = compliant
-      ? `Your savings of ${money(savings)} exceed the IRCC minimum of ${money(required)} by ${money(surplus)}`
-      : `Shortfall of ${money(shortfall)} — you need ${money(required)} to meet IRCC proof-of-funds requirements`
+      ? `Available funds of ${money(available)} meet the required ${money(required)}`
+      : `Required: ${money(required)} · Available: ${money(available)} · Shortfall: ${money(shortfall)}`
     return `
       <div style="background:${bg};border:2px solid ${border};border-radius:10px;padding:14px 20px;margin-bottom:14px;text-align:center;">
         <div style="font-size:7.5pt;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">IRCC Study Permit — Proof of Funds</div>

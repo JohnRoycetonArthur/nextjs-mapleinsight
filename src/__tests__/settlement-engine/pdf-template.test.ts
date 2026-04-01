@@ -101,4 +101,68 @@ describe('renderPdfTemplate compliance cards', () => {
     expect(html).toContain('What to Do Next')
     expect(html).not.toContain('Schedule Your Plan Review')
   })
+
+  it('uses available funds including scholarship for study permit compliance card', () => {
+    const html = renderPdfTemplate(makePackage({
+      answers: {
+        adults: 1,
+        children: 0,
+        pathway: 'study_permit',
+        city: 'toronto',
+        province: 'ON',
+        housing: '1br',
+        jobStatus: 'student',
+        studyPermit: {
+          programLevel: 'graduate',
+          tuitionAmount: 18_000,
+          gicStatus: 'planning',
+          scholarshipAmount: 10_000,
+        },
+      },
+      engineInput: {
+        pathway: 'study-permit',
+        liquidSavings: 15_000,
+        province: 'ON',
+        city: 'toronto',
+        household: { adults: 1, children: 0 },
+        housing: '1br',
+        jobStatus: 'student',
+        monthlyObligations: 0,
+        studyPermit: {
+          programLevel: 'graduate',
+          tuitionAmount: 18_000,
+          gicStatus: 'planning',
+          gicAmount: 0,
+          scholarshipAmount: 10_000,
+          biometricsDone: false,
+          feesPaid: false,
+          isSDS: false,
+        },
+      } as MapleReportPackage['engineInput'],
+      results: {
+        upfront: 8_000,
+        monthlyMin: 2_500,
+        monthlySafe: 3_000,
+        safeSavingsTarget: 30_000,
+        savingsGap: 5_000,
+        runwayMonths: 4,
+        bufferPercent: 20,
+        baselineFallback: false,
+        upfrontBreakdown: [],
+        monthlyBreakdown: [],
+        irccCompliance: {
+          required: 22_000,
+          tuition: 18_000,
+          livingExpenses: 2_000,
+          transport: 2_000,
+          isQuebec: false,
+          compliant: true,
+          shortfall: 0,
+        },
+      },
+    }))
+
+    expect(html).toContain('Funds Sufficient')
+    expect(html).toContain('Available funds of $25,000 meet the required $22,000')
+  })
 })
