@@ -7,7 +7,7 @@ const NAV_LINKS = [
   { href: "/settlement-planner/plan", label: "Settlement Planner" },
   { href: "/articles",                label: "Articles"           },
   { href: "/tools",                   label: "Calculators"        },
-  { href: "/for-consultants",         label: "For Consultants"    },
+  { href: "/#for-consultants",        label: "For Consultants"    },
   { href: "/glossary",                label: "Glossary"           },
   { href: "/about",                   label: "About"              },
 ];

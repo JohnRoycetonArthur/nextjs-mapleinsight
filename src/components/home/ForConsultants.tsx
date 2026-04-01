@@ -65,10 +65,11 @@ const SCENARIOS = [
 
 export function ForConsultants({ isMobile }: { isMobile: boolean }) {
   return (
-    <section style={{
+    <section id="for-consultants" style={{
       padding: isMobile ? '60px 20px' : '96px 32px',
       background: 'linear-gradient(165deg, #0F3D3A 0%, #1B4F4A 50%, #1B5E58 100%)',
       position: 'relative', overflow: 'hidden',
+      scrollMarginTop: 96,
     }}>
       {/* Dot pattern overlay */}
       <div aria-hidden="true" style={{
@@ -140,7 +141,7 @@ export function ForConsultants({ isMobile }: { isMobile: boolean }) {
               </div>
 
               <Link
-                href="/for-consultants"
+                href="/for-consultants/coming-soon"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   padding: '14px 28px', borderRadius: 10,
