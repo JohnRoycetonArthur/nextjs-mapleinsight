@@ -8,7 +8,7 @@
  * evaluates risks, and displays all required sections.
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { CloudDownload, PaperPlane, File, Calendar, CircleArrowDown, CircleArrowRight, ClipboardCheck, Clipboard, Rocket, Crosshairs } from 'nucleo-glass-icons/react'
 import {
   generateVerdict,
@@ -51,6 +51,12 @@ import type { DataSource } from '@/lib/settlement-engine/types'
 import { CURRENCY_SYMBOLS, type SupportedCurrency } from '@/lib/settlement-engine/currency'
 import { PublicModeSaveCard } from './PublicModeSaveCard'
 import { WhatToDoNext } from './WhatToDoNext'
+import {
+  trackPlannerReportExit,
+  trackPlannerReportScrollDepth,
+  trackPlannerReportTimeMilestone,
+  trackPlannerReportView,
+} from '@/lib/settlement-engine/analytics'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -301,6 +307,13 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
   const [sendPackage,          setSendPackage]          = useState<MapleReportPackage | null>(null)
   const [dataSources,          setDataSources]          = useState<Map<string, DataSource>>(new Map())
   const [checklistOpen,        setChecklistOpen]        = useState(false)
+  const [reportTrackingActive, setReportTrackingActive] = useState(false)
+  const hasTrackedReportViewRef = useRef(false)
+  const reportStartAtRef = useRef<number | null>(null)
+  const reportMilestonesRef = useRef<Set<number>>(new Set())
+  const reportScrollMilestonesRef = useRef<Set<number>>(new Set())
+  const reportMaxDepthRef = useRef(0)
+  const reportExitTrackedRef = useRef(false)
 
   // ── Minimum loading screen duration (3 s) ───────────────────────────────────
   useEffect(() => {
@@ -328,6 +341,84 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
   useEffect(() => {
     fetchDataSources().then(setDataSources).catch(() => { /* degrade gracefully */ })
   }, [])
+
+  useEffect(() => {
+    if (!reportTrackingActive || reportStartAtRef.current === null) return
+
+    const scrollThresholds = [25, 50, 75, 100]
+    const timeThresholds = [15, 30, 60, 120, 300]
+
+    const getElapsedSeconds = () =>
+      Math.max(1, Math.round((Date.now() - (reportStartAtRef.current ?? Date.now())) / 1000))
+
+    const flushExitEvent = () => {
+      if (reportExitTrackedRef.current) return
+      reportExitTrackedRef.current = true
+      trackPlannerReportExit({
+        mode,
+        report_type: 'client_plan',
+        destination: answers.city ?? null,
+        pathway: answers.pathway ?? null,
+        elapsed_seconds: getElapsedSeconds(),
+        max_depth_percentage: reportMaxDepthRef.current,
+      })
+    }
+
+    const handleScroll = () => {
+      const totalScrollable = document.documentElement.scrollHeight - window.innerHeight
+      const depth = totalScrollable <= 0
+        ? 100
+        : Math.min(100, Math.round((window.scrollY / totalScrollable) * 100))
+
+      reportMaxDepthRef.current = Math.max(reportMaxDepthRef.current, depth)
+
+      for (const threshold of scrollThresholds) {
+        if (depth < threshold || reportScrollMilestonesRef.current.has(threshold)) continue
+        reportScrollMilestonesRef.current.add(threshold)
+        trackPlannerReportScrollDepth({
+          mode,
+          report_type: 'client_plan',
+          destination: answers.city ?? null,
+          pathway: answers.pathway ?? null,
+          depth_percentage: threshold,
+        })
+      }
+    }
+
+    const intervalId = window.setInterval(() => {
+      const elapsedSeconds = getElapsedSeconds()
+      for (const threshold of timeThresholds) {
+        if (elapsedSeconds < threshold || reportMilestonesRef.current.has(threshold)) continue
+        reportMilestonesRef.current.add(threshold)
+        trackPlannerReportTimeMilestone({
+          mode,
+          report_type: 'client_plan',
+          destination: answers.city ?? null,
+          pathway: answers.pathway ?? null,
+          elapsed_seconds: threshold,
+        })
+      }
+    }, 1000)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushExitEvent()
+      }
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('pagehide', flushExitEvent)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('pagehide', flushExitEvent)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      flushExitEvent()
+    }
+  }, [answers.city, answers.pathway, mode, reportTrackingActive])
 
   // ── Build EngineInput ────────────────────────────────────────────────────────
   const engineInput = useMemo<EngineInput | null>(() => {
@@ -400,6 +491,31 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
       isStudy ? STUDY_PERMIT_DEFAULTS : undefined,
     )
   }, [engineInput, baseline])
+
+  useEffect(() => {
+    const reportReady = minLoadDone && Boolean(baseline) && Boolean(engineInput) && Boolean(engineOutput) && !showConsultantReport
+
+    if (!reportReady) {
+      setReportTrackingActive(false)
+      return
+    }
+
+    setReportTrackingActive(true)
+    if (hasTrackedReportViewRef.current && !reportExitTrackedRef.current) return
+
+    hasTrackedReportViewRef.current = true
+    reportStartAtRef.current = Date.now()
+    reportMilestonesRef.current = new Set()
+    reportScrollMilestonesRef.current = new Set()
+    reportMaxDepthRef.current = 0
+    reportExitTrackedRef.current = false
+    trackPlannerReportView({
+      mode,
+      report_type: 'client_plan',
+      destination: answers.city ?? null,
+      pathway: answers.pathway ?? null,
+    })
+  }, [answers.city, answers.pathway, baseline, engineInput, engineOutput, minLoadDone, mode, showConsultantReport])
 
   // ── Risks & actions ──────────────────────────────────────────────────────────
   const { topRisks, topActions } = useMemo(() => {

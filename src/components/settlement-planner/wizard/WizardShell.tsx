@@ -12,7 +12,7 @@
  *   - All wizard state wired to useSettlementSession (US-10.3)
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import {
   usePlannerMode,
@@ -39,7 +39,9 @@ import { C, FONT, SERIF, TOTAL_STEPS, WIZARD_STEPS } from './constants'
 import { ResultsDashboard } from '../ResultsDashboard'
 import {
   trackPlannerComplete,
+  trackPlannerSeePlanClick,
   trackPlannerStart,
+  trackPlannerStepView,
   trackPlannerStepComplete,
 } from '@/lib/settlement-engine/analytics'
 
@@ -120,6 +122,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
   const [showClear,   setShowClear]   = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [hasTrackedStart, setHasTrackedStart] = useState(false)
+  const viewedStepsRef = useRef<Set<number>>(new Set())
 
   // ── Responsive breakpoint ─────────────────────────────────────────────────
   useEffect(() => {
@@ -146,6 +149,17 @@ export function WizardShell({ consultant, onComplete }: Props) {
     setHasTrackedStart(true)
   }, [hasTrackedStart, mode, showResults])
 
+  useEffect(() => {
+    if (showResults || viewedStepsRef.current.has(currentStep)) return
+    viewedStepsRef.current.add(currentStep)
+    trackPlannerStepView({
+      mode,
+      step: currentStep,
+      step_name: WIZARD_STEPS[currentStep - 1]?.key ?? 'step',
+      completed_steps: completed.size,
+    })
+  }, [completed.size, currentStep, mode, showResults])
+
   // ── Navigation handlers ───────────────────────────────────────────────────
 
   const onChange = useCallback((key: keyof WizardAnswers, value: unknown) => {
@@ -161,6 +175,15 @@ export function WizardShell({ consultant, onComplete }: Props) {
 
   const goNext = useCallback(() => {
     const stepKey = WIZARD_STEPS[currentStep - 1]?.key ?? 'step'
+    if (currentStep >= TOTAL_STEPS) {
+      trackPlannerSeePlanClick({
+        mode,
+        step: currentStep,
+        step_name: stepKey,
+        destination: answers.city ?? null,
+        pathway: answers.pathway ?? null,
+      })
+    }
     const stepErrors = validateStep(currentStep, answers)
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors)
@@ -204,6 +227,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
     setCompleted(new Set())
     setErrors({})
     setHasTrackedStart(false)
+    viewedStepsRef.current = new Set()
     setShowClear(false)
   }, [clearSession])
 
@@ -212,6 +236,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
     setCompleted(new Set())
     setErrors({})
     setHasTrackedStart(false)
+    viewedStepsRef.current = new Set()
     setShowClear(false)
     setShowResults(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
