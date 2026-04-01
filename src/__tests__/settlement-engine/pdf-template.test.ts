@@ -102,6 +102,67 @@ describe('renderPdfTemplate compliance cards', () => {
     expect(html).not.toContain('Schedule Your Plan Review')
   })
 
+  it('renders a compact input summary on the first page', () => {
+    const html = renderPdfTemplate(makePackage({
+      answers: {
+        adults: 2,
+        children: 1,
+        arrival: '1_3_months',
+        departureRegion: 'south-asia',
+        pathway: 'study_permit',
+        city: 'toronto',
+        province: 'ON',
+        transitMode: 'public',
+        housing: '1br',
+        furnishing: 'moderate',
+        jobStatus: 'student',
+        savings: '15000',
+        obligations: '500',
+        feesPaid: true,
+        biometricsDone: false,
+        studyPermit: {
+          programLevel: 'graduate',
+          tuitionAmount: 18000,
+          gicStatus: 'planning',
+          scholarshipAmount: 10000,
+          isSDS: true,
+        },
+      },
+      engineInput: {
+        pathway: 'study-permit',
+        liquidSavings: 15_000,
+        province: 'ON',
+        city: 'toronto',
+        household: { adults: 2, children: 1 },
+        housing: '1br',
+        jobStatus: 'student',
+        monthlyObligations: 500,
+        studyPermit: {
+          programLevel: 'graduate',
+          tuitionAmount: 18_000,
+          gicStatus: 'planning',
+          gicAmount: 0,
+          scholarshipAmount: 10_000,
+          biometricsDone: false,
+          feesPaid: true,
+          isSDS: true,
+        },
+      } as MapleReportPackage['engineInput'],
+    }))
+
+    expect(html).toContain('Your Inputs')
+    expect(html).toContain('Arrival:')
+    expect(html).toContain('1-3 months')
+    expect(html).toContain('Departure region:')
+    expect(html).toContain('South Asia')
+    expect(html).toContain('Household:')
+    expect(html).toContain('2 adults, 1 child')
+    expect(html).toContain('Program level:')
+    expect(html).toContain('Graduate')
+    expect(html).toContain('SDS route:')
+    expect(html).toContain('Yes')
+  })
+
   it('uses available funds including scholarship for study permit compliance card', () => {
     const html = renderPdfTemplate(makePackage({
       answers: {

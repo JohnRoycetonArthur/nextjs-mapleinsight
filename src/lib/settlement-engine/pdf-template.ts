@@ -40,6 +40,29 @@ function cap(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' ') : ''
 }
 
+function formatBool(value: boolean | undefined): string | null {
+  if (value === undefined) return null
+  return value ? 'Yes' : 'No'
+}
+
+function formatMoneyInput(value: number | string | undefined, currency = 'CAD'): string | null {
+  if (value === undefined || value === null || value === '') return null
+  const parsed = typeof value === 'number'
+    ? value
+    : Number.parseFloat(String(value).replace(/,/g, ''))
+  if (!Number.isFinite(parsed) || parsed <= 0) return null
+  return new Intl.NumberFormat('en-CA', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(parsed)
+}
+
+function formatRegion(code: string | undefined): string | null {
+  if (!code) return null
+  return DEPARTURE_REGION_LABELS[code] ?? cap(code)
+}
+
 // ─── Label maps ───────────────────────────────────────────────────────────────
 
 const PATHWAY_LABELS: Record<string, string> = {
@@ -57,6 +80,52 @@ const HOUSING_LABELS: Record<string, string> = {
 const JOB_LABELS: Record<string, string> = {
   secured_30: 'Job Secured', offer_30_90: 'Offer in Hand',
   no_offer: 'No Offer Yet', student: 'Full-Time Student',
+}
+
+const ARRIVAL_LABELS: Record<string, string> = {
+  within_30: 'Within 30 days',
+  '1_3_months': '1-3 months',
+  '3_6_months': '3-6 months',
+  '6_12_months': '6-12 months',
+  '12_plus': '12+ months',
+}
+
+const TRANSIT_LABELS: Record<string, string> = {
+  public: 'Public transit',
+  car: 'Car',
+  both: 'Public transit + car',
+}
+
+const DEPARTURE_REGION_LABELS: Record<string, string> = {
+  'south-asia': 'South Asia',
+  'southeast-asia': 'Southeast Asia',
+  'east-asia': 'East Asia',
+  'middle-east': 'Middle East',
+  africa: 'Africa',
+  europe: 'Europe',
+  'latin-america': 'Latin America',
+  'north-america': 'North America',
+  oceania: 'Oceania',
+}
+
+const PROGRAM_LEVEL_LABELS: Record<string, string> = {
+  undergraduate: 'Undergraduate',
+  graduate: 'Graduate',
+  college_diploma: 'College diploma',
+  language_school: 'Language school',
+}
+
+const GIC_STATUS_LABELS: Record<string, string> = {
+  planning: 'Planning to purchase',
+  purchased: 'Already purchased',
+  not_purchasing: 'Not purchasing',
+}
+
+const EXPRESS_ENTRY_SUBCLASS_LABELS: Record<string, string> = {
+  fsw: 'Federal Skilled Worker',
+  cec: 'Canadian Experience Class',
+  fst: 'Federal Skilled Trades',
+  unsure: 'Not sure yet',
 }
 
 const SEV_COLOR: Record<string, string> = {
@@ -151,6 +220,42 @@ h4 { font-size: 9.5pt; font-weight: 700; color: #1B4F4A; margin-bottom: 6px; }
 }
 .summary-bar span { color: #6B7280; }
 .summary-bar strong { color: #111827; }
+
+.input-summary {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.input-summary-title {
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1B4F4A;
+  margin-bottom: 8px;
+}
+.input-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px 12px;
+}
+.input-summary-item {
+  min-width: 0;
+  font-size: 8pt;
+  line-height: 1.35;
+}
+.input-summary-label {
+  color: #6B7280;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.input-summary-value {
+  color: #111827;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
 
 /* ── Metrics ── */
 .metric-row {
@@ -368,6 +473,81 @@ function renderSummaryBar(pkg: MapleReportPackage): string {
       <span>Household: <strong>${esc(hh)}</strong></span>
       <span>Housing: <strong>${esc(housing)}</strong></span>
       <span>Employment: <strong>${esc(job)}</strong></span>
+    </div>
+  `
+}
+
+function renderInputSummary(pkg: MapleReportPackage): string {
+  const { answers, engineInput } = pkg
+  const currency = answers.inputCurrency ?? 'CAD'
+  const adults = answers.adults ?? 1
+  const children = answers.children ?? 0
+  const household = `${adults} adult${adults > 1 ? 's' : ''}${children > 0 ? `, ${children} child${children > 1 ? 'ren' : ''}` : ''}`
+  const destination = [cap(answers.city ?? ''), answers.province ?? ''].filter(Boolean).join(', ')
+  const customExpenseCount = answers.customExpenses?.filter(item => item.label && item.amount).length ?? 0
+
+  const items: Array<{ label: string; value: string | null }> = [
+    { label: 'Pathway', value: (PATHWAY_LABELS[answers.pathway ?? ''] ?? cap(answers.pathway ?? '')) || null },
+    { label: 'Arrival', value: (ARRIVAL_LABELS[answers.arrival ?? ''] ?? cap(answers.arrival ?? '')) || null },
+    { label: 'Departure region', value: formatRegion(answers.departureRegion) },
+    { label: 'Destination', value: destination || null },
+    { label: 'Transit', value: (TRANSIT_LABELS[answers.transitMode ?? ''] ?? cap(answers.transitMode ?? '')) || null },
+    { label: 'Household', value: household },
+    { label: 'Housing', value: (HOUSING_LABELS[answers.housing ?? ''] ?? cap(answers.housing ?? '')) || null },
+    { label: 'Furnishing', value: cap(answers.furnishing ?? '') || null },
+    { label: 'Employment', value: (JOB_LABELS[answers.jobStatus ?? ''] ?? cap(answers.jobStatus ?? '')) || null },
+    { label: 'Monthly income', value: formatMoneyInput(answers.income, currency) },
+    { label: 'Occupation', value: answers.occupation ?? null },
+    { label: 'NOC code', value: answers.nocCode ?? null },
+    { label: 'Experience', value: answers.experience ? `${answers.experience} years` : null },
+    { label: 'Hours/week', value: answers.hoursPerWeek ? `${answers.hoursPerWeek}` : null },
+    { label: 'Savings', value: formatMoneyInput(answers.savings, currency) ?? formatMoneyInput(engineInput.liquidSavings, currency) },
+    { label: 'Monthly obligations', value: formatMoneyInput(answers.obligations, currency) },
+    { label: 'Savings capacity', value: formatMoneyInput(answers.savingsCapacity, currency) },
+    { label: 'Borrowed funds', value: formatMoneyInput(answers.fundsComposition?.borrowed, currency) },
+    { label: 'Gifted funds', value: formatMoneyInput(answers.fundsComposition?.gifted, currency) },
+    { label: 'Currency', value: answers.inputCurrency ?? null },
+    { label: 'Fees paid', value: formatBool(answers.feesPaid) },
+    { label: 'Biometrics done', value: formatBool(answers.biometricsDone) },
+    { label: 'Childcare needed', value: formatBool(answers.childcare) },
+    { label: 'Planning for car', value: formatBool(answers.car) },
+    { label: 'Custom expenses', value: customExpenseCount > 0 ? `${customExpenseCount} added` : null },
+  ]
+
+  if (answers.pathway === 'express_entry' && answers.expressEntry) {
+    items.push(
+      { label: 'EE stream', value: (EXPRESS_ENTRY_SUBCLASS_LABELS[answers.expressEntry.subClass ?? ''] ?? cap(answers.expressEntry.subClass ?? '')) || null },
+      { label: 'Job offer', value: formatBool(answers.expressEntry.hasJobOffer) },
+      { label: 'Work authorized', value: formatBool(answers.expressEntry.isWorkAuthorized) },
+    )
+  }
+
+  if (answers.pathway === 'study_permit' && answers.studyPermit) {
+    items.push(
+      { label: 'Program level', value: (PROGRAM_LEVEL_LABELS[answers.studyPermit.programLevel ?? ''] ?? cap(answers.studyPermit.programLevel ?? '')) || null },
+      { label: 'Tuition', value: formatMoneyInput(answers.studyPermit.tuitionAmount, currency) },
+      { label: 'Scholarship', value: formatMoneyInput(answers.studyPermit.scholarshipAmount, currency) },
+      { label: 'GIC status', value: (GIC_STATUS_LABELS[answers.studyPermit.gicStatus ?? ''] ?? cap(answers.studyPermit.gicStatus ?? '')) || null },
+      { label: 'SDS route', value: formatBool(answers.studyPermit.isSDS) },
+      { label: 'Part-time hours', value: answers.studyPermit.partTimeHoursPerWeek ? `${answers.studyPermit.partTimeHoursPerWeek}` : null },
+      { label: 'Hourly rate', value: formatMoneyInput(answers.studyPermit.partTimeHourlyRate, currency) },
+    )
+  }
+
+  const markup = items
+    .filter(item => item.value)
+    .map(item => `
+      <div class="input-summary-item">
+        <span class="input-summary-label">${esc(item.label)}:</span>
+        <span class="input-summary-value">${esc(item.value!)}</span>
+      </div>
+    `)
+    .join('')
+
+  return `
+    <div class="input-summary">
+      <div class="input-summary-title">Your Inputs</div>
+      <div class="input-summary-grid">${markup}</div>
     </div>
   `
 }
@@ -1283,7 +1463,7 @@ function buildClientPage1(pkg: MapleReportPackage, totalPages: number, mode: Pla
     <div class="page">
       ${renderPageHeader(consultant?.displayName ?? null, consultant?.companyName ?? null, generatedAt, undefined, mode)}
       <div class="page-content">
-        ${renderSummaryBar(pkg)}
+        ${renderInputSummary(pkg)}
         ${renderComplianceCard(pkg)}
         ${renderClientMetrics(pkg)}
         ${renderClientGap(pkg)}

@@ -9,7 +9,7 @@ import { Layers, TabClose } from "nucleo-glass-icons/react";
 const NAV_LINKS = [
   { href: "/articles",        label: "Articles"         },
   { href: "/tools",           label: "Calculators"      },
-  { href: "/for-consultants", label: "For Consultants"  },
+  { href: "/#for-consultants", label: "For Consultants"  },
   { href: "/about",           label: "About"            },
 ];
 

@@ -164,6 +164,7 @@ export function SourceBadge({ sourceKey, sources, fallbackSource }: SourceBadgeP
 
   const s = CATEGORY_STYLE[source.category] ?? CATEGORY_STYLE.estimate
   const badge = shortLabel(sourceKey)
+  const showSourceLink = source.name !== 'Maple Insight Internal Estimate'
   const effectiveFormatted = new Date(source.effectiveDate).toLocaleDateString('en-CA', {
     month: 'short',
     year: 'numeric',
@@ -206,14 +207,16 @@ export function SourceBadge({ sourceKey, sources, fallbackSource }: SourceBadgeP
       <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 6 }}>
         Verified: {verifiedFormatted}
       </div>
-      <a
-        href={source.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ fontSize: 11, color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-      >
-        View source <LinkIcon />
-      </a>
+      {showSourceLink && (
+        <a
+          href={source.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: 11, color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+        >
+          View source <LinkIcon />
+        </a>
+      )}
     </div>,
     document.body,
   ) : null
