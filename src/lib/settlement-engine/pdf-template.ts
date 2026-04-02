@@ -90,12 +90,6 @@ const ARRIVAL_LABELS: Record<string, string> = {
   '12_plus': '12+ months',
 }
 
-const TRANSIT_LABELS: Record<string, string> = {
-  public: 'Public transit',
-  car: 'Car',
-  both: 'Public transit + car',
-}
-
 const DEPARTURE_REGION_LABELS: Record<string, string> = {
   'south-asia': 'South Asia',
   'southeast-asia': 'Southeast Asia',
@@ -491,7 +485,7 @@ function renderInputSummary(pkg: MapleReportPackage): string {
     { label: 'Arrival', value: (ARRIVAL_LABELS[answers.arrival ?? ''] ?? cap(answers.arrival ?? '')) || null },
     { label: 'Departure region', value: formatRegion(answers.departureRegion) },
     { label: 'Destination', value: destination || null },
-    { label: 'Transit', value: (TRANSIT_LABELS[answers.transitMode ?? ''] ?? cap(answers.transitMode ?? '')) || null },
+    { label: 'Transit', value: 'Public transit' },
     { label: 'Household', value: household },
     { label: 'Housing', value: (HOUSING_LABELS[answers.housing ?? ''] ?? cap(answers.housing ?? '')) || null },
     { label: 'Furnishing', value: cap(answers.furnishing ?? '') || null },

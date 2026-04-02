@@ -165,9 +165,6 @@ function buildEmailHtml(
     minimal: 'Minimal (unfurnished)', basic: 'Basic', moderate: 'Moderate',
     standard: 'Standard', full: 'Fully furnished',
   }
-  const TRANSIT_LABELS: Record<string, string> = {
-    public: 'Public transit', car: 'Car', both: 'Both',
-  }
   const REGION_LABELS: Record<string, string> = {
     'south-asia':   'South Asia',   'east-asia':    'East Asia',
     'southeast-asia': 'Southeast Asia', 'middle-east': 'Middle East',
@@ -225,7 +222,7 @@ function buildEmailHtml(
 
     ${sectionHeader('Step 3 — Destination')}
     ${row('City / Province', destination)}
-    ${row('Transit mode', TRANSIT_LABELS[a.transitMode ?? ''] ?? a.transitMode)}
+    ${row('Transit', 'Public transit')}
 
     ${sectionHeader('Step 4 — Work &amp; Income')}
     ${row('Job status', JOB_LABELS[a.jobStatus ?? ''] ?? a.jobStatus)}

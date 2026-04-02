@@ -79,7 +79,13 @@ function validateStep(step: number, answers: WizardAnswers): StepErrors {
       if (answers.city === 'other' && !answers.province) errors.province = 'Please select your province.'
       break
     case 4:
-      if (!answers.jobStatus) errors.jobStatus = 'Please select your job situation.'
+      if (answers.pathway === 'study_permit') {
+        if (answers.jobStatus !== 'student') {
+          errors.jobStatus = 'Study permit applicants are automatically set to student for this step.'
+        }
+      } else if (!answers.jobStatus) {
+        errors.jobStatus = 'Please select your job situation.'
+      }
       break
     case 5:
       if (!answers.savings?.trim()) errors.savings = 'Please enter your available savings.'
@@ -123,6 +129,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
   const [showResults, setShowResults] = useState(false)
   const [hasTrackedStart, setHasTrackedStart] = useState(false)
   const viewedStepsRef = useRef<Set<number>>(new Set())
+  const previousPathwayRef = useRef<string | undefined>(answers.pathway)
 
   // ── Responsive breakpoint ─────────────────────────────────────────────────
   useEffect(() => {
@@ -142,6 +149,21 @@ export function WizardShell({ consultant, onComplete }: Props) {
       })
     }
   }, [currentStep])
+
+  useEffect(() => {
+    const previousPathway = previousPathwayRef.current
+    previousPathwayRef.current = answers.pathway
+
+    if (previousPathway === undefined || previousPathway === answers.pathway) return
+
+    setCompleted(prev => {
+      const next = new Set(prev)
+      next.delete(4)
+      next.delete(5)
+      next.delete(6)
+      return next
+    })
+  }, [answers.pathway])
 
   useEffect(() => {
     if (showResults || hasTrackedStart) return

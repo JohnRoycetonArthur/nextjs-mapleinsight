@@ -282,11 +282,12 @@ describe('computeUpfront — staying-family', () => {
   })
 
   it('total does not include rent deposit or furnishing', () => {
-    // Only fees + biometrics + travel
+    // Only fees + biometrics + RPRF + travel
     const fees    = 1_365
     const bio     = 85
+    const rprf    = 515
     const travel  = computeOneWayFlight('south-asia', 1, 0)
-    expect(result.total).toBe(fees + bio + travel)
+    expect(result.total).toBe(fees + bio + rprf + travel)
   })
 })
 
