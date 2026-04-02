@@ -107,6 +107,9 @@ const PROVINCE_NAMES: Record<string, string> = {
   NT: 'Northwest Territories', NU: 'Nunavut', YT: 'Yukon',
 }
 
+const ONTARIO_MIN_WAGE_FALLBACK =
+  STUDY_PERMIT_DEFAULTS.provincialMinWages.find(w => w.provinceCode === 'ON')?.hourlyRate ?? 17.20
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtCAD(n: number): string {
@@ -231,18 +234,19 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
 
   // Study permit path flag (uses session value with underscore)
   const isStudyPermitPath = data.pathway === 'study_permit'
+  const filteredJobOptions = JOB_OPTIONS.filter(option => option.value !== 'student')
 
-  // Auto-select "Student" when on study permit path and no status set yet
+  // Auto-select "Student" when on study permit path.
   useEffect(() => {
-    if (isStudyPermitPath && !data.jobStatus) {
+    if (isStudyPermitPath && data.jobStatus !== 'student') {
       onChange('jobStatus', 'student')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isStudyPermitPath])
+  }, [isStudyPermitPath, data.jobStatus])
 
-  // Sync income field from part-time monthly when on study permit student/no-offer path
+  // Sync income field from part-time monthly when on study permit path.
   useEffect(() => {
-    if (isStudyPermitPath && (data.jobStatus === 'student' || data.jobStatus === 'no_offer')) {
+    if (isStudyPermitPath && data.jobStatus === 'student') {
       const monthly = data.studyPermit?.estimatedPartTimeMonthlyIncome ?? 0
       if (!data.income || data.incomeSource !== 'direct_input') {
         onChange('income', String(monthly))
@@ -254,15 +258,14 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
 
   // Derived flags
   const showDirectInput     = data.jobStatus === 'secured_30' || data.jobStatus === 'offer_30_90'
-  const showEstimatorToggle = !isStudyPermitPath && (data.jobStatus === 'no_offer' || data.jobStatus === 'student')
-  // For study permit: show part-time estimator when student or no_offer selected
-  const showPartTimeForStudyPermit = isStudyPermitPath && (data.jobStatus === 'student' || data.jobStatus === 'no_offer')
+  const showEstimatorToggle = !isStudyPermitPath && data.jobStatus === 'no_offer'
+  const showPartTimeForStudyPermit = isStudyPermitPath
   const isStudentPermit     = data.jobStatus === 'student' && data.pathway === 'study_permit'
 
   // Province min wage (for part-time estimator)
   const province     = data.province ?? 'ON'
   const minWageEntry = STUDY_PERMIT_DEFAULTS.provincialMinWages.find(w => w.provinceCode === province)
-  const defaultRate  = minWageEntry?.hourlyRate ?? 15.00
+  const defaultRate  = minWageEntry?.hourlyRate ?? ONTARIO_MIN_WAGE_FALLBACK
 
   // Part-time toggle state — initialise from session
   const [partTimeOn, setPartTimeOn] = useState<boolean>(() => {
@@ -274,6 +277,12 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
   const ptHours  = data.studyPermit?.partTimeHoursPerWeek ?? 20
   const ptRate   = data.studyPermit?.partTimeHourlyRate   ?? defaultRate
   const ptMonthly = partTimeOn ? Math.round(ptHours * ptRate * 4.33) : 0
+
+  useEffect(() => {
+    if (!isStudyPermitPath) return
+    const hours = data.studyPermit?.partTimeHoursPerWeek
+    setPartTimeOn(hours === undefined || hours > 0)
+  }, [isStudyPermitPath, data.studyPermit?.partTimeHoursPerWeek])
 
   useEffect(() => {
     const isVisible = isStudentPermit || showPartTimeForStudyPermit
@@ -355,7 +364,7 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
   const updatePartTime = (hours: number, rate: number, on: boolean) => {
     const monthly = on ? Math.round(hours * rate * 4.33) : 0
     onChange('studyPermit', {
-      ...data.studyPermit,
+      ...(data.studyPermit ?? {}),
       partTimeHoursPerWeek:           on ? hours : 0,
       partTimeHourlyRate:             rate,
       estimatedPartTimeMonthlyIncome: monthly,
@@ -382,57 +391,93 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
       </p>
 
       {/* ── Job status cards (AC-1) ────────────────────────────────────────── */}
-      <div style={{ marginBottom: 24 }}>
-        <Label>What&apos;s your job situation? *</Label>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
-          {JOB_OPTIONS.map(o => {
-            const active = data.jobStatus === o.value
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => {
-                  onChange('jobStatus', o.value)
-                  setShowEstimator(false)
-                  if (o.value === 'secured_30' || o.value === 'offer_30_90') {
-                    onChange('estimatedGrossMid', undefined)
-                    onChange('incomeSource', 'direct_input')
-                  }
-                }}
-                aria-pressed={active}
-                style={{
-                  padding: '16px 18px', borderRadius: 12, textAlign: 'left',
-                  border:     active ? `2px solid ${o.color}` : `1px solid ${C.border}`,
-                  background: active ? `${o.color}08` : C.white,
-                  cursor: 'pointer', transition: 'all 0.15s', fontFamily: FONT, minHeight: 44,
-                }}
-              >
-                <span style={{ display: 'block', marginBottom: 6 }} aria-hidden="true">{o.icon}</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: active ? o.color : C.forest, display: 'block', lineHeight: 1.3 }}>
-                  {o.label}
-                </span>
-                <span style={{ fontSize: 12, color: C.gray, display: 'block', marginTop: 3, lineHeight: 1.4 }}>
-                  {o.desc}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+      {isStudyPermitPath ? (
+        <div style={{ marginBottom: 24 }}>
+          <div
+            style={{
+              background: `${C.accent}08`,
+              border: `1px solid ${C.accent}22`,
+              borderRadius: 14,
+              padding: isMobile ? '18px 16px' : '20px 22px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <School size={18} color={C.accent} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.accent, fontFamily: SERIF }}>
+                Study Permit Pathway
+              </span>
+            </div>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: C.text, fontFamily: FONT }}>
+              As an international student, your planning runway is set to 6 months.
+            </p>
+            <p style={{ margin: '8px 0 0', fontSize: 13, lineHeight: 1.6, color: C.textLight, fontFamily: FONT }}>
+              This covers the period from arrival through your first academic term.
+            </p>
+          </div>
 
-        {/* Runway indicator (AC-2) */}
-        {data.jobStatus && (
           <div style={{ marginTop: 10, fontSize: 12, color: C.accent, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT }}>
             <span style={{ width: 8, height: 8, borderRadius: 4, background: C.accent, display: 'inline-block' }} />
-            Planning runway: {RUNWAY_LABEL[data.jobStatus]}
+            Planning runway: 6 months
           </div>
-        )}
 
-        {errors.jobStatus && (
-          <p role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
-            {errors.jobStatus}
-          </p>
-        )}
-      </div>
+          {errors.jobStatus && (
+            <p role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
+              {errors.jobStatus}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div style={{ marginBottom: 24 }}>
+          <Label>What&apos;s your job situation? *</Label>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+            {filteredJobOptions.map(o => {
+              const active = data.jobStatus === o.value
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => {
+                    onChange('jobStatus', o.value)
+                    setShowEstimator(false)
+                    if (o.value === 'secured_30' || o.value === 'offer_30_90') {
+                      onChange('estimatedGrossMid', undefined)
+                      onChange('incomeSource', 'direct_input')
+                    }
+                  }}
+                  aria-pressed={active}
+                  style={{
+                    padding: '16px 18px', borderRadius: 12, textAlign: 'left',
+                    border:     active ? `2px solid ${o.color}` : `1px solid ${C.border}`,
+                    background: active ? `${o.color}08` : C.white,
+                    cursor: 'pointer', transition: 'all 0.15s', fontFamily: FONT, minHeight: 44,
+                  }}
+                >
+                  <span style={{ display: 'block', marginBottom: 6 }} aria-hidden="true">{o.icon}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: active ? o.color : C.forest, display: 'block', lineHeight: 1.3 }}>
+                    {o.label}
+                  </span>
+                  <span style={{ fontSize: 12, color: C.gray, display: 'block', marginTop: 3, lineHeight: 1.4 }}>
+                    {o.desc}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {data.jobStatus && (
+            <div style={{ marginTop: 10, fontSize: 12, color: C.accent, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, background: C.accent, display: 'inline-block' }} />
+              Planning runway: {RUNWAY_LABEL[data.jobStatus]}
+            </div>
+          )}
+
+          {errors.jobStatus && (
+            <p role="alert" style={{ fontSize: 12, color: C.red, margin: '6px 0 0', fontFamily: FONT }}>
+              {errors.jobStatus}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── Direct income input (secured / offer with start date) (AC-3) ───── */}
       {showDirectInput && (

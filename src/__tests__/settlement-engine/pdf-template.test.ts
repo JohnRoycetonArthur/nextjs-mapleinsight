@@ -112,7 +112,6 @@ describe('renderPdfTemplate compliance cards', () => {
         pathway: 'study_permit',
         city: 'toronto',
         province: 'ON',
-        transitMode: 'public',
         housing: '1br',
         furnishing: 'moderate',
         jobStatus: 'student',

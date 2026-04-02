@@ -4,7 +4,7 @@
  * Step 3: Destination (US-11.4)
  *
  * Collects: destination city (7 supported + "Other"), province (auto-populated
- * for known cities; manual dropdown for "Other"), transit mode.
+ * for known cities; manual dropdown for "Other").
  *
  * On mount, fetches live cityBaseline data from Sanity for all 7 supported
  * cities in a single GROQ query. While fetching, the hardcoded CMHC figures
@@ -17,12 +17,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@sanity/client'
 import { apiVersion, dataset, projectId } from '@/sanity/env'
-import {
-  Commute,
-  DirectionsCar,
-  DirectionsSubway,
-  Warning,
-} from '@material-symbols-svg/react'
+import { Warning } from '@material-symbols-svg/react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 
@@ -68,12 +63,6 @@ const PROVINCE_OPTIONS = [
   { code: 'NT', name: 'Northwest Territories' },
   { code: 'NU', name: 'Nunavut' },
   { code: 'YT', name: 'Yukon' },
-]
-
-const TRANSIT_OPTIONS = [
-  { value: 'public', label: 'Public Transit', icon: <DirectionsSubway size={20} color={C.accent} /> },
-  { value: 'car',    label: 'Car',             icon: <DirectionsCar size={20} color={C.accent} /> },
-  { value: 'both',   label: 'Both',            icon: <Commute size={20} color={C.accent} /> },
 ]
 
 // ─── Live baseline data shape (from Sanity) ───────────────────────────────────
@@ -344,38 +333,6 @@ export function Step3Destination({ data, onChange, errors, isMobile }: Props) {
           )}
         </div>
       )}
-
-      {/* ── Transit mode selector (AC-4) ──────────────────────────────────── */}
-      <div>
-        <Label>How will you get around?</Label>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {TRANSIT_OPTIONS.map(o => {
-            const active = data.transitMode === o.value
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => onChange('transitMode', o.value)}
-                aria-pressed={active}
-                style={{
-                  flex: 1, padding: '14px 12px', borderRadius: 12, textAlign: 'center',
-                  border:     active ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
-                  background: active ? `${C.accent}08` : C.white,
-                  cursor: 'pointer', fontFamily: FONT, transition: 'all 0.15s',
-                  minHeight: 44,
-                }}
-              >
-                <span style={{ display: 'block', marginBottom: 4 }} aria-hidden="true">
-                  {o.icon}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: active ? C.accent : C.forest }}>
-                  {o.label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
     </div>
   )
 }

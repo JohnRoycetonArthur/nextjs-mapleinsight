@@ -14,12 +14,9 @@ import {
   DEPOSIT_MONTHS,
   ENGINE_VERSION,
   FURNISHING_COST,
-  PHONE_INTERNET_BASELINE,
   RPRF_PER_ADULT,
   RUNWAY_MONTHS,
-  UTILITIES_BASELINE,
   computeOneWayFlight,
-  groceriesForHousehold,
   rentFromBaseline,
 } from './constants'
 import {
@@ -33,12 +30,62 @@ import {
   getHealthInsuranceMonthlyCost,
 } from './study-permit'
 import type { BreakdownItem, EngineInput, EngineOutput } from './types'
+import {
+  DEFAULT_EXPENSES,
+  parseExpenseAmount,
+  type CustomExpense,
+  type DefaultExpenseKey,
+} from './defaults'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 /** Normalize a city name to a Sanity catalog key fragment (e.g. "Montréal" → "montreal"). */
 function citySlug(name: string): string {
   return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')
+}
+
+const TRANSIT_AGENCIES: Record<string, string> = {
+  'toronto:on': 'TTC',
+  'vancouver:bc': 'TransLink',
+  'calgary:ab': 'Calgary Transit',
+  'montreal:qc': 'STM',
+  'ottawa:on': 'OC Transpo',
+  'halifax:ns': 'Halifax Transit',
+  'winnipeg:mb': 'Winnipeg Transit',
+}
+
+function transitLabel(baseline: Pick<CityBaseline, 'cityName' | 'province' | 'isFallback'>): string {
+  if (baseline.isFallback) return 'Public transit'
+  const agency = TRANSIT_AGENCIES[`${citySlug(baseline.cityName)}:${baseline.province.toLowerCase()}`]
+  return agency ? `Public transit (${agency})` : 'Public transit'
+}
+
+function defaultExpenseSource(entry: CustomExpense | undefined): string {
+  return entry?.isModified ? 'user-input' : 'estimate'
+}
+
+function defaultExpenseLabel(
+  defaultKey: DefaultExpenseKey,
+  entry: CustomExpense | undefined,
+  adults: number,
+): string {
+  if (entry?.label) return entry.label
+  if (defaultKey === 'groceries') {
+    return `Groceries (${adults} adult${adults !== 1 ? 's' : ''})`
+  }
+  return DEFAULT_EXPENSES[defaultKey].label
+}
+
+function getExpenseAmount(
+  customExpenses: CustomExpense[] | undefined,
+  defaultKey: DefaultExpenseKey,
+  adults: number,
+): number {
+  const userEntry = customExpenses?.find(expense => expense.defaultKey === defaultKey)
+  if (userEntry) return parseExpenseAmount(userEntry.amount)
+
+  const defaultExpense = DEFAULT_EXPENSES[defaultKey]
+  return defaultExpense.perAdult ? defaultExpense.amount * adults : defaultExpense.amount
 }
 
 // ─── computeUpfront ───────────────────────────────────────────────────────────
@@ -180,14 +227,15 @@ export interface MonthlyResult {
  * For study permit pathway: adds health insurance monthly cost.
  */
 export function computeMonthlyMin(
-  input: Pick<EngineInput, 'housingType' | 'household' | 'monthlyObligations' | 'pathway' | 'province' | 'studyPermit'>,
+  input: Pick<EngineInput, 'housingType' | 'household' | 'monthlyObligations' | 'pathway' | 'province' | 'studyPermit' | 'customExpenses'>,
   baseline: Pick<
     CityBaseline,
-    'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'monthlyTransitPass' | 'cityName' | 'isFallback' | 'studentHousing'
+    'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'monthlyTransitPass' | 'cityName' | 'province' | 'isFallback' | 'studentHousing'
   >,
   studyPermitData?: StudyPermitData,
 ): MonthlyResult {
   const items: BreakdownItem[] = []
+  const adults = Math.max(1, input.household.adults)
   const baselineSource    = baseline.isFallback ? 'national-average' : 'cmhc'
   const transitSource     = baseline.isFallback ? 'national-average' : baseline.cityName.toLowerCase().replace(/\s+/g, '-')
   const rentSourceKey     = baseline.isFallback ? 'maple-estimate' : `cmhc-${citySlug(baseline.cityName)}-rent`
@@ -198,17 +246,43 @@ export function computeMonthlyMin(
   items.push({ key: 'rent',    label: 'Rent',          cad: rent,                        source: baselineSource, sourceKey: rentSourceKey })
 
   // Transit
-  items.push({ key: 'transit', label: 'Transit pass',  cad: baseline.monthlyTransitPass,  source: transitSource,  sourceKey: transitSourceKey })
+  items.push({
+    key: 'transit',
+    label: transitLabel(baseline),
+    cad: baseline.monthlyTransitPass,
+    source: transitSource,
+    sourceKey: transitSourceKey,
+  })
 
-  // Utilities
-  items.push({ key: 'utilities', label: 'Utilities',   cad: UTILITIES_BASELINE,           source: 'constant', sourceKey: 'maple-estimate' })
+  const utilitiesEntry = input.customExpenses?.find(expense => expense.defaultKey === 'utilities')
+  const utilities = getExpenseAmount(input.customExpenses, 'utilities', adults)
+  items.push({
+    key: 'utilities',
+    label: defaultExpenseLabel('utilities', utilitiesEntry, adults),
+    cad: utilities,
+    source: defaultExpenseSource(utilitiesEntry),
+    sourceKey: 'maple-estimate',
+  })
 
-  // Phone + internet
-  items.push({ key: 'phone', label: 'Phone & internet', cad: PHONE_INTERNET_BASELINE,     source: 'constant', sourceKey: 'maple-estimate' })
+  const phoneEntry = input.customExpenses?.find(expense => expense.defaultKey === 'phoneInternet')
+  const phone = getExpenseAmount(input.customExpenses, 'phoneInternet', adults)
+  items.push({
+    key: 'phone',
+    label: defaultExpenseLabel('phoneInternet', phoneEntry, adults),
+    cad: phone,
+    source: defaultExpenseSource(phoneEntry),
+    sourceKey: 'maple-estimate',
+  })
 
-  // Groceries
-  const groceries = groceriesForHousehold(input.household.adults, input.household.children)
-  items.push({ key: 'groceries', label: 'Groceries',   cad: groceries,                    source: 'constant', sourceKey: 'maple-estimate' })
+  const groceriesEntry = input.customExpenses?.find(expense => expense.defaultKey === 'groceries')
+  const groceries = getExpenseAmount(input.customExpenses, 'groceries', adults)
+  items.push({
+    key: 'groceries',
+    label: defaultExpenseLabel('groceries', groceriesEntry, adults),
+    cad: groceries,
+    source: defaultExpenseSource(groceriesEntry),
+    sourceKey: 'maple-estimate',
+  })
 
   // Monthly obligations
   if (input.monthlyObligations > 0) {
@@ -217,6 +291,20 @@ export function computeMonthlyMin(
       label:     'Monthly obligations (debt / remittances)',
       cad:       input.monthlyObligations,
       source:    'user-input',
+      sourceKey: 'user-input',
+    })
+  }
+
+  for (const expense of input.customExpenses ?? []) {
+    if (expense.defaultKey) continue
+    const amount = parseExpenseAmount(expense.amount)
+    if (amount <= 0) continue
+
+    items.push({
+      key: `custom-${expense.id}`,
+      label: expense.label || 'Other monthly expense',
+      cad: amount,
+      source: 'user-input',
       sourceKey: 'user-input',
     })
   }
@@ -262,7 +350,7 @@ export interface SafeResult {
  * bindingConstraint indicates which drove the final safeSavingsTarget.
  */
 export function computeSafe(
-  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses' | 'pathway' | 'province' | 'household' | 'studyPermit' | 'departureRegion'>,
+  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses' | 'customExpenses' | 'pathway' | 'province' | 'household' | 'studyPermit' | 'departureRegion'>,
   upfront: number,
   monthlyMin: number,
   monthlyMinBreakdown: BreakdownItem[],
@@ -280,8 +368,9 @@ export function computeSafe(
     adderItems.push({ key: 'car', label: 'Car (payment + insurance + fuel)', cad: CAR_MONTHLY, source: 'constant', sourceKey: 'maple-estimate' })
   }
 
-  if (input.customMonthlyExpenses > 0) {
-    adderItems.push({ key: 'custom', label: 'Other monthly expenses', cad: input.customMonthlyExpenses, source: 'user-input', sourceKey: 'user-input' })
+  const legacyCustomMonthlyExpenses = input.customMonthlyExpenses ?? 0
+  if (!input.customExpenses?.length && legacyCustomMonthlyExpenses > 0) {
+    adderItems.push({ key: 'custom', label: 'Other monthly expenses', cad: legacyCustomMonthlyExpenses, source: 'user-input', sourceKey: 'user-input' })
   }
 
   const monthlySafe = monthlyMin + adderItems.reduce((s, i) => s + i.cad, 0)

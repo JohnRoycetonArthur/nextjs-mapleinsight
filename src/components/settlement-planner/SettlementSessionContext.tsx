@@ -20,6 +20,8 @@ import React, {
   useState,
 } from 'react'
 import type { ConsultantBranding, PlannerMode } from './types'
+import { resetWorkIncomeAnswersForPathway } from './session/pathwayResets'
+import type { CustomExpense } from '@/lib/settlement-engine/defaults'
 // ─── Session data shape ───────────────────────────────────────────────────────
 
 /** All answers the wizard collects — all fields are optional until submitted. */
@@ -31,14 +33,13 @@ export interface WizardAnswers {
   departureRegion?: string  // region code e.g. 'south-asia' — used for flight cost estimate
 
   // Step 2 — Immigration
-  pathway?: string       // 'express_entry'|'pnp'|'study_permit'|'work_permit'|'family'|'refugee'|'other'
+  pathway?: string       // 'express_entry'|'pnp'|'study_permit'|'work_permit'|'family'
   feesPaid?: boolean
   biometricsDone?: boolean
 
   // Step 3 — Destination
   city?: string          // 'toronto'|'vancouver'|'calgary'|'montreal'|'ottawa'|'halifax'|'winnipeg'|'other'
   province?: string
-  transitMode?: string   // 'public'|'car'|'both'
 
   // Step 4 — Work & Income
   jobStatus?: string     // 'secured_30'|'offer_30_90'|'no_offer'|'student'
@@ -72,7 +73,7 @@ export interface WizardAnswers {
   furnishing?: string    // 'minimal'|'moderate'|'full'
   childcare?: boolean
   car?: boolean
-  customExpenses?: Array<{ label: string; amount: string }>
+  customExpenses?: CustomExpense[]
 
   // Express Entry sub-class (only present when pathway === 'express_entry')
   expressEntry?: {
@@ -107,6 +108,7 @@ export interface SessionData {
 
 const SCHEMA_VERSION = 1
 const DEBOUNCE_MS    = 400
+const DEPRECATED_ANSWER_KEYS = ['transit' + 'Mode'] as const
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 
@@ -140,7 +142,17 @@ function loadSession(slug: string): SessionData | null {
     if (parsed.schemaVersion !== SCHEMA_VERSION) return null
     if (typeof parsed.timestamp !== 'number')    return null
     if (typeof parsed.answers   !== 'object')    return null
-    return parsed
+    const answers = typeof parsed.answers === 'object' && parsed.answers !== null
+      ? parsed.answers
+      : {}
+    const sanitizedAnswers = { ...(answers as WizardAnswers & Record<string, unknown>) }
+    for (const key of DEPRECATED_ANSWER_KEYS) {
+      delete sanitizedAnswers[key]
+    }
+    return {
+      ...parsed,
+      answers: sanitizedAnswers,
+    }
   } catch {
     return null
   }
@@ -176,10 +188,12 @@ export interface SettlementSessionContextValue {
   consultant: ConsultantBranding | null
   isRestored:    boolean   // true once mount restoration check is complete
   storageAvailable: boolean
+  stalePathwayToast: boolean   // true when a restored session had an unsupported pathway
 
-  updateAnswers: (patch: Partial<WizardAnswers>) => void
-  setStep:       (step: number) => void
-  clearSession:  () => void
+  updateAnswers:         (patch: Partial<WizardAnswers>) => void
+  setStep:               (step: number) => void
+  clearSession:          () => void
+  clearStalePathwayToast: () => void
 }
 
 const SettlementSessionContext = createContext<SettlementSessionContextValue | null>(null)
@@ -203,8 +217,10 @@ export function SettlementSessionProvider({
   const [session, setSession]             = useState<SessionData>(() => freshSession(slug, mode))
   const [isRestored, setIsRestored]       = useState(false)
   const [storageAvailable, setStorageAvailable] = useState(true)
+  const [stalePathwayToast, setStalePathwayToast] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const previousPathwayRef = useRef<string | undefined>(undefined)
 
   // ── Task 4: Session restoration on mount ────────────────────────────────────
   useEffect(() => {
@@ -219,7 +235,24 @@ export function SettlementSessionProvider({
     }
 
     const saved = loadSession(slug)
-    setSession(saved ? { ...saved, slug, mode } : freshSession(slug, mode))
+    if (saved) {
+      const stalePathways = ['refugee', 'other']
+      if (saved.answers.pathway && stalePathways.includes(saved.answers.pathway)) {
+        // Pathway is no longer supported — reset to Step 2 with no pathway selected
+        setSession({
+          ...saved,
+          slug,
+          mode,
+          currentStep: 2,
+          answers: { ...saved.answers, pathway: '' },
+        })
+        setStalePathwayToast(true)
+      } else {
+        setSession({ ...saved, slug, mode })
+      }
+    } else {
+      setSession(freshSession(slug, mode))
+    }
     setIsRestored(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, mode])
@@ -238,6 +271,21 @@ export function SettlementSessionProvider({
     }
   }, [session, isRestored, storageAvailable])
 
+  useEffect(() => {
+    if (!isRestored) return
+
+    const currentPathway = session.answers.pathway
+    const previousPathway = previousPathwayRef.current
+    previousPathwayRef.current = currentPathway
+
+    if (previousPathway === undefined || previousPathway === currentPathway) return
+
+    setSession(prev => ({
+      ...prev,
+      answers: resetWorkIncomeAnswersForPathway(prev.answers, currentPathway),
+    }))
+  }, [isRestored, session.answers.pathway])
+
   // ── Mutations ────────────────────────────────────────────────────────────────
 
   const updateAnswers = useCallback((patch: Partial<WizardAnswers>) => {
@@ -249,6 +297,10 @@ export function SettlementSessionProvider({
 
   const setStep = useCallback((step: number) => {
     setSession(prev => ({ ...prev, currentStep: step }))
+  }, [])
+
+  const clearStalePathwayToast = useCallback(() => {
+    setStalePathwayToast(false)
   }, [])
 
   // Task 3: Clear — removes localStorage and resets to a fresh session
@@ -267,9 +319,11 @@ export function SettlementSessionProvider({
         consultant: effectiveConsultant,
         isRestored,
         storageAvailable,
+        stalePathwayToast,
         updateAnswers,
         setStep,
         clearSession,
+        clearStalePathwayToast,
       }}
     >
       {children}

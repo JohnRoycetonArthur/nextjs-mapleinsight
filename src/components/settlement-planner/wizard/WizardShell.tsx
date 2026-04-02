@@ -79,7 +79,13 @@ function validateStep(step: number, answers: WizardAnswers): StepErrors {
       if (answers.city === 'other' && !answers.province) errors.province = 'Please select your province.'
       break
     case 4:
-      if (!answers.jobStatus) errors.jobStatus = 'Please select your job situation.'
+      if (answers.pathway === 'study_permit') {
+        if (answers.jobStatus !== 'student') {
+          errors.jobStatus = 'Study permit applicants are automatically set to student for this step.'
+        }
+      } else if (!answers.jobStatus) {
+        errors.jobStatus = 'Please select your job situation.'
+      }
       break
     case 5:
       if (!answers.savings?.trim()) errors.savings = 'Please enter your available savings.'
@@ -111,7 +117,7 @@ interface Props {
 }
 
 export function WizardShell({ consultant, onComplete }: Props) {
-  const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession } = useSettlementSession()
+  const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession, stalePathwayToast, clearStalePathwayToast } = useSettlementSession()
   const { currentStep, answers } = session
   const mode = usePlannerMode()
   const isPublicMode = mode === 'public'
@@ -123,6 +129,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
   const [showResults, setShowResults] = useState(false)
   const [hasTrackedStart, setHasTrackedStart] = useState(false)
   const viewedStepsRef = useRef<Set<number>>(new Set())
+  const previousPathwayRef = useRef<string | undefined>(answers.pathway)
 
   // ── Responsive breakpoint ─────────────────────────────────────────────────
   useEffect(() => {
@@ -142,6 +149,21 @@ export function WizardShell({ consultant, onComplete }: Props) {
       })
     }
   }, [currentStep])
+
+  useEffect(() => {
+    const previousPathway = previousPathwayRef.current
+    previousPathwayRef.current = answers.pathway
+
+    if (previousPathway === undefined || previousPathway === answers.pathway) return
+
+    setCompleted(prev => {
+      const next = new Set(prev)
+      next.delete(4)
+      next.delete(5)
+      next.delete(6)
+      return next
+    })
+  }, [answers.pathway])
 
   useEffect(() => {
     if (showResults || hasTrackedStart) return
@@ -351,6 +373,30 @@ export function WizardShell({ consultant, onComplete }: Props) {
         }}>
           <Lock size={12} color="#1B7A4A" /> Your data stays in your browser
         </div>
+
+        {/* Stale pathway toast — shown when a restored session had an unsupported pathway */}
+        {stalePathwayToast && currentStep === 2 && (
+          <div
+            role="status"
+            style={{
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12,
+              background: '#FFF7E6', border: '1px solid #F59E0B',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+              fontSize: 13, color: '#92400E', fontFamily: FONT, lineHeight: 1.5,
+            }}
+          >
+            <span>Your previously selected pathway is no longer available. Please select a new pathway.</span>
+            <button
+              type="button"
+              onClick={clearStalePathwayToast}
+              aria-label="Dismiss notice"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 16, color: '#92400E', flexShrink: 0, lineHeight: 1, padding: 0,
+              }}
+            >×</button>
+          </div>
+        )}
 
         {renderStep()}
       </section>

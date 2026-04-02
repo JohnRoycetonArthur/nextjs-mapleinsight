@@ -68,7 +68,7 @@ function formatRegion(code: string | undefined): string | null {
 const PATHWAY_LABELS: Record<string, string> = {
   express_entry: 'Express Entry', pnp: 'Provincial Nominee Program',
   study_permit: 'Study Permit', work_permit: 'Work Permit',
-  family: 'Family Sponsorship', refugee: 'Refugee Protection', other: 'Other',
+  family: 'Family Sponsorship',
 }
 
 const HOUSING_LABELS: Record<string, string> = {
@@ -88,12 +88,6 @@ const ARRIVAL_LABELS: Record<string, string> = {
   '3_6_months': '3-6 months',
   '6_12_months': '6-12 months',
   '12_plus': '12+ months',
-}
-
-const TRANSIT_LABELS: Record<string, string> = {
-  public: 'Public transit',
-  car: 'Car',
-  both: 'Public transit + car',
 }
 
 const DEPARTURE_REGION_LABELS: Record<string, string> = {
@@ -491,7 +485,7 @@ function renderInputSummary(pkg: MapleReportPackage): string {
     { label: 'Arrival', value: (ARRIVAL_LABELS[answers.arrival ?? ''] ?? cap(answers.arrival ?? '')) || null },
     { label: 'Departure region', value: formatRegion(answers.departureRegion) },
     { label: 'Destination', value: destination || null },
-    { label: 'Transit', value: (TRANSIT_LABELS[answers.transitMode ?? ''] ?? cap(answers.transitMode ?? '')) || null },
+    { label: 'Transit', value: 'Public transit' },
     { label: 'Household', value: household },
     { label: 'Housing', value: (HOUSING_LABELS[answers.housing ?? ''] ?? cap(answers.housing ?? '')) || null },
     { label: 'Furnishing', value: cap(answers.furnishing ?? '') || null },

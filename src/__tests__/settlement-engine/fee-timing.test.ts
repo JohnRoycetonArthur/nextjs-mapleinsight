@@ -184,8 +184,8 @@ describe('FT-3: RPRF amount', () => {
     expect(rprf?.source).toBe('ircc')
   })
 
-  it('RPRF absent for non-EE pathway (other)', () => {
-    const input = { ...EE_INPUT, pathway: 'other' as const }
+  it('RPRF absent for non-EE pathway (work-permit)', () => {
+    const input = { ...EE_INPUT, pathway: 'work-permit' as const }
     const { breakdown } = computeUpfront(input, TORONTO_BASELINE)
     expect(breakdown.find(i => i.key === 'rprf')).toBeUndefined()
   })
