@@ -31,7 +31,7 @@ export interface WizardAnswers {
   departureRegion?: string  // region code e.g. 'south-asia' — used for flight cost estimate
 
   // Step 2 — Immigration
-  pathway?: string       // 'express_entry'|'pnp'|'study_permit'|'work_permit'|'family'|'refugee'|'other'
+  pathway?: string       // 'express_entry'|'pnp'|'study_permit'|'work_permit'|'family'
   feesPaid?: boolean
   biometricsDone?: boolean
 
@@ -176,10 +176,12 @@ export interface SettlementSessionContextValue {
   consultant: ConsultantBranding | null
   isRestored:    boolean   // true once mount restoration check is complete
   storageAvailable: boolean
+  stalePathwayToast: boolean   // true when a restored session had an unsupported pathway
 
-  updateAnswers: (patch: Partial<WizardAnswers>) => void
-  setStep:       (step: number) => void
-  clearSession:  () => void
+  updateAnswers:         (patch: Partial<WizardAnswers>) => void
+  setStep:               (step: number) => void
+  clearSession:          () => void
+  clearStalePathwayToast: () => void
 }
 
 const SettlementSessionContext = createContext<SettlementSessionContextValue | null>(null)
@@ -203,6 +205,7 @@ export function SettlementSessionProvider({
   const [session, setSession]             = useState<SessionData>(() => freshSession(slug, mode))
   const [isRestored, setIsRestored]       = useState(false)
   const [storageAvailable, setStorageAvailable] = useState(true)
+  const [stalePathwayToast, setStalePathwayToast] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -219,7 +222,24 @@ export function SettlementSessionProvider({
     }
 
     const saved = loadSession(slug)
-    setSession(saved ? { ...saved, slug, mode } : freshSession(slug, mode))
+    if (saved) {
+      const stalePathways = ['refugee', 'other']
+      if (saved.answers.pathway && stalePathways.includes(saved.answers.pathway)) {
+        // Pathway is no longer supported — reset to Step 2 with no pathway selected
+        setSession({
+          ...saved,
+          slug,
+          mode,
+          currentStep: 2,
+          answers: { ...saved.answers, pathway: '' },
+        })
+        setStalePathwayToast(true)
+      } else {
+        setSession({ ...saved, slug, mode })
+      }
+    } else {
+      setSession(freshSession(slug, mode))
+    }
     setIsRestored(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, mode])
@@ -251,6 +271,10 @@ export function SettlementSessionProvider({
     setSession(prev => ({ ...prev, currentStep: step }))
   }, [])
 
+  const clearStalePathwayToast = useCallback(() => {
+    setStalePathwayToast(false)
+  }, [])
+
   // Task 3: Clear — removes localStorage and resets to a fresh session
   const clearSession = useCallback(() => {
     setSession(prev => {
@@ -267,9 +291,11 @@ export function SettlementSessionProvider({
         consultant: effectiveConsultant,
         isRestored,
         storageAvailable,
+        stalePathwayToast,
         updateAnswers,
         setStep,
         clearSession,
+        clearStalePathwayToast,
       }}
     >
       {children}

@@ -111,7 +111,7 @@ interface Props {
 }
 
 export function WizardShell({ consultant, onComplete }: Props) {
-  const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession } = useSettlementSession()
+  const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession, stalePathwayToast, clearStalePathwayToast } = useSettlementSession()
   const { currentStep, answers } = session
   const mode = usePlannerMode()
   const isPublicMode = mode === 'public'
@@ -351,6 +351,30 @@ export function WizardShell({ consultant, onComplete }: Props) {
         }}>
           <Lock size={12} color="#1B7A4A" /> Your data stays in your browser
         </div>
+
+        {/* Stale pathway toast — shown when a restored session had an unsupported pathway */}
+        {stalePathwayToast && currentStep === 2 && (
+          <div
+            role="status"
+            style={{
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12,
+              background: '#FFF7E6', border: '1px solid #F59E0B',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+              fontSize: 13, color: '#92400E', fontFamily: FONT, lineHeight: 1.5,
+            }}
+          >
+            <span>Your previously selected pathway is no longer available. Please select a new pathway.</span>
+            <button
+              type="button"
+              onClick={clearStalePathwayToast}
+              aria-label="Dismiss notice"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 16, color: '#92400E', flexShrink: 0, lineHeight: 1, padding: 0,
+              }}
+            >×</button>
+          </div>
+        )}
 
         {renderStep()}
       </section>

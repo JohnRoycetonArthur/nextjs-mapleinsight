@@ -3,7 +3,7 @@
 /**
  * Step 2: Immigration Plan (US-11.3)
  *
- * Collects: immigration pathway (7 options), fees already paid (toggle),
+ * Collects: immigration pathway (5 options), fees already paid (toggle),
  * biometrics done (toggle).
  *
  * When pathway === 'study_permit', renders a conditional sub-form that collects:
@@ -25,12 +25,10 @@ import {
   FactCheck,
   FamilyGroup,
   Forum,
-  Help,
   Info,
   LibraryBooks,
   Lock,
   School,
-  ShieldLock,
   Target,
   TravelExplore,
   Work,
@@ -156,22 +154,6 @@ const PATHWAYS: { value: string; label: string; icon: React.ReactNode; desc: str
     color: C.red,
     irccKey: 'family-sponsorship',
   },
-  {
-    value: 'refugee',
-    label: 'Refugee / Protected',
-    icon:  <ShieldLock size={20} color={C.forest} />,
-    desc:  'Protected person status through a refugee claim, government sponsorship, or private sponsorship.',
-    color: C.forest,
-    irccKey: 'other',
-  },
-  {
-    value: 'other',
-    label: 'Other / Not Sure',
-    icon:  <Help size={20} color={C.gray} />,
-    desc:  'Another pathway or still exploring options — we\'ll use general federal fee defaults.',
-    color: C.gray,
-    irccKey: 'other',
-  },
 ]
 
 // ─── Study permit: tuition benchmarks ────────────────────────────────────────
@@ -220,7 +202,7 @@ const GIC_OPTIONS: { value: string; label: string; icon: React.ReactNode; desc: 
     label: 'Not purchasing',
     icon:  <Cancel size={18} color={C.purple} />,
     desc:  'I am not using a GIC.',
-    detail: 'GIC costs will be excluded. Note: a GIC is required for the Student Direct Stream (SDS) fast-track.',
+    detail: 'GIC costs will be excluded. No GIC will be added to your upfront estimate.',
   },
 ]
 
@@ -344,81 +326,34 @@ function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) 
           </span>
         </div>
 
-        {/* SDS mandatory GIC note */}
-        {sp.isSDS && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: `${C.purple}10`, border: `1px solid ${C.purple}30`,
-            borderRadius: 8, padding: '8px 12px', marginBottom: 12,
-            fontSize: 12, color: C.purple, fontFamily: FONT, fontWeight: 600,
-          }}>
-            <InfoIcon />
-            GIC is required for SDS applications.
-          </div>
-        )}
-
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 8 }}>
-          {GIC_OPTIONS.map(g => {
-            const isDisabled = sp.isSDS && g.value === 'not_purchasing'
-            return (
-              <button
-                key={g.value}
-                type="button"
-                onClick={() => { if (!isDisabled) onSPChange({ gicStatus: g.value }) }}
-                aria-pressed={sp.gicStatus === g.value}
-                disabled={isDisabled}
-                style={{
-                  padding: '14px 16px', borderRadius: 12, textAlign: 'left',
-                  border:     sp.gicStatus === g.value ? `2px solid ${C.purple}` : `1px solid ${C.border}`,
-                  background: isDisabled ? C.lightGray : sp.gicStatus === g.value ? `${C.purple}0a` : C.white,
-                  cursor:     isDisabled ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.15s', fontFamily: FONT,
-                  minHeight: 44, opacity: isDisabled ? 0.45 : 1,
-                }}
-              >
-                <span style={{ display: 'block', marginBottom: 5 }}>{g.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: sp.gicStatus === g.value ? C.purple : C.forest, display: 'block', lineHeight: 1.2 }}>{g.label}</span>
-                <span style={{ fontSize: 11, color: C.gray, display: 'block', marginTop: 4, lineHeight: 1.4 }}>{g.desc}</span>
-                {sp.gicStatus === g.value && !isDisabled && (
-                  <span style={{ fontSize: 11, color: C.purple, display: 'block', marginTop: 6, lineHeight: 1.4, fontStyle: 'italic' }}>{g.detail}</span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ── 4. SDS toggle ─────────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <Label>Are you applying through the Student Direct Stream (SDS)?</Label>
-          {/* Tooltip */}
-          <div style={{ position: 'relative', display: 'inline-flex' }} className="sds-tooltip-wrap">
-            <span
-              style={{ color: C.blue, cursor: 'default', display: 'inline-flex', marginBottom: 8 }}
-              title="The Student Direct Stream (SDS) is an expedited study permit processing program for applicants from eligible countries (India, China, Philippines, Vietnam, and others). SDS requires a GIC of at least $10,000 CAD and an IELTS score of 6.0 or higher. Processing is typically 20 days."
+          {GIC_OPTIONS.map(g => (
+            <button
+              key={g.value}
+              type="button"
+              onClick={() => onSPChange({ gicStatus: g.value })}
+              aria-pressed={sp.gicStatus === g.value}
+              style={{
+                padding: '14px 16px', borderRadius: 12, textAlign: 'left',
+                border:     sp.gicStatus === g.value ? `2px solid ${C.purple}` : `1px solid ${C.border}`,
+                background: sp.gicStatus === g.value ? `${C.purple}0a` : C.white,
+                cursor: 'pointer',
+                transition: 'all 0.15s', fontFamily: FONT,
+                minHeight: 44,
+              }}
             >
-              <InfoIcon />
-            </span>
-          </div>
+              <span style={{ display: 'block', marginBottom: 5 }}>{g.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: sp.gicStatus === g.value ? C.purple : C.forest, display: 'block', lineHeight: 1.2 }}>{g.label}</span>
+              <span style={{ fontSize: 11, color: C.gray, display: 'block', marginTop: 4, lineHeight: 1.4 }}>{g.desc}</span>
+              {sp.gicStatus === g.value && (
+                <span style={{ fontSize: 11, color: C.purple, display: 'block', marginTop: 6, lineHeight: 1.4, fontStyle: 'italic' }}>{g.detail}</span>
+              )}
+            </button>
+          ))}
         </div>
-        <SwitchToggle
-          label="Yes, I am applying through SDS"
-          checked={sp.isSDS ?? false}
-          onChange={() => {
-            const newIsSDS = !(sp.isSDS ?? false)
-            // If enabling SDS, ensure gicStatus is not 'not_purchasing'
-            const patch: Parameters<typeof onSPChange>[0] = { isSDS: newIsSDS }
-            if (newIsSDS && sp.gicStatus === 'not_purchasing') {
-              patch.gicStatus = 'planning'
-            }
-            onSPChange(patch)
-          }}
-          helper="SDS offers ~20-day processing for eligible countries. A GIC is mandatory."
-        />
       </div>
 
-      {/* ── 5. Scholarship / funding ──────────────────────────────────────── */}
+      {/* ── 4. Scholarship / funding ──────────────────────────────────────── */}
       <div>
         <Label htmlFor="scholarship-input">Scholarship / external funding (optional)</Label>
         <CurrencyInput

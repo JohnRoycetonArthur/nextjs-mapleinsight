@@ -98,7 +98,7 @@ function mapPathway(
       if (sub === 'fst') return 'express-entry-fstp'
       return 'express-entry-fsw'     // fsw, unsure, or CEC without full exemption criteria
     }
-    default: return 'other'
+    default: return 'express-entry-fsw'
   }
 }
 

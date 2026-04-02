@@ -68,7 +68,7 @@ function formatRegion(code: string | undefined): string | null {
 const PATHWAY_LABELS: Record<string, string> = {
   express_entry: 'Express Entry', pnp: 'Provincial Nominee Program',
   study_permit: 'Study Permit', work_permit: 'Work Permit',
-  family: 'Family Sponsorship', refugee: 'Refugee Protection', other: 'Other',
+  family: 'Family Sponsorship',
 }
 
 const HOUSING_LABELS: Record<string, string> = {

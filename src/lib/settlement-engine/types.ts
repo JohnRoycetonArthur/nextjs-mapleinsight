@@ -38,7 +38,6 @@ export type ImmigrationPathway =
   | 'work-permit'
   | 'pnp'
   | 'family-sponsorship'
-  | 'other'
 
 export type JobStatus = 'secured' | 'offer' | 'none' | 'student'
 
