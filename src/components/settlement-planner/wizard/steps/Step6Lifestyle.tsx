@@ -14,7 +14,13 @@
  *   - Provincial coverage, no waiting period → positive "no cost" info card
  */
 
+import { useCallback, useEffect, useRef } from 'react'
 import { C, FONT, SERIF } from '../constants'
+import {
+  buildDefaultExpenses,
+  DEFAULT_EXPENSES,
+  type CustomExpense,
+} from '@/lib/settlement-engine/defaults'
 import { STUDY_PERMIT_DEFAULTS } from '@/lib/settlement-engine/study-permit'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 import {
@@ -147,6 +153,49 @@ interface Props {
 // ─── Step 6: Lifestyle & Setup ────────────────────────────────────────────────
 
 export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }: Props) {
+  const customExpenseCounterRef = useRef(0)
+
+  const nextCustomExpenseId = useCallback(() => {
+    customExpenseCounterRef.current += 1
+    return `custom_${Date.now()}_${customExpenseCounterRef.current}`
+  }, [])
+
+  useEffect(() => {
+    if (!data.customExpenses?.length) return
+    if (data.customExpenses.every(expense => expense.id)) return
+
+    onChange(
+      'customExpenses',
+      data.customExpenses.map(expense => ({
+        ...expense,
+        id: expense.id || nextCustomExpenseId(),
+      })),
+    )
+  }, [data.customExpenses, nextCustomExpenseId, onChange])
+
+  useEffect(() => {
+    if (!data.customExpenses || data.customExpenses.length === 0) {
+      onChange('customExpenses', buildDefaultExpenses(data.adults ?? 1))
+    }
+  }, [data.adults, onChange])
+
+  useEffect(() => {
+    if (!data.customExpenses?.length) return
+
+    const nextGroceriesAmount = String(DEFAULT_EXPENSES.groceries.amount * Math.max(1, data.adults ?? 1))
+    const groceryRow = data.customExpenses.find(
+      expense => expense.defaultKey === 'groceries' && !expense.isModified,
+    )
+
+    if (!groceryRow || groceryRow.amount === nextGroceriesAmount) return
+
+    onChange(
+      'customExpenses',
+      data.customExpenses.map(expense =>
+        expense.id === groceryRow.id ? { ...expense, amount: nextGroceriesAmount } : expense,
+      ),
+    )
+  }, [data.adults, data.customExpenses, onChange])
   // ── Study permit health insurance derivation (§4.3) ──────────────────────
   const isStudyPermit  = data.pathway === 'study_permit'
   const city           = data.city ?? ''
@@ -180,6 +229,22 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
   const inputBase: React.CSSProperties = {
     padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`,
     fontSize: 14, fontFamily: FONT, color: C.text, outline: 'none', background: C.white,
+  }
+
+  const customExpenses = data.customExpenses ?? []
+
+  const updateExpense = (index: number, updater: (expense: CustomExpense) => CustomExpense) => {
+    const next = [...customExpenses]
+    next[index] = updater(next[index])
+    onChange('customExpenses', next)
+  }
+
+  const createCustomExpense = (): CustomExpense => {
+    return {
+      id: nextCustomExpenseId(),
+      label: '',
+      amount: '',
+    }
   }
 
   return (
@@ -437,18 +502,18 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
         )}
 
         {/* User-added custom expense rows */}
-        {(data.customExpenses ?? []).map((exp, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+        {customExpenses.map((exp, i) => (
+          <div key={exp.id || `expense_${i}`} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <input
               type="text"
               placeholder="Label (e.g. Language classes)"
               value={exp.label}
               aria-label={`Custom expense ${i + 1} label`}
-              onChange={e => {
-                const next = [...(data.customExpenses ?? [])]
-                next[i] = { ...next[i], label: e.target.value }
-                onChange('customExpenses', next)
-              }}
+              onChange={e => updateExpense(i, current => ({
+                ...current,
+                label: e.target.value,
+                isModified: current.isDefault ? true : current.isModified,
+              }))}
               style={{ ...inputBase, flex: 1, maxWidth: 200 }}
             />
             <div style={{ position: 'relative', flex: '0 0 140px' }}>
@@ -464,17 +529,32 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
                 placeholder="0"
                 value={exp.amount}
                 aria-label={`Custom expense ${i + 1} amount`}
-                onChange={e => {
-                  const next = [...(data.customExpenses ?? [])]
-                  next[i] = { ...next[i], amount: e.target.value.replace(/[^0-9.,]/g, '') }
-                  onChange('customExpenses', next)
-                }}
+                onChange={e => updateExpense(i, current => ({
+                  ...current,
+                  amount: e.target.value.replace(/[^0-9.,]/g, ''),
+                  isModified: current.isDefault ? true : current.isModified,
+                }))}
                 style={{ ...inputBase, width: '100%', paddingLeft: 48 }}
               />
             </div>
+            {exp.isDefault && !exp.isModified && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: C.textLight,
+                  background: C.lightGray,
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                (estimated)
+              </span>
+            )}
             <button
               type="button"
-              onClick={() => onChange('customExpenses', (data.customExpenses ?? []).filter((_, idx) => idx !== i))}
+              onClick={() => onChange('customExpenses', customExpenses.filter((_, idx) => idx !== i))}
               aria-label={`Remove expense: ${exp.label || `item ${i + 1}`}`}
               style={{
                 width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`,
@@ -491,7 +571,7 @@ export function Step6Lifestyle({ data, onChange, errors, isMobile, hasChildren }
         {/* Add expense button */}
         <button
           type="button"
-          onClick={() => onChange('customExpenses', [...(data.customExpenses ?? []), { label: '', amount: '' }])}
+          onClick={() => onChange('customExpenses', [...customExpenses, createCustomExpense()])}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 14px', borderRadius: 8, border: `1px dashed ${C.border}`,

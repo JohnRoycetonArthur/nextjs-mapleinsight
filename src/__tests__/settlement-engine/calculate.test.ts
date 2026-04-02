@@ -16,6 +16,7 @@ import {
 import { BUFFER_PERCENT, ENGINE_VERSION, RUNWAY_MONTHS } from '@/lib/settlement-engine/constants'
 import type { CityBaseline } from '@/lib/settlement-engine/baselines'
 import type { EngineInput } from '@/lib/settlement-engine/types'
+import { buildDefaultExpenses, type CustomExpense } from '@/lib/settlement-engine/defaults'
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ const TORONTO_INPUT: EngineInput = {
   liquidSavings:         18_000,
   monthlyObligations:    300,
   plansCar:              false,
-  customMonthlyExpenses: 0,
+  customExpenses:        buildDefaultExpenses(1),
   jobStatus:             'none',
 }
 
@@ -98,10 +99,10 @@ describe('computeUpfront', () => {
     expect(item?.cad).toBe(2_000)
   })
 
-  // U = 1365 + 85 + 1500 + 3522 + 2000 = 8472
+  // U = 1365 + 85 + 515 + 1500 + 3522 + 2000 = 8987
   it('total upfront equals sum of all items', () => {
-    expect(result.total).toBe(1_365 + 85 + 1_500 + 1_761 * 2 + 2_000)
-    expect(result.total).toBe(8_472)
+    expect(result.total).toBe(1_365 + 85 + 515 + 1_500 + 1_761 * 2 + 2_000)
+    expect(result.total).toBe(8_987)
   })
 })
 
@@ -119,18 +120,22 @@ describe('computeMonthlyMin', () => {
   it('includes transit pass from baseline', () => {
     const item = result.breakdown.find(i => i.key === 'transit')
     expect(item?.cad).toBe(156)
+    expect(item?.label).toBe('Public transit (TTC)')
   })
 
   it('includes utilities baseline', () => {
     expect(result.breakdown.find(i => i.key === 'utilities')?.cad).toBe(150)
+    expect(result.breakdown.find(i => i.key === 'utilities')?.source).toBe('estimate')
   })
 
   it('includes phone/internet baseline', () => {
     expect(result.breakdown.find(i => i.key === 'phone')?.cad).toBe(80)
+    expect(result.breakdown.find(i => i.key === 'phone')?.source).toBe('estimate')
   })
 
   it('includes groceries for single adult', () => {
     expect(result.breakdown.find(i => i.key === 'groceries')?.cad).toBe(400)
+    expect(result.breakdown.find(i => i.key === 'groceries')?.source).toBe('estimate')
   })
 
   it('includes monthly obligations', () => {
@@ -150,18 +155,97 @@ describe('computeMonthlyMin', () => {
 
   it('groceries scale with household size', () => {
     const couple = computeMonthlyMin(
-      { ...TORONTO_INPUT, household: { adults: 2, children: 1 }, monthlyObligations: 0 },
+      { ...TORONTO_INPUT, household: { adults: 2, children: 1 }, customExpenses: buildDefaultExpenses(2), monthlyObligations: 0 },
       TORONTO_BASELINE,
     )
-    // couple $600 + 1 child $200 = $800
     expect(couple.breakdown.find(i => i.key === 'groceries')?.cad).toBe(800)
+  })
+
+  it('uses unchanged default expenses from customExpenses without double-counting', () => {
+    const unchangedDefaults = buildDefaultExpenses(1)
+    const monthly = computeMonthlyMin(
+      { ...TORONTO_INPUT, customExpenses: unchangedDefaults, monthlyObligations: 0 },
+      TORONTO_BASELINE,
+    )
+
+    expect(monthly.total).toBe(1_761 + 156 + 150 + 80 + 400)
+  })
+
+  it('uses modified utilities amount and source from user input', () => {
+    const modifiedUtilities: CustomExpense[] = buildDefaultExpenses(1).map(expense =>
+      expense.defaultKey === 'utilities'
+        ? { ...expense, amount: '200', isModified: true }
+        : expense,
+    )
+
+    const monthly = computeMonthlyMin(
+      { ...TORONTO_INPUT, customExpenses: modifiedUtilities, monthlyObligations: 0 },
+      TORONTO_BASELINE,
+    )
+
+    expect(monthly.breakdown.find(i => i.key === 'utilities')).toMatchObject({
+      cad: 200,
+      source: 'user-input',
+    })
+    expect(monthly.total).toBe(1_761 + 156 + 200 + 80 + 400)
+  })
+
+  it('falls back to groceries default when user deleted groceries row', () => {
+    const withoutGroceries = buildDefaultExpenses(2)
+      .filter(expense => expense.defaultKey !== 'groceries')
+
+    const monthly = computeMonthlyMin(
+      { ...TORONTO_INPUT, household: { adults: 2, children: 0 }, customExpenses: withoutGroceries, monthlyObligations: 0 },
+      TORONTO_BASELINE,
+    )
+
+    expect(monthly.breakdown.find(i => i.key === 'groceries')).toMatchObject({
+      cad: 800,
+      source: 'estimate',
+    })
+  })
+
+  it('falls back to all defaults when customExpenses is empty', () => {
+    const monthly = computeMonthlyMin(
+      { ...TORONTO_INPUT, customExpenses: [], monthlyObligations: 0 },
+      TORONTO_BASELINE,
+    )
+
+    expect(monthly.total).toBe(1_761 + 156 + 150 + 80 + 400)
+  })
+
+  it('includes additional non-default custom expenses exactly once', () => {
+    const withLanguageClasses: CustomExpense[] = [
+      ...buildDefaultExpenses(1),
+      { id: 'custom_language_classes', label: 'Language classes', amount: '200' },
+    ]
+
+    const monthly = computeMonthlyMin(
+      { ...TORONTO_INPUT, customExpenses: withLanguageClasses, monthlyObligations: 0 },
+      TORONTO_BASELINE,
+    )
+
+    expect(monthly.breakdown.find(i => i.key === 'custom-custom_language_classes')).toMatchObject({
+      cad: 200,
+      source: 'user-input',
+    })
+    expect(monthly.total).toBe(1_761 + 156 + 150 + 80 + 400 + 200)
+  })
+
+  it('uses grocery scaling of $400 per adult when unchanged', () => {
+    const monthly = computeMonthlyMin(
+      { ...TORONTO_INPUT, household: { adults: 3, children: 0 }, customExpenses: buildDefaultExpenses(3), monthlyObligations: 0 },
+      TORONTO_BASELINE,
+    )
+
+    expect(monthly.breakdown.find(i => i.key === 'groceries')?.cad).toBe(1_200)
   })
 })
 
 // ─── computeSafe ─────────────────────────────────────────────────────────────
 
 describe('computeSafe', () => {
-  const upfront     = 8_472
+  const upfront     = 8_987
   const monthlyMin  = 2_847
   const monthlyBreakdown = computeMonthlyMin(TORONTO_INPUT, TORONTO_BASELINE).breakdown
 
@@ -190,12 +274,12 @@ describe('computeSafe', () => {
     expect(r.monthlySafe).toBe(monthlyMin + 600)
   })
 
-  // S_safe = (8472 + 2847×6) × 1.10 = 25554 × 1.10 = 28109.4
+  // S_safe = (8987 + 2847×6) × 1.10 = 26069 × 1.10 = 28675.9
   it('S_safe = (U + M_safe × runway) × (1 + buffer)', () => {
     const r = computeSafe(TORONTO_INPUT, upfront, monthlyMin, monthlyBreakdown)
     const expected = (upfront + monthlyMin * 6) * (1 + BUFFER_PERCENT)
     expect(r.safeSavingsTarget).toBeCloseTo(expected, 2)
-    expect(r.safeSavingsTarget).toBeCloseTo(28_109.4, 1)
+    expect(r.safeSavingsTarget).toBeCloseTo(28_675.9, 1)
   })
 
   it('bufferPercent is 10%', () => {
@@ -226,20 +310,20 @@ describe('computeGap', () => {
 describe('runEngine — Toronto TC-1 scenario', () => {
   const output = runEngine(TORONTO_INPUT, TORONTO_BASELINE, 'cmhc:2025-10|ircc:2024-11')
 
-  it('produces upfront of $8,472', () => {
-    expect(output.upfront).toBe(8_472)
+  it('produces upfront of $8,987', () => {
+    expect(output.upfront).toBe(8_987)
   })
 
   it('produces monthlyMin of $2,847', () => {
     expect(output.monthlyMin).toBe(2_847)
   })
 
-  it('S_safe ≈ $28,109', () => {
-    expect(output.safeSavingsTarget).toBeCloseTo(28_109.4, 1)
+  it('S_safe ≈ $28,676', () => {
+    expect(output.safeSavingsTarget).toBeCloseTo(28_675.9, 1)
   })
 
-  it('savings gap ≈ $10,109 (18K savings)', () => {
-    expect(output.savingsGap).toBeCloseTo(28_109.4 - 18_000, 1)
+  it('savings gap ≈ $10,676 (18K savings)', () => {
+    expect(output.savingsGap).toBeCloseTo(28_675.9 - 18_000, 1)
   })
 
   it('includes engineVersion', () => {
@@ -338,5 +422,11 @@ describe('runEngine — fallback baseline', () => {
   it('deposit source is national-average', () => {
     const deposit = output.upfrontBreakdown.find(i => i.key === 'housing-deposit')
     expect(deposit?.source).toBe('national-average')
+  })
+
+  it('uses the fallback public transit cost in monthly breakdown', () => {
+    const transit = output.monthlyBreakdown.find(i => i.key === 'transit')
+    expect(transit?.cad).toBe(130)
+    expect(transit?.label).toBe('Public transit')
   })
 })

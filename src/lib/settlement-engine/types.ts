@@ -1,5 +1,7 @@
 // ─── Data Source Catalog ──────────────────────────────────────────────────────
 
+import type { CustomExpense } from './defaults'
+
 export interface DataSource {
   key: string
   name: string
@@ -82,7 +84,8 @@ export interface EngineInput {
 
   // Lifestyle adders
   plansCar: boolean         // monthly car cost adder if true
-  customMonthlyExpenses: number // any other regular expenses
+  customMonthlyExpenses?: number // deprecated legacy aggregate; use customExpenses when available
+  customExpenses?: CustomExpense[]
 
   // Funds composition — borrowed/gifted portions of liquid savings (US-20.2)
   fundsComposition?: {

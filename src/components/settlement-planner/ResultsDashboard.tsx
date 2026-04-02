@@ -443,9 +443,6 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
         }
       : undefined
 
-    const customMonthly = (answers.customExpenses ?? [])
-      .reduce((sum, e) => sum + parseAmount(e.amount), 0)
-
     return {
       city:     answers.city ?? 'toronto',
       province: answers.province ?? 'ON',
@@ -473,7 +470,7 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
           }
         : undefined,
       plansCar:              answers.car ?? false,
-      customMonthlyExpenses: customMonthly,
+      customExpenses:        answers.customExpenses ?? [],
       jobStatus:             mapJobStatus(answers.jobStatus),
       studyPermit:           studyPermitInput,
     }
