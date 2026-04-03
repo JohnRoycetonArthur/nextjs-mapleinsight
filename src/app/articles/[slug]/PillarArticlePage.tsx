@@ -105,8 +105,8 @@ const PATHWAY_DATA = [
       "Setup costs × family members",
     ],
     articles: [
-      { title: "Sponsoring Family Members — Financial Requirements", slug: "sponsoring-family-financial-requirements" },
-      { title: "Canada Child Benefit (CCB) Guide", slug: "canada-child-benefit" },
+      { title: "Sponsoring Family Members — Financial Requirements", slug: "sponsoring-family-members-financial-requirements" },
+      { title: "Canada Child Benefit (CCB) Guide", slug: "canada-child-benefit-ccb-guide" },
     ],
   },
   {
@@ -126,7 +126,7 @@ const PATHWAY_DATA = [
     ],
     articles: [
       { title: "Provincial Nominee Programs Overview", slug: "pnp-overview" },
-      { title: "Cost of Living Across Canadian Provinces", slug: "cost-of-living-provinces" },
+      { title: "Cost of Living Across Canadian Provinces", slug: "cost-of-living-canada-city-comparison" },
     ],
   },
 ];
@@ -150,11 +150,11 @@ const WIZARD_STEPS = [
 ];
 
 const RELATED_ARTICLES = [
-  { title: "Opening a Newcomer Bank Account",          slug: "newcomer-bank-account",  category: "Banking",     color: C.accent },
-  { title: "Understanding Canadian Credit Scores",     slug: "canadian-credit-scores", category: "Banking",     color: C.accent },
-  { title: "Your First Canadian Tax Return",           slug: "first-tax-return",       category: "Taxes",       color: C.gold   },
-  { title: "TFSA Explained for Newcomers",             slug: "tfsa-explained",         category: "Saving",      color: C.blue   },
-  { title: "Renting vs Buying in Canada",              slug: "renting-vs-buying",      category: "Housing",     color: C.purple },
+  { title: "Opening a Newcomer Bank Account",          slug: "opening-a-newcomer-bank-account",  category: "Banking",  color: C.accent },
+  { title: "Understanding Canadian Credit Scores",     slug: "understanding-canadian-credit-scores", category: "Banking", color: C.accent },
+  { title: "Your First Canadian Tax Return",           slug: "your-first-canadian-tax-return",  category: "Taxes",    color: C.gold   },
+  { title: "TFSA Explained for Newcomers",             slug: "tfsa-explained-for-newcomers",    category: "Saving",   color: C.blue   },
+  { title: "Renting vs Buying in Canada",              slug: "renting-vs-buying-in-canada",     category: "Housing",  color: C.purple },
   { title: "Provincial Health Insurance Guide",        slug: "provincial-health-insurance", category: "Benefits", color: C.red },
 ];
 
@@ -664,7 +664,7 @@ export function PillarArticlePage({ article, readingTime }: Props) {
             <div style={{ display: "grid", gap: 8 }}>
               <ArticleLink title="Setting Up Phone & Internet Plans" slug="phone-internet-plans" category="Getting Started" color={C.gold} />
               <ArticleLink title="Provincial Health Insurance Guide" slug="provincial-health-insurance" category="Benefits" color={C.gold} />
-              <ArticleLink title="Opening a Newcomer Bank Account" slug="newcomer-bank-account" category="Banking" color={C.gold} />
+              <ArticleLink title="Opening a Newcomer Bank Account" slug="opening-a-newcomer-bank-account" category="Banking" color={C.gold} />
             </div>
           </div>
 
@@ -750,7 +750,7 @@ export function PillarArticlePage({ article, readingTime }: Props) {
                 </div>
               ) : (
                 <SettlementSessionProvider slug="pillar-article" mode="public">
-                  <WizardShell />
+                  <WizardShell scrollTargetId="your-plan" />
                 </SettlementSessionProvider>
               )}
             </div>
