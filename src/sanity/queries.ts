@@ -24,6 +24,7 @@ export type ArticleFull = ArticleSummary & {
   seoDescription: string | null;
   answerSummary: string | null;
   articleType: 'guide' | 'explainer' | 'news' | 'tool-page' | null;
+  isPillar: boolean | null;
   faqItems: Array<{ question: string; answer: string; anchorSlug: string | null }> | null;
   exampleScenarios: Array<{ title: string; body: string }> | null;
   sources: ArticleSource[] | null;
@@ -65,6 +66,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleFull | null
       seoDescription,
       answerSummary,
       articleType,
+      isPillar,
       faqItems[] { question, answer, "anchorSlug": anchorSlug.current },
       exampleScenarios[] { title, body },
       sources[] { _key, sourceName, documentTitle, url, accessedDate }

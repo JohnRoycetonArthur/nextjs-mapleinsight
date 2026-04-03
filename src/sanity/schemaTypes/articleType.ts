@@ -223,6 +223,91 @@ export const articleType = defineType({
             },
           },
         },
+        {
+          type: 'object',
+          name: 'toolEmbed',
+          title: 'Tool Embed',
+          fields: [
+            defineField({
+              name: 'toolId',
+              title: 'Tool ID',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'title',
+              title: 'Title',
+              type: 'string',
+            }),
+            defineField({
+              name: 'description',
+              title: 'Description',
+              type: 'text',
+              rows: 2,
+            }),
+          ],
+          preview: {
+            select: {title: 'title', subtitle: 'toolId'},
+            prepare({title, subtitle}) {
+              return {title: title || 'Tool Embed', subtitle}
+            },
+          },
+        },
+        {
+          type: 'object',
+          name: 'markdownTable',
+          title: 'Markdown Table',
+          fields: [
+            defineField({
+              name: 'rows',
+              title: 'Rows',
+              type: 'array',
+              validation: (Rule) => Rule.required().min(1),
+              of: [
+                defineField({
+                  name: 'row',
+                  title: 'Row',
+                  type: 'object',
+                  fields: [
+                    defineField({
+                      name: 'cells',
+                      title: 'Cells',
+                      type: 'array',
+                      of: [{type: 'string'}],
+                      validation: (Rule) => Rule.required().min(1),
+                    }),
+                  ],
+                  preview: {
+                    select: {cells: 'cells'},
+                    prepare({cells}: {cells?: string[]}) {
+                      return {
+                        title: Array.isArray(cells) ? cells.join(' | ').slice(0, 80) : 'Table Row',
+                      }
+                    },
+                  },
+                }),
+              ],
+            }),
+          ],
+          preview: {
+            select: {rows: 'rows'},
+            prepare({rows}: {rows?: Array<{cells?: string[]}>}) {
+              const count = Array.isArray(rows) ? rows.length : 0
+              return {title: 'Table', subtitle: `${count} row${count === 1 ? '' : 's'}`}
+            },
+          },
+        },
+        {
+          type: 'object',
+          name: 'divider',
+          title: 'Divider',
+          fields: [],
+          preview: {
+            prepare() {
+              return {title: 'Divider'}
+            },
+          },
+        },
       ],
       validation: (Rule) => Rule.required(),
     }),
@@ -269,6 +354,14 @@ export const articleType = defineType({
       validation: (Rule) => Rule.max(3),
     }),
     defineField({
+      name: 'isPillar',
+      title: 'Pillar Article',
+      type: 'boolean',
+      group: 'links',
+      description: 'Marks this article as a pillar/hub page for content clustering.',
+      initialValue: false,
+    }),
+    defineField({
       name: 'journeyStage',
       title: 'Journey Stage',
       type: 'string',
@@ -308,6 +401,30 @@ export const articleType = defineType({
       group: 'seo',
       description: 'Set if this content appears elsewhere and you want to avoid duplicate indexing.',
       validation: (Rule) => Rule.uri({scheme: ['http', 'https']}),
+    }),
+    defineField({
+      name: 'seoSchema',
+      title: 'SEO Schema',
+      type: 'array',
+      group: 'seo',
+      description: 'Structured data schema types to include on this page (e.g., FAQPage, Article, HowTo).',
+      of: [
+        {
+          type: 'object',
+          name: 'seoSchemaType',
+          fields: [
+            defineField({
+              name: 'type',
+              title: 'Type',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            }),
+          ],
+          preview: {
+            select: {title: 'type'},
+          },
+        },
+      ],
     }),
     defineField({
       name: 'noIndex',

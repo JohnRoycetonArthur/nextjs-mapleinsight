@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getArticleBySlug, getAllArticleSlugs, ArticleFull } from "@/sanity/queries";
 import { ArticleContent, ArticleSection } from "./ArticleContent";
+import { PillarArticlePage } from "./PillarArticlePage";
 import { articleSchema } from "@/lib/structured-data";
 
 export async function generateStaticParams() {
@@ -116,6 +117,24 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           })),
         }
       : null;
+
+  if (article.isPillar) {
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        {faqJsonLd && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          />
+        )}
+        <PillarArticlePage article={article} readingTime={readingTime} />
+      </>
+    );
+  }
 
   return (
     <>
