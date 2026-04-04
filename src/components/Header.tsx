@@ -22,7 +22,7 @@ const MOBILE_SECONDARY = [
 
 // Maple leaf icon (reused from design system)
 const MapleLeaf = () => (
-  <svg width={14} height={14} viewBox="0 0 24 24" fill="#1B7A4A" aria-hidden="true">
+  <svg width={14} height={14} viewBox="0 0 24 24" fill="#D52B1E" aria-hidden="true">
     <path d="M12 0L13.5 6.5L17 4L15.5 8.5L22 9L17 12L20 16L14 14L12 24L10 14L4 16L7 12L2 9L8.5 8.5L7 4L10.5 6.5Z" />
   </svg>
 );
@@ -51,10 +51,17 @@ export function Header() {
               <BrandMark size={40} />
             </div>
             <div>
-              <div className="font-semibold text-gray-900 leading-tight">
-                Maple Insight<span className="hidden md:inline"> Canada</span>
+              <div
+                style={{
+                  fontFamily: "var(--font-dm-serif, 'DM Serif Display', Georgia, serif)",
+                  fontSize: 18,
+                  color: "#111827",
+                  lineHeight: 1.1,
+                }}
+              >
+                Maple Insight
               </div>
-              <div className="hidden md:block text-xs text-gray-500">Financial clarity for newcomers</div>
+              <div className="hidden md:block text-xs text-gray-500">Financial Clarity for your move to Canada</div>
             </div>
           </Link>
 

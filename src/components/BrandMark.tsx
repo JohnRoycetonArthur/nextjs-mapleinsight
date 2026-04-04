@@ -3,7 +3,7 @@ interface BrandMarkProps {
   color?: string;
 }
 
-export function BrandMark({ size = 24, color = "#FF6B6B" }: BrandMarkProps) {
+export function BrandMark({ size = 24, color = "#D52B1E" }: BrandMarkProps) {
   return (
     <svg
       width={size}

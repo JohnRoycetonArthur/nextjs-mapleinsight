@@ -3,6 +3,31 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import {
+  AirplaneTicket,
+  Analytics,
+  ArrowForward,
+  Checklist,
+  Description,
+  Devices,
+  Flag,
+  Handshake,
+  Home,
+  IosShare,
+  KeyboardArrowDown,
+  Lightbulb,
+  Mail,
+  MenuBook,
+  QueryStats,
+  Schedule,
+  ShieldLock,
+  SmartToy,
+  Target,
+  TaskAlt,
+  TrackChanges,
+  TrendingUp,
+  WorkspacePremium,
+} from '@material-symbols-svg/react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +76,17 @@ const PHASES = [
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 }
 
+function orderTasksForPhase(tasks: ActionPlanTask[], originalOrder: Map<string, number>) {
+  return [...tasks].sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1
+
+    const priorityDelta = (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)
+    if (priorityDelta !== 0) return priorityDelta
+
+    return (originalOrder.get(a.id) ?? 9999) - (originalOrder.get(b.id) ?? 9999)
+  })
+}
+
 // ─── Preview tasks (empty state) ─────────────────────────────────────────────
 
 const PREVIEW_TASKS = [
@@ -69,42 +105,51 @@ const MapleLeafIcon = ({ size = 14, color = C.red }: { size?: number; color?: st
   </svg>
 )
 
-const CheckSvg = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-)
+const CheckSvg = () => <TaskAlt size={14} color="#fff" aria-hidden="true" />
 
-const BookIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-  </svg>
-)
+const BookIcon = () => <MenuBook size={12} color="currentColor" aria-hidden="true" />
 
-const ArrowIcon = ({ s = 10 }: { s?: number }) => (
-  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-  </svg>
-)
+const ArrowIcon = ({ s = 10 }: { s?: number }) => <ArrowForward size={s} color="currentColor" aria-hidden="true" />
 
 const ChevronIcon = ({ open }: { open: boolean }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-    style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .3s', flexShrink: 0 }} aria-hidden="true">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
+  <KeyboardArrowDown
+    size={16}
+    color="currentColor"
+    aria-hidden="true"
+    style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .3s', flexShrink: 0 }}
+  />
 )
 
-const TargetIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
-  </svg>
-)
+const TargetIcon = () => <Target size={18} color={C.accent} aria-hidden="true" />
 
-const SparkIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-    <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z" />
-  </svg>
-)
+const SparkIcon = () => <WorkspacePremium size={14} color="currentColor" aria-hidden="true" />
+
+function PhaseIcon({ phaseId, color, size = 18 }: { phaseId: ActionPlanTask['phase']; color: string; size?: number }) {
+  if (phaseId === 'pre-arrival') return <AirplaneTicket size={size} color={color} aria-hidden="true" />
+  if (phaseId === 'first-week') return <Flag size={size} color={color} aria-hidden="true" />
+  if (phaseId === 'first-30') return <Checklist size={size} color={color} aria-hidden="true" />
+  return <Target size={size} color={color} aria-hidden="true" />
+}
+
+function ValuePropIcon({ title }: { title: string }) {
+  if (title === 'Personalized') return <Target size={18} color={C.forest} aria-hidden="true" />
+  if (title === 'Track progress') return <TrackChanges size={18} color={C.forest} aria-hidden="true" />
+  if (title === 'Linked guides') return <MenuBook size={18} color={C.forest} aria-hidden="true" />
+  return <ShieldLock size={18} color={C.forest} aria-hidden="true" />
+}
+
+function CompletionLinkIcon({ label }: { label: string }) {
+  if (label === 'Start investing') return <TrendingUp size={14} color={C.textDark} aria-hidden="true" />
+  if (label === 'Optimize your taxes') return <Description size={14} color={C.textDark} aria-hidden="true" />
+  return <Home size={14} color={C.textDark} aria-hidden="true" />
+}
+
+function ToolTileIcon({ label }: { label: string }) {
+  if (label === 'View Full Report') return <QueryStats size={16} color={C.textDark} aria-hidden="true" />
+  if (label === 'Share Plan') return <IosShare size={16} color={C.textDark} aria-hidden="true" />
+  if (label === 'Save to Phone') return <Devices size={16} color={C.textDark} aria-hidden="true" />
+  return <Mail size={16} color={C.textDark} aria-hidden="true" />
+}
 
 // ─── Progress Ring ────────────────────────────────────────────────────────────
 
@@ -145,11 +190,34 @@ function PriorityBadge({ priority }: { priority: string }) {
 
 // ─── Task Item (phase section) ────────────────────────────────────────────────
 
-function TaskItem({ task, phaseColor, onToggle }: { task: ActionPlanTask; phaseColor: string; onToggle: (id: string) => void }) {
+function TaskItem({
+  task,
+  phaseColor,
+  onToggle,
+  movement,
+}: {
+  task: ActionPlanTask
+  phaseColor: string
+  onToggle: (id: string) => void
+  movement?: 'up' | 'down' | null
+}) {
   const [hov, setHov] = useState(false)
   const done = task.completed
   return (
-    <div style={{ display: 'flex', gap: 12, padding: '14px 0', borderBottom: `1px solid ${C.lightGray}`, alignItems: 'flex-start', opacity: done ? 0.55 : 1, transition: 'opacity .3s' }}>
+    <div style={{
+      display: 'flex',
+      gap: 12,
+      padding: '14px 0',
+      borderBottom: `1px solid ${C.lightGray}`,
+      alignItems: 'flex-start',
+      opacity: done ? 0.55 : 1,
+      transition: 'opacity .3s',
+      animation: movement === 'up'
+        ? 'taskBubbleUp 0.4s cubic-bezier(0.34,1.56,0.64,1)'
+        : movement === 'down'
+          ? 'taskSinkDown 0.4s cubic-bezier(0.4,0,0.2,1)'
+          : 'none',
+    }}>
       <button
         role="checkbox" aria-checked={done} aria-label={task.title}
         onClick={() => onToggle(task.id)}
@@ -177,7 +245,7 @@ function TaskItem({ task, phaseColor, onToggle }: { task: ActionPlanTask; phaseC
         )}
         {task.whyItMatters && !done && (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, padding: '4px 8px', borderRadius: 6, background: `${C.gold}08`, marginBottom: 6 }}>
-            <span style={{ fontSize: 12, lineHeight: 1.5, flexShrink: 0 }}>💡</span>
+            <Lightbulb size={14} color={C.gold} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
             <span style={{ fontFamily: FONT, fontSize: 12, color: C.gold, lineHeight: 1.5, fontWeight: 500 }}>{task.whyItMatters}</span>
           </div>
         )}
@@ -201,14 +269,38 @@ function PhaseSection({ phase, tasks, completedCount, onToggleTask, defaultOpen 
   defaultOpen: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  const [movementById, setMovementById] = useState<Record<string, 'up' | 'down'>>({})
+  const prevOrderRef = useRef<string[]>(tasks.map(task => task.id))
+
+  useEffect(() => {
+    const nextOrder = tasks.map(task => task.id)
+    const prevOrder = prevOrderRef.current
+    const movement: Record<string, 'up' | 'down'> = {}
+
+    nextOrder.forEach((id, nextIndex) => {
+      const prevIndex = prevOrder.indexOf(id)
+      if (prevIndex === -1 || prevIndex === nextIndex) return
+      movement[id] = nextIndex < prevIndex ? 'up' : 'down'
+    })
+
+    prevOrderRef.current = nextOrder
+
+    if (Object.keys(movement).length === 0) return
+
+    setMovementById(movement)
+    const timeout = setTimeout(() => setMovementById({}), 450)
+    return () => clearTimeout(timeout)
+  }, [tasks])
+
   const total = tasks.length
   const allDone = completedCount === total && total > 0
+  const phaseId = phase.id as ActionPlanTask['phase']
   return (
     <div style={{ borderRadius: 14, border: `1px solid ${allDone ? phase.color + '30' : C.border}`, background: C.white, overflow: 'hidden', marginBottom: 10, transition: 'border-color .3s' }}>
       <button onClick={() => setOpen(!open)} aria-expanded={open}
         style={{ width: '100%', padding: '16px 18px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
         <div style={{ width: 38, height: 38, borderRadius: 10, background: allDone ? phase.color : phase.lightColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, transition: 'background .3s', flexShrink: 0 }}>
-          {allDone ? <CheckSvg /> : phase.icon}
+          {allDone ? <CheckSvg /> : <PhaseIcon phaseId={phaseId} color={phase.color} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -224,7 +316,7 @@ function PhaseSection({ phase, tasks, completedCount, onToggleTask, defaultOpen 
       </button>
       <div style={{ maxHeight: open ? 9999 : 0, overflow: 'hidden', transition: 'max-height .4s ease' }}>
         <div style={{ padding: '0 18px 14px' }}>
-          {tasks.map(t => <TaskItem key={t.id} task={t} phaseColor={phase.color} onToggle={onToggleTask} />)}
+          {tasks.map(t => <TaskItem key={t.id} task={t} phaseColor={phase.color} onToggle={onToggleTask} movement={movementById[t.id]} />)}
         </div>
       </div>
     </div>
@@ -294,15 +386,10 @@ export default function SettlementPlanPage() {
 
   // ── Derived values ──
   const tasks = plan?.tasks ?? []
+  const taskOrder = useMemo(() => new Map(tasks.map((task, index) => [task.id, index])), [tasks])
   const total = tasks.length
   const completed = tasks.filter(t => t.completed).length
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
-
-  const todaysFocus = useMemo(() =>
-    tasks.filter(t => !t.completed)
-      .sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 1) - (PRIORITY_ORDER[b.priority] ?? 1))
-      .slice(0, 3),
-    [tasks])
 
   const currentPhase = useMemo(() => {
     for (const phase of PHASES) {
@@ -310,6 +397,15 @@ export default function SettlementPlanPage() {
     }
     return PHASES[PHASES.length - 1].id
   }, [tasks])
+
+  const todaysFocus = useMemo(() =>
+    orderTasksForPhase(
+      tasks.filter(t => t.phase === currentPhase),
+      taskOrder,
+    ).filter(t => !t.completed).slice(0, 3),
+    [currentPhase, taskOrder, tasks])
+
+  const currentPhaseMeta = PHASES.find(phase => phase.id === currentPhase) ?? PHASES[0]
 
   // ── Persist + milestone check ──
   const toggleTask = useCallback((id: string) => {
@@ -326,7 +422,7 @@ export default function SettlementPlanPage() {
         { threshold: 25, label: 'First milestone unlocked!' },
         { threshold: 50, label: 'Halfway milestone unlocked!' },
         { threshold: 75, label: 'Almost there — final stretch!' },
-        { threshold: 100, label: '🎉 You\'re fully prepared for Canada!' },
+        { threshold: 100, label: 'You\'re fully prepared for Canada!' },
       ]
       for (const m of milestones) {
         if (newPct >= m.threshold && oldPct < m.threshold && !celebratedRef.current.has(m.threshold)) {
@@ -362,12 +458,12 @@ export default function SettlementPlanPage() {
     const prevIds = prevFocusRef.current
     const newIds = todaysFocus.map(t => t.id)
     const entering = newIds.find(id => !prevIds.includes(id))
+    prevFocusRef.current = newIds
     if (entering && prevIds.length > 0) {
       setEnteringId(entering)
       const t = setTimeout(() => setEnteringId(null), 450)
       return () => clearTimeout(t)
     }
-    prevFocusRef.current = newIds
   }, [todaysFocus])
 
   const handleFocusToggle = useCallback((id: string) => {
@@ -404,7 +500,9 @@ export default function SettlementPlanPage() {
           <div style={{ borderRadius: 16, border: `1px solid ${C.border}`, background: C.white, overflow: 'hidden', marginBottom: 28, position: 'relative' }}>
             <div style={{ padding: '18px 20px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#E8F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📋</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#E8F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Checklist size={18} color={C.accent} aria-hidden="true" />
+                </div>
                 <div>
                   <div style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.forest }}>Sample Checklist</div>
                   <div style={{ fontFamily: FONT, fontSize: 12, color: C.textLight }}>Personalized to your pathway &amp; city</div>
@@ -434,7 +532,7 @@ export default function SettlementPlanPage() {
               { icon: '🔒', title: 'Private', desc: 'Data stays in your browser' },
             ].map((v, i) => (
               <div key={i} style={{ padding: 14, borderRadius: 12, border: `1px solid ${C.border}`, background: C.white }}>
-                <div style={{ fontSize: 18, marginBottom: 4 }}>{v.icon}</div>
+                <div style={{ marginBottom: 4 }}><ValuePropIcon title={v.title} /></div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.textDark }}>{v.title}</div>
                 <div style={{ fontSize: 11, color: C.gray, marginTop: 1 }}>{v.desc}</div>
               </div>
@@ -447,7 +545,9 @@ export default function SettlementPlanPage() {
               <MapleLeafIcon size={16} color="#fff" /> Create My Plan — It&apos;s Free
             </Link>
             <div style={{ fontSize: 12, color: C.textLight, marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-              <span>⏱ 3 min</span><span>🤖 No AI</span><span>📊 IRCC data</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Schedule size={14} color={C.textLight} aria-hidden="true" />3 min</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><SmartToy size={14} color={C.textLight} aria-hidden="true" />No AI</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Analytics size={14} color={C.textLight} aria-hidden="true" />IRCC data</span>
             </div>
           </div>
         </div>
@@ -463,11 +563,11 @@ export default function SettlementPlanPage() {
 
   // ═══ ACTIVE STATE ════════════════════════════════════════════════════════════
   const motivationalText =
-    pct === 100 ? "🎉 You're fully prepared for Canada!"
-    : pct >= 75  ? "🚀 You're ahead of most newcomers!"
-    : pct >= 50  ? "💪 More than halfway ready!"
-    : pct >= 25  ? "📈 Great momentum — keep going!"
-    : pct > 0    ? `🌱 You're ${pct}% ready for life in Canada`
+    pct === 100 ? "You're fully prepared for Canada!"
+    : pct >= 75  ? "You're ahead of most newcomers!"
+    : pct >= 50  ? "More than halfway ready!"
+    : pct >= 25  ? "Great momentum — keep going!"
+    : pct > 0    ? `You're ${pct}% ready for life in Canada`
     : "Your journey starts here"
 
   return (
@@ -529,7 +629,7 @@ export default function SettlementPlanPage() {
                 { icon: '🏠', label: 'Plan for homeownership',  slug: 'fhsa-introduction' },
               ].map((item, i) => (
                 <Link key={i} href={`/articles/${item.slug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, background: C.white, border: `1px solid ${C.border}`, fontFamily: FONT, fontSize: 12, fontWeight: 600, color: C.textDark, textDecoration: 'none' }}>
-                  {item.icon} {item.label}
+                  <CompletionLinkIcon label={item.label} /> {item.label}
                 </Link>
               ))}
             </div>
@@ -537,7 +637,7 @@ export default function SettlementPlanPage() {
         )}
 
         {/* ── Next step nudge (1–99%) ── */}
-        {pct > 0 && pct < 100 && todaysFocus.length > 0 && (
+        {false && pct > 0 && pct < 100 && todaysFocus.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: `${C.accent}06`, border: `1px solid ${C.accent}12`, marginBottom: 14 }}>
             <span style={{ fontSize: 16 }}>👉</span>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -558,6 +658,12 @@ export default function SettlementPlanPage() {
               <TargetIcon />
               <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.forest }}>Focus on the Top 3</span>
               <span style={{ fontFamily: FONT, fontSize: 11, color: C.textLight }}>What should you do next?</span>
+            </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12, padding: '6px 10px', borderRadius: 999, background: currentPhaseMeta.lightColor }}>
+              <PhaseIcon phaseId={currentPhase as ActionPlanTask['phase']} color={currentPhaseMeta.color} size={13} />
+              <span style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: currentPhaseMeta.color }}>
+                Focusing on {currentPhaseMeta.label}
+              </span>
             </div>
             <div style={{ position: 'relative' }}>
               {todaysFocus.map((task, i) => {
@@ -623,7 +729,10 @@ export default function SettlementPlanPage() {
 
         {/* ── Phase sections ── */}
         {PHASES.map(phase => {
-          const phaseTasks = tasks.filter(t => t.phase === phase.id)
+          const phaseTasks = orderTasksForPhase(
+            tasks.filter(t => t.phase === phase.id),
+            taskOrder,
+          )
           const phaseCompleted = phaseTasks.filter(t => t.completed).length
           if (phaseTasks.length === 0) return null
           return (
@@ -653,7 +762,7 @@ export default function SettlementPlanPage() {
               ].map((item, i) => (
                 <button key={i} onClick={item.action} style={{ padding: '14px 12px', borderRadius: 10, border: `1px solid ${C.border}`, background: `${C.lightGray}60`, cursor: 'pointer', textAlign: 'left', fontFamily: FONT, transition: 'background .2s, border-color .2s', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>{item.icon}</span>
+                    <ToolTileIcon label={item.label} />
                     <span style={{ fontSize: 13, fontWeight: 600, color: C.textDark }}>{item.label}</span>
                   </div>
                   <span style={{ fontSize: 11, color: C.textLight, paddingLeft: 22 }}>{item.desc}</span>
@@ -663,7 +772,7 @@ export default function SettlementPlanPage() {
             {/* Consultant CTA */}
             <div style={{ padding: '14px 16px', borderRadius: 10, background: `${C.accent}06`, border: `1px solid ${C.accent}15`, display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 16 }}>🤝</span>
+                <Handshake size={16} color="#fff" aria-hidden="true" />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 600, color: C.forest }}>Want expert guidance?</div>
@@ -693,6 +802,15 @@ export default function SettlementPlanPage() {
           60%  { transform: translateY(-2px) scale(1.01); opacity: 0.8; }
           100% { transform: translateY(0)    scale(1);    opacity: 1; }
         }
+        @keyframes taskBubbleUp {
+          0%   { transform: translateY(16px); opacity: 0.7; }
+          60%  { transform: translateY(-3px); opacity: 1; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes taskSinkDown {
+          0%   { transform: translateY(-10px); opacity: 0.8; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
         @media (prefers-reduced-motion: reduce) {
           * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
@@ -700,3 +818,4 @@ export default function SettlementPlanPage() {
     </div>
   )
 }
+
