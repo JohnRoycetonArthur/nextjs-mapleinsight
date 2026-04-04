@@ -61,6 +61,9 @@ export function Footer() {
             Maple Insight
           </span>
         </div>
+        <div style={{ marginTop: -16, marginBottom: 28, fontSize: 12, color: "rgba(255,255,255,0.62)" }}>
+          Financial Clarity for your move to Canada
+        </div>
 
         {/* 3-column grid */}
         <div className="footer-grid" style={{
@@ -100,7 +103,7 @@ export function Footer() {
           <Link href="/disclaimer" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "underline" }}>Disclaimer</Link>
           <span>·</span>
           <Link href="/affiliate-disclosure" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "underline" }}>Affiliate Disclosure</Link>
-          <span style={{ marginLeft: 8 }}>© 2026 Maple Insight Canada · Educational content only · Not financial advice</span>
+          <span style={{ marginLeft: 8 }}>© 2026 Maple Insight · Educational content only · Not financial advice</span>
         </div>
       </div>
 

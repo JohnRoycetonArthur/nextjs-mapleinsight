@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maple Insight Canada">
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maple Insight">
   <rect x="2" y="2" width="44" height="44" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
   <!-- Maple leaf (simple, modern) -->
   <path d="M24 12
@@ -17,7 +17,7 @@
            L14 16
            L21 18
            L24 12Z"
-        fill="#D62828"/>
+        fill="#D52B1E"/>
   <!-- Insight dot -->
-  <circle cx="35.5" cy="14.5" r="3" fill="#1B4332"/>
+  <circle cx="35.5" cy="14.5" r="3" fill="#D52B1E"/>
 </svg>
