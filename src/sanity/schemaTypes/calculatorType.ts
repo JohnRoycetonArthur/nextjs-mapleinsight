@@ -1,4 +1,4 @@
-import {defineField, defineType} from 'sanity'
+import {defineArrayMember, defineField, defineType} from 'sanity'
 
 export const calculatorType = defineType({
   name: 'calculator',
@@ -38,7 +38,7 @@ export const calculatorType = defineType({
       name: 'intro',
       title: 'Intro',
       type: 'array',
-      of: [{type: 'block'}],
+      of: [defineArrayMember({type: 'block'})],
     }),
     defineField({
       name: 'seoTitle',

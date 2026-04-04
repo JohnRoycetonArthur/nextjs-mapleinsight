@@ -46,6 +46,14 @@ export async function getAllArticles(): Promise<ArticleSummary[]> {
   );
 }
 
+export async function getNonPillarArticles(): Promise<ArticleSummary[]> {
+  return client.fetch(
+    `*[_type == "article" && isPillar != true] | order(publishedAt desc) {
+      ${ARTICLE_SUMMARY_FIELDS}
+    }`
+  );
+}
+
 export async function getFeaturedArticles(limit = 4): Promise<ArticleSummary[]> {
   return client.fetch(
     `*[_type == "article"] | order(publishedAt desc) [0...$limit] {
@@ -89,6 +97,48 @@ export async function getArticlesForSitemap(): Promise<
     `*[_type == "article"] {
       "slug": slug.current,
       publishedAt
+    }`
+  );
+}
+
+// ─── Articles Landing Page (US-26) ───────────────────────────────────────────
+
+export type ArticleListing = {
+  title: string;
+  slug: string;
+  category: string | null;
+  tags: string[] | null;
+  excerpt: string | null;
+  readingTime: number | null;
+  publishedAt: string | null;
+};
+
+export type PillarArticleMeta = {
+  title: string;
+  slug: string;
+  readingTime: number | null;
+} | null;
+
+export async function getArticlesForLanding(): Promise<ArticleListing[]> {
+  return client.fetch(
+    `*[_type == "article" && isPillar != true] | order(publishedAt desc) {
+      title,
+      "slug": slug.current,
+      "category": category->slug.current,
+      tags,
+      "excerpt": summary,
+      readingTime,
+      publishedAt
+    }`
+  );
+}
+
+export async function getPillarArticleForLanding(): Promise<PillarArticleMeta> {
+  return client.fetch(
+    `*[_type == "article" && isPillar == true][0]{
+      title,
+      "slug": slug.current,
+      readingTime
     }`
   );
 }

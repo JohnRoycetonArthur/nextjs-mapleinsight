@@ -1,0 +1,50 @@
+# --- Dependencies & Lockfiles ---
+# These are token-heavy and rarely need to be read entirely.
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# --- Next.js Build Outputs ---
+.next/
+out/
+build/
+
+# --- Environment & Secrets ---
+# Crucial for security and preventing Claude from reading sensitive data.
+.env*
+*.local
+*.secret
+.vercel/
+
+# --- Static Assets & Media ---
+# Binary files or large asset folders Claude cannot "read" anyway.
+public/assets/
+public/images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.mp4
+*.pdf
+
+# --- Logs & Temp Files ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.turbo/
+.cache/
+
+# --- Tests & Coverage ---
+# Ignore if you aren't currently working on testing logic.
+coverage/
+.nyc_output/
+
+# --- Documentation & Configs ---
+# Only exclude if you find Claude spends too many tokens re-reading them.
+README.md
+CHANGELOG.md

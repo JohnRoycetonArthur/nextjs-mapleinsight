@@ -1,4 +1,4 @@
-import { defineField, defineType } from 'sanity'
+import { defineArrayMember, defineField, defineType } from 'sanity'
 
 export const dataSourceType = defineType({
   name: 'dataSource',
@@ -60,7 +60,7 @@ export const dataSourceType = defineType({
       name: 'appliesTo',
       title: 'Applies To (Engine Keys)',
       type: 'array',
-      of: [{ type: 'string' }],
+      of: [defineArrayMember({type: 'string'})],
       description: 'Engine variable keys governed by this source (e.g. ["ee_processing_fee", "ee_rprf"]).',
     }),
     defineField({

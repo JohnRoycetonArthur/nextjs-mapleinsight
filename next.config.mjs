@@ -9,6 +9,9 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/:path*", has: [{ type: "host", value: "www.mapleinsight.ca" }], destination: "https://mapleinsight.ca/:path*", permanent: true },
+      { source: "/start-here",          destination: "/settlement-plan", permanent: true },
+      { source: "/start-here/:path*",   destination: "/settlement-plan", permanent: true },
+      { source: "/articles/financially-ready-move-to-canada", destination: "/immigration-costs", permanent: true },
     ];
   },
 };

@@ -441,6 +441,145 @@ function makePortableTextComponents(
           title={value?.calculatorSlug ? `Try the ${value.calculatorSlug.replace(/-/g, " ")} calculator` : "Try a calculator"}
         />
       ),
+      toolEmbed: ({ value }: any) => {
+        const toolId = value?.toolId ?? "";
+        const isSettlementPlanner = toolId === "settlement-planner";
+
+        return (
+          <div
+            style={{
+              margin: "28px 0",
+              padding: "24px",
+              borderRadius: 18,
+              background: "linear-gradient(135deg, #F4FBF7 0%, #EEF7FF 100%)",
+              border: "1px solid #D6E9DD",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                color: "#1B7A4A",
+                marginBottom: 8,
+              }}
+            >
+              Interactive Tool
+            </div>
+            <h3
+              style={{
+                fontFamily: "var(--font-dm-serif, 'DM Serif Display', Georgia, serif)",
+                fontSize: 24,
+                lineHeight: 1.2,
+                color: "#1B4F4A",
+                margin: "0 0 10px",
+              }}
+            >
+              {value?.title || "Explore the tool"}
+            </h3>
+            <p
+              style={{
+                fontSize: 15,
+                lineHeight: 1.7,
+                color: "#4B5563",
+                margin: "0 0 16px",
+              }}
+            >
+              {value?.description || "Open the interactive tool for a personalized estimate."}
+            </p>
+            <Link
+              href={isSettlementPlanner ? "/settlement-planner/plan" : "/tools"}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 16px",
+                borderRadius: 10,
+                background: "#1B7A4A",
+                color: "#fff",
+                fontWeight: 700,
+                textDecoration: "none",
+              }}
+            >
+              Open tool
+              <ArrowRight size={12} />
+            </Link>
+          </div>
+        );
+      },
+      markdownTable: ({ value }: any) => {
+        const rows = Array.isArray(value?.rows) ? value.rows : [];
+        if (rows.length === 0) return null;
+
+        const [headerRow, ...bodyRows] = rows;
+
+        return (
+          <div style={{ overflowX: "auto", margin: "24px 0" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                background: "#fff",
+                border: "1px solid #E5E7EB",
+                borderRadius: 12,
+                overflow: "hidden",
+              }}
+            >
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr>
+                  {(headerRow?.cells ?? []).map((cell: string, index: number) => (
+                    <th
+                      key={`${cell}-${index}`}
+                      style={{
+                        textAlign: "left",
+                        padding: "12px 14px",
+                        borderBottom: "1px solid #E5E7EB",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "#1F2937",
+                      }}
+                    >
+                      {cell}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bodyRows.map((row: any, rowIndex: number) => (
+                  <tr key={row._key ?? rowIndex}>
+                    {(row?.cells ?? []).map((cell: string, cellIndex: number) => (
+                      <td
+                        key={`${cell}-${cellIndex}`}
+                        style={{
+                          padding: "12px 14px",
+                          borderBottom:
+                            rowIndex === bodyRows.length - 1 ? "none" : "1px solid #E5E7EB",
+                          fontSize: 15,
+                          lineHeight: 1.6,
+                          color: "#374151",
+                          verticalAlign: "top",
+                        }}
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      },
+      divider: () => (
+        <hr
+          style={{
+            border: 0,
+            borderTop: "1px solid #E5E7EB",
+            margin: "32px 0",
+          }}
+        />
+      ),
     },
     marks: {
       link: ({ children, value }: any) => (

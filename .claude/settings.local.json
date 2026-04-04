@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(grep ^slug: /c/Repos/nextjs-mapleinsight/docs/5.4/*.md /c/Repos/nextjs-mapleinsight/docs/pillar-article/*.md /c/Repos/nextjs-mapleinsight/docs/articles-batch3/*.md)",
+      "Bash(grep ^slug: /c/Repos/nextjs-mapleinsight/docs/US-5.4-batch2/articles/*.md)",
+      "Bash(find /c/Repos/nextjs-mapleinsight/docs -name \"*.md\" -exec grep -l \"^slug:\" {})"
+    ]
+  }
+}

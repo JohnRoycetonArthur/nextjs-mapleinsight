@@ -1,10 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import Link from "next/link";
 import { ArticleFull } from "@/sanity/queries";
 import { SettlementSessionProvider } from "@/components/settlement-planner/SettlementSessionContext";
 import { WizardShell } from "@/components/settlement-planner/wizard/WizardShell";
+import {
+  Analytics,
+  ArrowRightAlt,
+  Checklist,
+  Description,
+  Explore,
+  FamilyGroup,
+  Gavel,
+  Groups,
+  HomeWork,
+  Payments,
+  QueryStats,
+  Savings,
+  Schedule,
+  School,
+  ShieldLock,
+  TaskAlt,
+  TravelLuggageAndBags,
+} from "@material-symbols-svg/react";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -53,7 +72,7 @@ const PATHWAY_DATA = [
     id: "express-entry",
     title: "Express Entry",
     subtitle: "Skilled workers & professionals",
-    icon: "🚀",
+    icon: <TravelLuggageAndBags size={24} color={C.accent} />,
     color: C.accent,
     lightColor: "#E8F5EE",
     range: "$15,000 – $35,000+",
@@ -73,7 +92,7 @@ const PATHWAY_DATA = [
     id: "study-permit",
     title: "Study Permit",
     subtitle: "International students",
-    icon: "🎓",
+    icon: <School size={24} color={C.blue} />,
     color: C.blue,
     lightColor: "#EFF6FF",
     range: "$25,000 – $70,000+",
@@ -93,7 +112,7 @@ const PATHWAY_DATA = [
     id: "family-sponsorship",
     title: "Family Sponsorship",
     subtitle: "Sponsor your loved ones",
-    icon: "👨‍👩‍👧‍👦",
+    icon: <FamilyGroup size={24} color={C.purple} />,
     color: C.purple,
     lightColor: "#F5F0FF",
     range: "$18,000 – $45,000+",
@@ -113,7 +132,7 @@ const PATHWAY_DATA = [
     id: "pnp",
     title: "Provincial Nominee",
     subtitle: "PNP pathways",
-    icon: "🏛️",
+    icon: <Gavel size={24} color={C.gold} />,
     color: C.gold,
     lightColor: "#FDF6E3",
     range: "$15,000 – $40,000+",
@@ -132,21 +151,12 @@ const PATHWAY_DATA = [
 ];
 
 const HIDDEN_COSTS = [
-  { icon: "🧥", title: "Winter clothing", range: "$500 – $1,500", note: "Essential if arriving Oct–Apr. Don't buy at home — wait for Canadian prices." },
-  { icon: "📋", title: "Credential evaluation", range: "$200 – $500", note: "WES or IQAS assessment for your degrees. Required for most immigration programs." },
-  { icon: "🏥", title: "Health insurance gap", range: "$75 – $250/mo", note: "Some provinces have a 3-month wait for coverage. You'll need private insurance." },
-  { icon: "🏠", title: "Rental deposit", range: "1–2 months rent", note: "Most landlords require first and last month's rent upfront." },
-  { icon: "📱", title: "Phone & internet setup", range: "$60 – $120/mo", note: "Canadian telecom is expensive. Compare plans before committing." },
-  { icon: "🚌", title: "Transit pass", range: "$100 – $170/mo", note: "Monthly passes vary by city. Toronto TTC: $156. Vancouver TransLink: $104–$181." },
-];
-
-const WIZARD_STEPS = [
-  { num: 1, title: "Household",    desc: "Family size & dependents",  icon: "👥", color: C.accent  },
-  { num: 2, title: "Immigration",  desc: "Your pathway & status",     icon: "🛂", color: C.gold   },
-  { num: 3, title: "Destination",  desc: "Where you're heading",      icon: "📍", color: C.blue   },
-  { num: 4, title: "Work & Income",desc: "Employment & earnings",     icon: "💼", color: C.purple },
-  { num: 5, title: "Savings",      desc: "What you have today",       icon: "🏦", color: C.red    },
-  { num: 6, title: "Lifestyle",    desc: "Your comfort level",        icon: "🏠", color: C.accent },
+  { icon: <TravelLuggageAndBags size={22} color={C.accent} />, title: "Winter clothing", range: "$500 – $1,500", note: "Essential if arriving Oct–Apr. Don't buy at home — wait for Canadian prices." },
+  { icon: <Description size={22} color={C.gold} />, title: "Credential evaluation", range: "$200 – $500", note: "WES or IQAS assessment for your degrees. Required for most immigration programs." },
+  { icon: <ShieldLock size={22} color={C.red} />, title: "Health insurance gap", range: "$75 – $250/mo", note: "Some provinces have a 3-month wait for coverage. You'll need private insurance." },
+  { icon: <HomeWork size={22} color={C.purple} />, title: "Rental deposit", range: "1–2 months rent", note: "Most landlords require first and last month's rent upfront." },
+  { icon: <Payments size={22} color={C.blue} />, title: "Phone & internet setup", range: "$60 – $120/mo", note: "Canadian telecom is expensive. Compare plans before committing." },
+  { icon: <Explore size={22} color={C.accent} />, title: "Transit pass", range: "$100 – $170/mo", note: "Monthly passes vary by city. Toronto TTC: $156. Vancouver TransLink: $104–$181." },
 ];
 
 const RELATED_ARTICLES = [
@@ -175,31 +185,19 @@ const ChevDown = ({ open, size = 20 }: { open: boolean; size?: number }) => (
 );
 
 const ArrowRight = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-  </svg>
+  <ArrowRightAlt size={size} color="currentColor" aria-hidden="true" />
 );
 
 const CheckCircle = ({ color = C.accent }: { color?: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-  </svg>
+  <TaskAlt size={16} color={color} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
 );
 
 const BookIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-  </svg>
+  <Description size={14} color="currentColor" aria-hidden="true" />
 );
 
 const BarChartIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" />
-  </svg>
+  <Analytics size={18} color="currentColor" aria-hidden="true" />
 );
 
 const SparkleIcon = () => (
@@ -210,10 +208,7 @@ const SparkleIcon = () => (
 );
 
 const ClockIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-  </svg>
+  <Schedule size={14} color="currentColor" aria-hidden="true" />
 );
 
 // ─── Sub-components ─────────────────────────────────────────────────────────────
@@ -313,7 +308,7 @@ function PathwayCard({ data }: { data: typeof PATHWAY_DATA[0] }) {
     >
       <div style={{ padding: "20px 22px 16px", background: `linear-gradient(135deg, ${data.lightColor}, ${C.white})` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <span style={{ fontSize: 24 }}>{data.icon}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{data.icon}</span>
           <div>
             <h3 style={{ fontFamily: serif, fontSize: 18, color: C.forest, margin: 0, lineHeight: 1.2 }}>{data.title}</h3>
             <span style={{ fontFamily: font, fontSize: 12, color: C.gray }}>{data.subtitle}</span>
@@ -650,7 +645,7 @@ export function PillarArticlePage({ article, readingTime }: Props) {
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, margin: "0 0 36px" }}>
             {HIDDEN_COSTS.map((cost, i) => (
               <div key={i} style={{ padding: "18px 20px", borderRadius: 14, background: C.white, border: `1px solid ${C.border}`, display: "flex", gap: 14 }}>
-                <span style={{ fontSize: 24, lineHeight: 1 }}>{cost.icon}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{cost.icon}</span>
                 <div>
                   <div style={{ fontFamily: font, fontSize: 14, fontWeight: 600, color: C.textDark, marginBottom: 2 }}>{cost.title}</div>
                   <div style={{ fontFamily: serif, fontSize: 16, color: C.forest, marginBottom: 4 }}>{cost.range}</div>
@@ -675,43 +670,9 @@ export function PillarArticlePage({ article, readingTime }: Props) {
             Everything above gives you a range. But you need a number — <strong>your</strong> number. The Settlement Planner takes your specific situation and calculates exactly how much money you need, where the gaps are, and what to do about them.
           </p>
 
-          {/* Wizard step preview */}
-          <div style={{ margin: "24px 0 32px", padding: "24px", borderRadius: 16, background: C.white, border: `1px solid ${C.border}` }}>
-            <div style={{ fontFamily: font, fontSize: 12, fontWeight: 700, color: C.textLight, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16 }}>
-              6 Quick Steps — Takes 3 Minutes
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(6, 1fr)", gap: 10 }}>
-              {WIZARD_STEPS.map((step) => (
-                <div key={step.num} style={{ padding: "14px", borderRadius: 12, background: `${step.color}06`, border: `1px solid ${step.color}15`, textAlign: "center" }}>
-                  <div style={{ fontSize: 22, marginBottom: 6 }}>{step.icon}</div>
-                  <div style={{ fontFamily: font, fontSize: 13, fontWeight: 600, color: C.textDark }}>{step.title}</div>
-                  <div style={{ fontFamily: font, fontSize: 11, color: C.gray, marginTop: 2 }}>{step.desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* What you'll get */}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 12, margin: "0 0 28px" }}>
-            {[
-              { icon: "✅", title: "IRCC Compliance Check",   desc: "Do you meet the minimum proof-of-funds requirements?" },
-              { icon: "📊", title: "Real Cost Breakdown",     desc: "Every line item with sources — rent, fees, transit, setup" },
-              { icon: "🎯", title: "Savings Gap Analysis",    desc: "How much more you need & actionable strategies" },
-              { icon: "📋", title: "Settlement Checklist",    desc: "Pre-arrival to 90 days — everything you need to do" },
-            ].map((item, i) => (
-              <div key={i} style={{ padding: "16px", borderRadius: 12, border: `1px solid ${C.border}`, display: "flex", gap: 12, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 20 }}>{item.icon}</span>
-                <div>
-                  <div style={{ fontFamily: font, fontSize: 13, fontWeight: 600, color: C.textDark }}>{item.title}</div>
-                  <div style={{ fontFamily: font, fontSize: 12, color: C.gray, marginTop: 2, lineHeight: 1.5 }}>{item.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* ── Tool embed ── */}
-          <div style={{ margin: "40px 0", borderRadius: 16, border: `2px solid ${C.accent}25`, background: C.white, overflow: "hidden", boxShadow: "0 4px 24px rgba(27,79,74,0.06)" }}>
-            <div style={{ padding: "20px 24px", background: `linear-gradient(135deg, ${C.accent}08, ${C.accent}03)`, borderBottom: `1px solid ${C.accent}15`, display: "flex", alignItems: "center", gap: 12 }}>
+          <div id="settlement-planner-widget" style={{ margin: "40px 0", borderRadius: 16, border: `2px solid ${C.accent}25`, background: C.white, overflow: "hidden", boxShadow: "0 4px 24px rgba(27,79,74,0.06)" }}>
+            <div id="settlement-planner-widget-header" style={{ padding: "20px 24px", background: `linear-gradient(135deg, ${C.accent}08, ${C.accent}03)`, borderBottom: `1px solid ${C.accent}15`, display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${C.accent}15`, display: "flex", alignItems: "center", justifyContent: "center", color: C.accent }}>
                 <BarChartIcon />
               </div>
@@ -725,8 +686,8 @@ export function PillarArticlePage({ article, readingTime }: Props) {
             <div style={{ padding: "24px" }}>
               {!wizardStarted ? (
                 <div style={{ textAlign: "center", padding: "32px 0" }}>
-                  <div style={{ width: 80, height: 80, borderRadius: 20, background: `linear-gradient(135deg, ${C.accent}15, ${C.blue}10)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 36 }}>
-                    🍁
+                  <div style={{ width: 80, height: 80, borderRadius: 20, background: `linear-gradient(135deg, ${C.accent}15, ${C.blue}10)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                    <Analytics size={36} color={C.accent} />
                   </div>
                   <h3 style={{ fontFamily: serif, fontSize: 22, color: C.forest, margin: "0 0 8px" }}>Ready to find out your number?</h3>
                   <p style={{ fontFamily: font, fontSize: 15, color: C.gray, margin: "0 0 24px", maxWidth: 420, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
@@ -743,14 +704,14 @@ export function PillarArticlePage({ article, readingTime }: Props) {
                     Start My Free Settlement Plan
                   </button>
                   <div style={{ fontFamily: font, fontSize: 12, color: C.textLight, marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                    <span>⏱ Takes 3 minutes</span>
-                    <span>🔒 No data stored</span>
-                    <span>🤖 No AI</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Schedule size={14} color={C.textLight} /> Takes 3 minutes</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ShieldLock size={14} color={C.textLight} /> No data stored</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><TaskAlt size={14} color={C.textLight} /> No AI</span>
                   </div>
                 </div>
               ) : (
                 <SettlementSessionProvider slug="pillar-article" mode="public">
-                  <WizardShell scrollTargetId="your-plan" />
+                  <WizardShell scrollTargetId="settlement-planner-widget-header" frameTargetId="settlement-planner-widget" />
                 </SettlementSessionProvider>
               )}
             </div>
