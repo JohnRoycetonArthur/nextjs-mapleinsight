@@ -24,6 +24,7 @@ export type ArticleFull = ArticleSummary & {
   seoDescription: string | null;
   answerSummary: string | null;
   articleType: 'guide' | 'explainer' | 'news' | 'tool-page' | null;
+  isPillar: boolean | null;
   faqItems: Array<{ question: string; answer: string; anchorSlug: string | null }> | null;
   exampleScenarios: Array<{ title: string; body: string }> | null;
   sources: ArticleSource[] | null;
@@ -40,6 +41,14 @@ const ARTICLE_SUMMARY_FIELDS = `
 export async function getAllArticles(): Promise<ArticleSummary[]> {
   return client.fetch(
     `*[_type == "article"] | order(publishedAt desc) {
+      ${ARTICLE_SUMMARY_FIELDS}
+    }`
+  );
+}
+
+export async function getNonPillarArticles(): Promise<ArticleSummary[]> {
+  return client.fetch(
+    `*[_type == "article" && isPillar != true] | order(publishedAt desc) {
       ${ARTICLE_SUMMARY_FIELDS}
     }`
   );
@@ -65,6 +74,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleFull | null
       seoDescription,
       answerSummary,
       articleType,
+      isPillar,
       faqItems[] { question, answer, "anchorSlug": anchorSlug.current },
       exampleScenarios[] { title, body },
       sources[] { _key, sourceName, documentTitle, url, accessedDate }
@@ -87,6 +97,48 @@ export async function getArticlesForSitemap(): Promise<
     `*[_type == "article"] {
       "slug": slug.current,
       publishedAt
+    }`
+  );
+}
+
+// ─── Articles Landing Page (US-26) ───────────────────────────────────────────
+
+export type ArticleListing = {
+  title: string;
+  slug: string;
+  category: string | null;
+  tags: string[] | null;
+  excerpt: string | null;
+  readingTime: number | null;
+  publishedAt: string | null;
+};
+
+export type PillarArticleMeta = {
+  title: string;
+  slug: string;
+  readingTime: number | null;
+} | null;
+
+export async function getArticlesForLanding(): Promise<ArticleListing[]> {
+  return client.fetch(
+    `*[_type == "article" && isPillar != true] | order(publishedAt desc) {
+      title,
+      "slug": slug.current,
+      "category": category->slug.current,
+      tags,
+      "excerpt": summary,
+      readingTime,
+      publishedAt
+    }`
+  );
+}
+
+export async function getPillarArticleForLanding(): Promise<PillarArticleMeta> {
+  return client.fetch(
+    `*[_type == "article" && isPillar == true][0]{
+      title,
+      "slug": slug.current,
+      readingTime
     }`
   );
 }

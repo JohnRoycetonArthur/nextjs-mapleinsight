@@ -457,6 +457,28 @@ export function PublicModeSaveCard({ reportPackage, onStartNewPlan }: Props) {
             {status === 'loading' ? 'Sending...' : 'Email My Report'}
           </button>
 
+          {onStartNewPlan && (
+            <button
+              type="button"
+              onClick={onStartNewPlan}
+              style={{
+                width: '100%',
+                marginTop: 10,
+                padding: '11px 18px',
+                borderRadius: 10,
+                border: `1px solid ${C.border}`,
+                background: 'transparent',
+                color: C.gray,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: FONT,
+              }}
+            >
+              Start over
+            </button>
+          )}
+
           <p style={{ fontSize: 11, color: C.textLight, margin: '12px 0 0', lineHeight: 1.5, textAlign: 'center' }}>
             We only use your email to deliver this report. We may use anonymized feedback to improve the tool. Your comments will not be published with your name unless you give explicit permission.
           </p>

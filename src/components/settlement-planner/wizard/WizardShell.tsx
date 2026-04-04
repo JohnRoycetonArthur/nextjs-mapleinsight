@@ -20,11 +20,11 @@ import {
   type WizardAnswers,
 } from '../SettlementSessionContext'
 import {
-  Archive,
   ArrowBack,
   ArrowRightAlt,
   Delete,
   Lock,
+  RestartAlt,
 } from '@material-symbols-svg/react'
 import type { ConsultantBranding } from '../types'
 import { DesktopStepper } from './DesktopStepper'
@@ -114,9 +114,11 @@ function initials(name: string): string {
 interface Props {
   consultant?:    ConsultantBranding | null
   onComplete?:    (answers: WizardAnswers) => void
+  scrollTargetId?: string
+  frameTargetId?: string
 }
 
-export function WizardShell({ consultant, onComplete }: Props) {
+export function WizardShell({ consultant, onComplete, scrollTargetId, frameTargetId }: Props) {
   const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession, stalePathwayToast, clearStalePathwayToast } = useSettlementSession()
   const { currentStep, answers } = session
   const mode = usePlannerMode()
@@ -128,6 +130,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
   const [showClear,   setShowClear]   = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [hasTrackedStart, setHasTrackedStart] = useState(false)
+  const [footerFrame, setFooterFrame] = useState<{left: number; right: number} | null>(null)
   const viewedStepsRef = useRef<Set<number>>(new Set())
   const previousPathwayRef = useRef<string | undefined>(answers.pathway)
 
@@ -138,6 +141,35 @@ export function WizardShell({ consultant, onComplete }: Props) {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    if (!frameTargetId) {
+      setFooterFrame(null)
+      return
+    }
+
+    const syncFrame = () => {
+      const target = document.getElementById(frameTargetId)
+      if (!target) {
+        setFooterFrame(null)
+        return
+      }
+
+      const rect = target.getBoundingClientRect()
+      const left = Math.max(0, rect.left)
+      const right = Math.max(0, window.innerWidth - rect.right)
+      setFooterFrame({ left, right })
+    }
+
+    syncFrame()
+    window.addEventListener('resize', syncFrame)
+    window.addEventListener('scroll', syncFrame, { passive: true })
+
+    return () => {
+      window.removeEventListener('resize', syncFrame)
+      window.removeEventListener('scroll', syncFrame)
+    }
+  }, [frameTargetId])
 
   // ── Restore completed set from session ─────────────────────────────────────
   useEffect(() => {
@@ -195,6 +227,18 @@ export function WizardShell({ consultant, onComplete }: Props) {
     })
   }, [updateAnswers])
 
+  const scrollToPlannerTop = useCallback(() => {
+    if (scrollTargetId) {
+      const target = document.getElementById(scrollTargetId)
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        return
+      }
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [scrollTargetId])
+
   const goNext = useCallback(() => {
     const stepKey = WIZARD_STEPS[currentStep - 1]?.key ?? 'step'
     if (currentStep >= TOTAL_STEPS) {
@@ -235,14 +279,14 @@ export function WizardShell({ consultant, onComplete }: Props) {
       step_name: stepKey,
     })
     setStep(currentStep + 1)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [answers, currentStep, mode, onComplete, setStep])
+    scrollToPlannerTop()
+  }, [answers, currentStep, mode, onComplete, scrollToPlannerTop, setStep])
 
   const goBack = useCallback(() => {
     setErrors({})
     setStep(Math.max(1, currentStep - 1))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [currentStep, setStep])
+    scrollToPlannerTop()
+  }, [currentStep, scrollToPlannerTop, setStep])
 
   const handleClear = useCallback(() => {
     clearSession()
@@ -261,8 +305,8 @@ export function WizardShell({ consultant, onComplete }: Props) {
     viewedStepsRef.current = new Set()
     setShowClear(false)
     setShowResults(false)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [clearSession])
+    scrollToPlannerTop()
+  }, [clearSession, scrollToPlannerTop])
 
   // ── Step meta ─────────────────────────────────────────────────────────────
   const stepMeta   = WIZARD_STEPS[currentStep - 1]
@@ -434,7 +478,7 @@ export function WizardShell({ consultant, onComplete }: Props) {
                 onClick={handleClear}
                 style={{ flex: 1, padding: '10px 16px', borderRadius: 10, border: 'none', background: C.red, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
               >
-                Yes, clear all
+                Yes, start over
               </button>
             </div>
           </div>
@@ -447,11 +491,20 @@ export function WizardShell({ consultant, onComplete }: Props) {
         background: C.white, borderTop: `1px solid ${C.border}`,
         padding:    isMobile ? '10px 16px' : '14px 24px',
         zIndex: 50,
+        ...(footerFrame && !isMobile ? { left: footerFrame.left, right: footerFrame.right } : {}),
       }}>
-        <div style={{ maxWidth: 580, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{
+          maxWidth: frameTargetId && !isMobile ? 'none' : 580,
+          margin: '0 auto',
+          display: isMobile ? 'flex' : 'grid',
+          gridTemplateColumns: isMobile ? undefined : '1fr auto 1fr',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: isMobile ? 12 : 16,
+        }}>
 
-          {/* Left: Back + Clear */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Left: Back + Start over */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             {currentStep > 1 && (
               <button
                 type="button"
@@ -472,20 +525,29 @@ export function WizardShell({ consultant, onComplete }: Props) {
               onClick={() => setShowClear(true)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '5px 10px', borderRadius: 7, border: 'none',
-                background: 'transparent', color: C.textLight,
-                fontSize: 11, cursor: 'pointer', fontFamily: FONT,
+                padding: '9px 16px', borderRadius: 9,
+                border: `1px solid ${C.border}`, background: C.white,
+                color: C.text, fontWeight: 600, fontSize: 13,
+                cursor: 'pointer', fontFamily: FONT,
               }}
             >
-              <Archive size={13} color="#C41E3A" /> Clear
+              <RestartAlt size={16} color="#374151" /> Start over
             </button>
           </div>
 
+          {!isMobile && (
+            <div style={{ justifySelf: 'center' }}>
+              <span style={{ fontSize: 12, color: C.textLight, fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                Step {currentStep} of {TOTAL_STEPS}
+              </span>
+            </div>
+          )}
+
           {/* Right: Step text + Next button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end', justifySelf: isMobile ? undefined : 'end' }}>
             {/* "Step X of 6" — AC-1 */}
             {!isMobile && (
-              <span style={{ fontSize: 12, color: C.textLight, fontFamily: FONT }}>
+              <span style={{ display: 'none', fontSize: 12, color: C.textLight, fontFamily: FONT }}>
                 Step {currentStep} of {TOTAL_STEPS}
               </span>
             )}

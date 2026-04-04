@@ -2,21 +2,36 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Container } from "./Container";
 import { BrandMark } from "./BrandMark";
 import { Layers, TabClose } from "nucleo-glass-icons/react";
 
 const NAV_LINKS = [
-  { href: "/articles",        label: "Articles"         },
-  { href: "/tools",           label: "Calculators"      },
-  { href: "/#for-consultants", label: "For Consultants"  },
-  { href: "/about",           label: "About"            },
+  { href: "/immigration-costs", label: "Calculate Costs",       activeMatch: (p: string) => p.startsWith("/immigration-costs") },
+  { href: "/settlement-plan",   label: "Your Settlement Plan",  activeMatch: (p: string) => p === "/settlement-plan" },
+  { href: "/articles",          label: "Guides & Articles",     activeMatch: (p: string) => p.startsWith("/articles") },
+  { href: "/about",             label: "About",                 activeMatch: (p: string) => p === "/about" },
 ];
+
+const MOBILE_SECONDARY = [
+  { href: "/about",            label: "About"              },
+  { href: "/glossary",         label: "Glossary"           },
+  { href: "/for-consultants",  label: "For Consultants"    },
+];
+
+// Maple leaf icon (reused from design system)
+const MapleLeaf = () => (
+  <svg width={14} height={14} viewBox="0 0 24 24" fill="#1B7A4A" aria-hidden="true">
+    <path d="M12 0L13.5 6.5L17 4L15.5 8.5L22 9L17 12L20 16L14 14L12 24L10 14L4 16L7 12L2 9L8.5 8.5L7 4L10.5 6.5Z" />
+  </svg>
+);
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -45,63 +60,30 @@ export function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-6 md:flex" aria-label="Main navigation">
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="text-sm font-medium text-ink-700 no-underline hover:text-ink-900"
-              >
-                {l.label}
-              </Link>
-            ))}
-            {/* Primary CTA button */}
-            <Link
-              href="/settlement-planner/plan"
-              aria-label="Start your free settlement plan"
-              style={{
-                display:      "inline-flex",
-                alignItems:   "center",
-                gap:          5,
-                fontSize:     14,
-                color:        "#fff",
-                textDecoration: "none",
-                fontWeight:   700,
-                background:   "#1B7A4A",
-                padding:      "9px 20px",
-                borderRadius: 9,
-                border:       "none",
-                whiteSpace:   "nowrap",
-                boxShadow:    "0 2px 8px rgba(27,122,74,0.2)",
-                transition:   "background 0.2s, transform 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
-            >
-              Start Free Plan
-            </Link>
+            {NAV_LINKS.map((l) => {
+              const isActive = l.activeMatch(pathname);
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    color: isActive ? "#1B7A4A" : "#4B5563",
+                    borderBottom: isActive ? "2px solid #1B7A4A" : "2px solid transparent",
+                    paddingBottom: 2,
+                    transition: "color 0.15s, border-color 0.15s",
+                  }}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Mobile: compact CTA + hamburger */}
+          {/* Mobile: hamburger only */}
           <div className="flex items-center gap-2 md:hidden">
-            <Link
-              href="/settlement-planner/plan"
-              aria-label="Start your free settlement plan"
-              style={{
-                display:      "inline-flex",
-                alignItems:   "center",
-                fontSize:     12,
-                color:        "#fff",
-                textDecoration: "none",
-                fontWeight:   700,
-                background:   "#1B7A4A",
-                padding:      "7px 14px",
-                borderRadius: 8,
-                whiteSpace:   "nowrap",
-              }}
-              onClick={() => setIsOpen(false)}
-            >
-              Start Free Plan
-            </Link>
             <button
               className="rounded-md p-2 text-gray-700 hover:bg-gray-100"
               onClick={() => setIsOpen(!isOpen)}
@@ -127,12 +109,68 @@ export function Header() {
           aria-label="Mobile navigation"
           className="md:hidden border-t border-ink-200 bg-white px-4 py-3 flex flex-col gap-1"
         >
-          {NAV_LINKS.map((l) => (
+          {/* Primary nav items */}
+          {NAV_LINKS.map((l) => {
+            const isActive = l.activeMatch(pathname);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setIsOpen(false)}
+                style={{
+                  display: "block",
+                  borderRadius: 8,
+                  padding: "10px 12px",
+                  fontSize: 14,
+                  fontWeight: isActive ? 600 : 500,
+                  textDecoration: "none",
+                  color: isActive ? "#1B7A4A" : "#374151",
+                  background: isActive ? "rgba(27, 122, 74, 0.06)" : "transparent",
+                }}
+              >
+                {l.label}
+              </Link>
+            );
+          })}
+
+          {/* CTA row */}
+          <div style={{ margin: "4px 0", borderTop: "1px solid #E5E7EB", paddingTop: 8 }} />
+          <Link
+            href="/immigration-costs#your-plan"
+            onClick={() => setIsOpen(false)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              borderRadius: 8,
+              padding: "10px 12px",
+              fontSize: 14,
+              fontWeight: 700,
+              textDecoration: "none",
+              color: "#1B7A4A",
+              background: "rgba(27, 122, 74, 0.06)",
+              borderLeft: "3px solid #1B7A4A",
+            }}
+          >
+            <MapleLeaf /> Start My Free Plan
+          </Link>
+          <div style={{ margin: "4px 0", borderTop: "1px solid #E5E7EB", paddingTop: 8 }} />
+
+          {/* Secondary links */}
+          {MOBILE_SECONDARY.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               onClick={() => setIsOpen(false)}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-ink-700 no-underline hover:bg-gray-50"
+              style={{
+                display: "block",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                fontWeight: 500,
+                textDecoration: "none",
+                color: "#6B7280",
+              }}
             >
               {l.label}
             </Link>

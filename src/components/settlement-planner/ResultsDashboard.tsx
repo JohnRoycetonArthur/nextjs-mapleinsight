@@ -1454,6 +1454,84 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
           )
         })()}
 
+        {/* ── US-24.3: Settlement Plan Handoff CTA ──────────────────────── */}
+        {isPublicMode && (() => {
+          const handleOpenPlan = () => {
+            const now = new Date().toISOString()
+            const phaseMap: Record<string, 'pre-arrival' | 'first-week' | 'first-30' | 'first-90'> = {
+              'Pre-Arrival': 'pre-arrival', 'preArrival': 'pre-arrival',
+              'First Week':  'first-week',  'firstWeek':  'first-week',
+              'First 30 Days': 'first-30',  'first30':    'first-30',
+              'First 90 Days': 'first-90',  'first90':    'first-90',
+            }
+            const allItems = [
+              ...checklist.preArrival.items.map(i => ({ ...i, period: 'pre-arrival' as const })),
+              ...checklist.firstWeek.items.map(i => ({ ...i,  period: 'first-week' as const })),
+              ...checklist.first30.items.map(i => ({ ...i,    period: 'first-30' as const })),
+              ...checklist.first90.items.map(i => ({ ...i,    period: 'first-90' as const })),
+            ]
+            const planData = {
+              schemaVersion: 1 as const,
+              createdAt: now,
+              updatedAt: now,
+              pathway: answers.pathway ?? '',
+              city: answers.city ?? '',
+              province: answers.province ?? 'ON',
+              familySize: (answers.adults ?? 1) + (answers.children ?? 0),
+              tasks: allItems.map((item, idx) => ({
+                id: `task-${idx}`,
+                phase: (phaseMap[item.period] ?? item.period) as 'pre-arrival' | 'first-week' | 'first-30' | 'first-90',
+                title: item.label,
+                description: null as string | null,
+                whyItMatters: null as string | null,
+                priority: item.priority <= 2 ? 'high' as const : item.priority <= 5 ? 'medium' as const : 'low' as const,
+                articleSlug: item.articleSlug ?? null,
+                completed: false,
+              })),
+            }
+            try {
+              const existing = localStorage.getItem('mi_action_plan')
+              if (existing) {
+                const confirmed = window.confirm('This will replace your existing plan and reset all progress. Continue?')
+                if (!confirmed) return
+              }
+              localStorage.setItem('mi_action_plan', JSON.stringify(planData))
+            } catch {
+              // ignore storage errors
+            }
+            window.location.href = '/settlement-plan'
+          }
+
+          return (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(27,79,74,0.04), rgba(27,122,74,0.02))',
+              border: '2px solid rgba(27,122,74,0.15)',
+              borderRadius: 16,
+              padding: 24,
+              marginBottom: 14,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+                <span style={{ fontSize: 22, lineHeight: 1 }}>✅</span>
+                <div>
+                  <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: C.forest, marginBottom: 6 }}>
+                    Your personalized action plan is ready
+                  </div>
+                  <p style={{ fontFamily: FONT, fontSize: 13, color: C.text, margin: 0, lineHeight: 1.6 }}>
+                    We&apos;ve created a step-by-step checklist based on your situation. Track your progress as you settle in.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleOpenPlan}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 24px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${C.forest}, ${C.accent})`, color: '#fff', fontFamily: FONT, fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 16px ${C.accent}30` }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 0L13.5 6.5L17 4L15.5 8.5L22 9L17 12L20 16L14 14L12 24L10 14L4 16L7 12L2 9L8.5 8.5L7 4L10.5 6.5Z"/></svg>
+                Open My Settlement Plan →
+              </button>
+            </div>
+          )
+        })()}
+
         {/* ── AC-8: Action Buttons ────────────────────────────────────────── */}
         {isPublicMode ? (
           publicReportPackage ? <PublicModeSaveCard reportPackage={publicReportPackage} onStartNewPlan={onStartOver} /> : null

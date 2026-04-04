@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRightAlt, Schedule } from '@material-symbols-svg/react';
+import { ArrowRightAlt } from '@material-symbols-svg/react';
 
 const C = {
   forest: '#1B4F4A', accent: '#1B7A4A',
@@ -45,20 +45,20 @@ function FadeIn({ children, delay = 0, style = {} }: {
 const STEPS = [
   {
     num: '1',
-    title: 'Answer a few questions',
-    desc: 'Household, destination, income, savings, and lifestyle. About 8 minutes.',
+    title: 'Tell us your situation',
+    desc: 'Family size, immigration pathway, and which Canadian city you\'re heading to.',
     color: C.accent,
   },
   {
     num: '2',
-    title: 'Get your personalized plan',
-    desc: 'Cost estimates, savings gap, risk flags, and a 90-day checklist — calculated instantly.',
+    title: 'We crunch the numbers',
+    desc: 'Real data from IRCC, CMHC & CRA — proof of funds, rent, fees, and hidden costs. No AI.',
     color: C.blue,
   },
   {
     num: '3',
-    title: 'Save or revisit anytime',
-    desc: 'Download as PDF, email to yourself, or come back later — your data stays in your browser.',
+    title: 'Get your free plan',
+    desc: 'IRCC compliance check, cost breakdown, savings gap analysis, and a personalized settlement checklist.',
     color: C.purple,
   },
 ];
@@ -148,28 +148,20 @@ export function HowItWorks({ isMobile }: { isMobile: boolean }) {
         <FadeIn delay={0.3}>
           <div style={{ textAlign: 'center', marginTop: 44 }}>
             <Link
-              href="/settlement-planner/plan"
+              href="/immigration-costs#your-plan"
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '14px 32px', borderRadius: 12,
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '13px 28px', borderRadius: 100,
                 background: C.accent, color: '#fff',
                 fontWeight: 700, fontSize: 15, textDecoration: 'none',
-                boxShadow: `0 4px 14px ${C.accent}44`,
+                boxShadow: `0 3px 14px ${C.accent}30`,
                 transition: 'transform 0.2s, box-shadow 0.2s',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              Start My Free Settlement Plan <ArrowRightAlt size={14} color="#FFFFFF" />
+              Start Now — It&apos;s Free <ArrowRightAlt size={14} color="#FFFFFF" />
             </Link>
-            <div style={{
-              marginTop: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 6, fontSize: 12, color: C.textLight,
-            }}>
-              <Schedule size={13} color="#9CA3AF" />
-              Takes about 8 minutes
-            </div>
           </div>
         </FadeIn>
       </div>

@@ -1,4 +1,4 @@
-import { defineField, defineType } from 'sanity'
+import { defineArrayMember, defineField, defineType } from 'sanity'
 
 export const immigrationFeesType = defineType({
   name: 'immigrationFees',
@@ -32,7 +32,7 @@ export const immigrationFeesType = defineType({
       type: 'array',
       description: 'Required funds by family size (IRCC low-income cut-off table).',
       of: [
-        {
+        defineArrayMember({
           type: 'object',
           fields: [
             defineField({
@@ -57,7 +57,7 @@ export const immigrationFeesType = defineType({
               }
             },
           },
-        },
+        }),
       ],
     }),
     defineField({
@@ -81,7 +81,7 @@ export const immigrationFeesType = defineType({
       title: 'Express Entry Settlement Funds',
       type: 'array',
       description: 'Required settlement funds by family size for FSWP and FSTP (50% of LICO). Effective July 7, 2025.',
-      of: [{
+      of: [defineArrayMember({
         type: 'object',
         fields: [
           defineField({ name: 'familyMembers', title: 'Family Members', type: 'number', validation: (Rule) => Rule.required().min(1).integer() }),
@@ -93,7 +93,7 @@ export const immigrationFeesType = defineType({
             return { title: `${familyMembers} person${familyMembers === 1 ? '' : 's'}`, subtitle: amountCAD != null ? `$${amountCAD.toLocaleString()}` : '' }
           },
         },
-      }],
+      })],
     }),
     defineField({
       name: 'expressEntryAdditionalMember',
@@ -114,7 +114,7 @@ export const immigrationFeesType = defineType({
       title: 'One-Way Flight Cost by Departure Region',
       type: 'array',
       description: 'Per-person one-way fares by departure region. Used to calculate settlement travel costs.',
-      of: [{
+      of: [defineArrayMember({
         type: 'object',
         fields: [
           defineField({ name: 'regionCode',       title: 'Region Code',                    type: 'string', description: 'e.g. south-asia, north-america' }),
@@ -127,7 +127,7 @@ export const immigrationFeesType = defineType({
             return { title: regionLabel ?? '—', subtitle: farePerPersonCAD != null ? `$${farePerPersonCAD} one-way` : '' }
           },
         },
-      }],
+      })],
     }),
 
     // ─── Study Permit Financial Data (optional, only populated for study-permit doc) ──
@@ -148,7 +148,7 @@ export const immigrationFeesType = defineType({
           title: 'IRCC Living Expense Requirements (non-Quebec)',
           type: 'array',
           description: 'Required living funds indexed by family size (1–7). Source: canada.ca. Excludes tuition and transportation.',
-          of: [{
+          of: [defineArrayMember({
             type: 'object',
             fields: [
               defineField({ name: 'familyMembers', title: 'Family Members (incl. applicant)', type: 'number', validation: (Rule) => Rule.required().min(1).integer() }),
@@ -160,7 +160,7 @@ export const immigrationFeesType = defineType({
                 return { title: `${familyMembers} person${familyMembers === 1 ? '' : 's'}`, subtitle: amountCAD != null ? `$${amountCAD.toLocaleString()}/yr` : '' }
               },
             },
-          }],
+          })],
         }),
         defineField({
           name: 'proofOfFundsAdditionalMember',
@@ -209,7 +209,7 @@ export const immigrationFeesType = defineType({
           title: 'Health Insurance Lookup by Province',
           type: 'array',
           description: 'Provincial health coverage rules for international students. Used to add upfront bridge costs and monthly insurance costs.',
-          of: [{
+          of: [defineArrayMember({
             type: 'object',
             fields: [
               defineField({ name: 'provinceCode',          title: 'Province Code (ON, BC, AB, etc.)',          type: 'string'  }),
@@ -226,7 +226,7 @@ export const immigrationFeesType = defineType({
                 return { title: provinceCode, subtitle: mechanism }
               },
             },
-          }],
+          })],
         }),
         defineField({
           name: 'studentWorkRights',
@@ -245,7 +245,7 @@ export const immigrationFeesType = defineType({
           title: 'Provincial Minimum Wages',
           type: 'array',
           description: 'Current minimum wage by province. Used to estimate monthly part-time income for students.',
-          of: [{
+          of: [defineArrayMember({
             type: 'object',
             fields: [
               defineField({ name: 'provinceCode', title: 'Province Code', type: 'string' }),
@@ -257,7 +257,7 @@ export const immigrationFeesType = defineType({
                 return { title: provinceCode, subtitle: `$${hourlyRate}/hr` }
               },
             },
-          }],
+          })],
         }),
       ],
     }),

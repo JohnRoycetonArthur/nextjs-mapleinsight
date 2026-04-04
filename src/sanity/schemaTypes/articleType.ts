@@ -1,4 +1,4 @@
-import {defineField, defineType} from 'sanity'
+import {defineArrayMember, defineField, defineType} from 'sanity'
 
 export const articleType = defineType({
   name: 'article',
@@ -55,7 +55,7 @@ export const articleType = defineType({
       type: 'array',
       group: 'content',
       description: 'Optional keywords for cross-linking and filtering.',
-      of: [{type: 'string'}],
+      of: [defineArrayMember({type: 'string'})],
       options: {layout: 'tags'},
     }),
     defineField({
@@ -89,7 +89,7 @@ export const articleType = defineType({
       group: 'content',
       description: 'Full article content. Supports rich text, callout boxes, and embedded calculators.',
       of: [
-        {
+        defineArrayMember({
           type: 'block',
           styles: [
             {title: 'Normal', value: 'normal'},
@@ -142,8 +142,8 @@ export const articleType = defineType({
               },
             ],
           },
-        },
-        {
+        }),
+        defineArrayMember({
           type: 'object',
           name: 'calloutBox',
           title: 'Callout Box',
@@ -182,8 +182,8 @@ export const articleType = defineType({
               return {title: title || 'Callout Box', subtitle: subtitle || 'info'}
             },
           },
-        },
-        {
+        }),
+        defineArrayMember({
           type: 'object',
           name: 'proTip',
           title: 'Pro Tip',
@@ -202,8 +202,8 @@ export const articleType = defineType({
               return {title: '💡 Pro Tip', subtitle}
             },
           },
-        },
-        {
+        }),
+        defineArrayMember({
           type: 'object',
           name: 'calculatorEmbed',
           title: 'Calculator Embed',
@@ -222,7 +222,101 @@ export const articleType = defineType({
               return {title: '🧮 Calculator Embed', subtitle}
             },
           },
-        },
+        }),
+        defineArrayMember({
+          type: 'object',
+          name: 'toolEmbed',
+          title: 'Tool Embed',
+          fields: [
+            defineField({
+              name: 'toolId',
+              title: 'Tool ID',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'title',
+              title: 'Title',
+              type: 'string',
+            }),
+            defineField({
+              name: 'description',
+              title: 'Description',
+              type: 'text',
+              rows: 2,
+            }),
+          ],
+          preview: {
+            select: {title: 'title', subtitle: 'toolId'},
+            prepare({title, subtitle}) {
+              return {title: title || 'Tool Embed', subtitle}
+            },
+          },
+        }),
+        defineArrayMember({
+          type: 'object',
+          name: 'markdownTable',
+          title: 'Markdown Table',
+          fields: [
+            defineField({
+              name: 'rows',
+              title: 'Rows',
+              type: 'array',
+              validation: (Rule) => Rule.required().min(1),
+              of: [
+                defineArrayMember({
+                  name: 'row',
+                  title: 'Row',
+                  type: 'object',
+                  fields: [
+                    defineField({
+                      name: 'cells',
+                      title: 'Cells',
+                      type: 'array',
+                      of: [defineArrayMember({type: 'string'})],
+                      validation: (Rule) => Rule.required().min(1),
+                    }),
+                  ],
+                  preview: {
+                    select: {cells: 'cells'},
+                    prepare({cells}: {cells?: string[]}) {
+                      return {
+                        title: Array.isArray(cells) ? cells.join(' | ').slice(0, 80) : 'Table Row',
+                      }
+                    },
+                  },
+                }),
+              ],
+            }),
+          ],
+          preview: {
+            select: {rows: 'rows'},
+            prepare({rows}: {rows?: Array<{cells?: string[]}>}) {
+              const count = Array.isArray(rows) ? rows.length : 0
+              return {title: 'Table', subtitle: `${count} row${count === 1 ? '' : 's'}`}
+            },
+          },
+        }),
+        defineArrayMember({
+          type: 'object',
+          name: 'divider',
+          title: 'Divider',
+          fields: [
+            defineField({
+              name: 'spacer',
+              title: 'Spacer',
+              type: 'boolean',
+              initialValue: true,
+              hidden: true,
+              readOnly: true,
+            }),
+          ],
+          preview: {
+            prepare() {
+              return {title: 'Divider'}
+            },
+          },
+        }),
       ],
       validation: (Rule) => Rule.required(),
     }),
@@ -256,7 +350,7 @@ export const articleType = defineType({
       type: 'array',
       group: 'links',
       description: 'Up to 3 related article references shown at the bottom of the article.',
-      of: [{type: 'reference', to: [{type: 'article'}]}],
+      of: [defineArrayMember({type: 'reference', to: [{type: 'article'}]})],
       validation: (Rule) => Rule.max(3),
     }),
     defineField({
@@ -265,8 +359,16 @@ export const articleType = defineType({
       type: 'array',
       group: 'links',
       description: "Up to 3 calculator references shown in the 'Try These Calculators' section.",
-      of: [{type: 'reference', to: [{type: 'calculator'}]}],
+      of: [defineArrayMember({type: 'reference', to: [{type: 'calculator'}]})],
       validation: (Rule) => Rule.max(3),
+    }),
+    defineField({
+      name: 'isPillar',
+      title: 'Pillar Article',
+      type: 'boolean',
+      group: 'links',
+      description: 'Marks this article as a pillar/hub page for content clustering.',
+      initialValue: false,
     }),
     defineField({
       name: 'journeyStage',
@@ -310,6 +412,30 @@ export const articleType = defineType({
       validation: (Rule) => Rule.uri({scheme: ['http', 'https']}),
     }),
     defineField({
+      name: 'seoSchema',
+      title: 'SEO Schema',
+      type: 'array',
+      group: 'seo',
+      description: 'Structured data schema types to include on this page (e.g., FAQPage, Article, HowTo).',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          name: 'seoSchemaType',
+          fields: [
+            defineField({
+              name: 'type',
+              title: 'Type',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            }),
+          ],
+          preview: {
+            select: {title: 'type'},
+          },
+        }),
+      ],
+    }),
+    defineField({
       name: 'noIndex',
       title: 'Hide from Search Engines',
       type: 'boolean',
@@ -339,7 +465,7 @@ export const articleType = defineType({
       group: 'ai',
       description: 'Structured Q&A pairs rendered as schema.org FAQPage markup. Up to 10 items.',
       of: [
-        {
+        defineArrayMember({
           type: 'object',
           name: 'faqItem',
           title: 'FAQ Item',
@@ -368,7 +494,7 @@ export const articleType = defineType({
           preview: {
             select: {title: 'question', subtitle: 'answer'},
           },
-        },
+        }),
       ],
       validation: (Rule) => Rule.max(10),
     }),
@@ -413,7 +539,7 @@ export const articleType = defineType({
       group: 'content',
       description: 'Authoritative sources cited in this article (government, regulatory, or institutional pages only).',
       of: [
-        {
+        defineArrayMember({
           type: 'object',
           name: 'source',
           title: 'Source',
@@ -452,7 +578,7 @@ export const articleType = defineType({
               return { title: title || 'Untitled Source', subtitle: subtitle || '' };
             },
           },
-        },
+        }),
       ],
     }),
     defineField({
@@ -462,7 +588,7 @@ export const articleType = defineType({
       group: 'content',
       description: 'Concrete numeric examples shown in guide-type articles. Add 1–3 scenarios.',
       of: [
-        {
+        defineArrayMember({
           type: 'object',
           name: 'exampleScenario',
           title: 'Example Scenario',
@@ -488,7 +614,7 @@ export const articleType = defineType({
               return {title: title || 'Example Scenario', subtitle: subtitle?.slice(0, 80)}
             },
           },
-        },
+        }),
       ],
     }),
   ],
