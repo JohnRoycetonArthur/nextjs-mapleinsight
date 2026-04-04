@@ -641,10 +641,10 @@ export default function SettlementPlanPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: `${C.accent}06`, border: `1px solid ${C.accent}12`, marginBottom: 14 }}>
             <span style={{ fontSize: 16 }}>👉</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontFamily: FONT, fontSize: 13, fontWeight: 600, color: C.forest }}>Next: {todaysFocus[0].title}</span>
-              {todaysFocus[0].description && (
+              <span style={{ fontFamily: FONT, fontSize: 13, fontWeight: 600, color: C.forest }}>Next: {todaysFocus[0]?.title}</span>
+              {todaysFocus[0]?.description && (
                 <span style={{ fontFamily: FONT, fontSize: 12, color: C.gray, marginLeft: 4 }}>
-                  — {todaysFocus[0].description.split('.')[0].substring(0, 50)}
+                  — {todaysFocus[0]?.description?.split('.')[0].substring(0, 50)}
                 </span>
               )}
             </div>
@@ -818,4 +818,5 @@ export default function SettlementPlanPage() {
     </div>
   )
 }
+
 
