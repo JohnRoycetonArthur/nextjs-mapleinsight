@@ -110,7 +110,7 @@ export function ScenarioHeroCards() {
         destination: scenario.cityKey,
         pathway: scenario.pathwayKey,
       });
-      router.push(`/immigration-cost?scenario=${scenario.type}#plan`);
+      router.push(`/immigration-costs?scenario=${scenario.type}#your-plan`);
     },
     [router],
   );
@@ -205,8 +205,8 @@ export function ScenarioHeroCards() {
                 marginRight: 'auto',
               }}
             >
-              What people like you{' '}
-              <span style={{ color: C.gold }}>actually spend</span>
+              How much money you need to move to Canada —{' '}
+              <span style={{ color: C.gold }}>based on real data</span>
             </h1>
 
             {/* Subheadline */}
@@ -222,7 +222,7 @@ export function ScenarioHeroCards() {
             >
               Source-backed cost patterns from IRCC, CMHC, and official benchmarks.
               <br />
-              Click your situation to get a personalized plan.
+              Choose your situation to see your exact cost breakdown.
             </p>
           </div>
 
@@ -262,7 +262,7 @@ export function ScenarioHeroCards() {
           {/* Primary CTA */}
           <div style={{ textAlign: 'center', marginTop: isMobile ? 24 : 32 }}>
             <a
-              href="/immigration-cost#plan"
+              href="/immigration-costs#your-plan"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

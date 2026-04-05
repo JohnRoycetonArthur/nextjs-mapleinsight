@@ -351,7 +351,7 @@ export function WizardShell({ consultant, onComplete, scrollTargetId, frameTarge
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT, paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
 
       {/* ── Compact wizard header ──────────────────────────────────────────── */}
       {!isPublicMode && (
@@ -497,7 +497,10 @@ export function WizardShell({ consultant, onComplete, scrollTargetId, frameTarge
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         background: C.white, borderTop: `1px solid ${C.border}`,
-        padding:    isMobile ? '10px 16px' : '14px 24px',
+        paddingTop:    isMobile ? '10px' : '14px',
+        paddingLeft:   isMobile ? '16px' : '24px',
+        paddingRight:  isMobile ? '16px' : '24px',
+        paddingBottom: isMobile ? 'calc(10px + env(safe-area-inset-bottom, 0px))' : '14px',
         zIndex: 50,
         ...(footerFrame && !isMobile ? { left: footerFrame.left, right: footerFrame.right } : {}),
       }}>

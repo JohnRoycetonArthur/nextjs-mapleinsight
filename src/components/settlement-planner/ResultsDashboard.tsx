@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { CloudDownload, PaperPlane, File, Calendar, CircleArrowDown, CircleArrowRight, ClipboardCheck, Clipboard, Rocket, Crosshairs } from 'nucleo-glass-icons/react'
+import { CloudDownload, PaperPlane, File, Calendar, CircleArrowDown, CircleArrowRight, ClipboardCheck } from 'nucleo-glass-icons/react'
 import {
   generateVerdict,
   computeTimeToDepletion,
@@ -42,7 +42,7 @@ import type {
 import type { ConsultantBranding } from './types'
 import { ConsultantReport } from './ConsultantReport'
 import { generateReportPackage, downloadReportPackage, type MapleReportPackage } from '@/lib/settlement-engine/export'
-import { generateChecklist, type ChecklistItem } from '@/lib/settlement-engine/checklist'
+import { generateChecklist } from '@/lib/settlement-engine/checklist'
 import { SendToConsultantModal } from './SendToConsultantModal'
 import { SourceBadge } from './SourceBadge'
 import { DataFreshnessBar } from './DataFreshnessBar'
@@ -308,7 +308,7 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
   const [showSendModal,        setShowSendModal]        = useState(false)
   const [sendPackage,          setSendPackage]          = useState<MapleReportPackage | null>(null)
   const [dataSources,          setDataSources]          = useState<Map<string, DataSource>>(new Map())
-  const [checklistOpen,        setChecklistOpen]        = useState(false)
+
   const [reportTrackingActive, setReportTrackingActive] = useState(false)
   const hasTrackedReportViewRef = useRef(false)
   const reportStartAtRef = useRef<number | null>(null)
@@ -880,6 +880,26 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
     setShowSendModal(true)
   }
 
+  // ─── Open settlement plan (public mode) ──────────────────────────────────
+  function handleOpenPlan() {
+    const planData = buildActionPlanFromChecklist({ answers, checklist })
+    try {
+      const existing = localStorage.getItem('mi_action_plan')
+      if (existing) {
+        const confirmed = window.confirm('This will replace your existing plan and reset all progress. Continue?')
+        if (!confirmed) return
+      }
+      localStorage.setItem('mi_action_plan', JSON.stringify(planData))
+    } catch {
+      // ignore storage errors
+    }
+    if (onOpenSettlementPlan) {
+      onOpenSettlementPlan(planData)
+      return
+    }
+    window.location.href = '/settlement-plan'
+  }
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT }}>
@@ -1019,6 +1039,9 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
             </div>
           </div>
         )}
+
+        {/* ── What to Do Next — public mode, below compliance ──────────────── */}
+        {isPublicMode && <WhatToDoNext onOpenSettlementPlan={handleOpenPlan} />}
 
         {/* ── 2. Metric Tiles ───────────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -1336,9 +1359,7 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
         </div>
 
         {/* ── AC-7: Consultant Post-Review Callout ────────────────────────── */}
-        {isPublicMode ? (
-          <WhatToDoNext />
-        ) : (
+        {!isPublicMode && (
         <div style={{
           background: C.white, borderRadius: 14,
           borderTop: `1px solid ${C.red}20`,
@@ -1396,117 +1417,6 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
         </div>
 
         )}
-        {/* ── 7. Settlement Checklist — collapsible accordion ─────────────── */}
-        {(() => {
-          const totalItems = checklist.preArrival.items.length + checklist.firstWeek.items.length + checklist.first30.items.length + checklist.first90.items.length
-          return (
-            <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, marginBottom: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              <button
-                onClick={() => setChecklistOpen(!checklistOpen)}
-                aria-expanded={checklistOpen}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '16px 16px' : '18px 26px', border: 'none', background: C.white, cursor: 'pointer', fontFamily: FONT }}
-              >
-                <h2 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: 0 }}>Settlement Checklist</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: C.textLight }}>{totalItems} items · 4 periods</span>
-                  <ChevDown open={checklistOpen} />
-                </div>
-              </button>
-              {checklistOpen && (
-                <div style={{ padding: isMobile ? '0 16px 18px' : '0 26px 22px', borderTop: `1px solid ${C.border}` }}>
-                  {[
-                    { title: 'Pre-Arrival',   period: checklist.preArrival, icon: <Rocket        size={14} stopColor1={C.accent} stopColor2="#1B4F4A" />, color: C.accent  },
-                    { title: 'First Week',    period: checklist.firstWeek,  icon: <ClipboardCheck size={14} stopColor1={C.gold}   stopColor2="#92720A" />, color: C.gold    },
-                    { title: 'First 30 Days', period: checklist.first30,    icon: <Clipboard      size={14} stopColor1={C.blue}   stopColor2="#1D4ED8" />, color: C.blue    },
-                    { title: 'First 90 Days', period: checklist.first90,    icon: <Crosshairs     size={14} stopColor1={C.purple} stopColor2="#7C3AED" />, color: C.purple  },
-                  ].map(group => (
-                    <div key={group.title} style={{ marginTop: 16 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                        <span aria-hidden="true">{group.icon}</span>
-                        <span style={{ fontFamily: SERIF, fontSize: 15, color: group.color, fontWeight: 700 }}>{group.title}</span>
-                      </div>
-                      {group.period.items.map((item: ChecklistItem, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 5, paddingLeft: 4, alignItems: 'flex-start' }}>
-                          <CheckIcon color={group.color} />
-                          <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>
-                            {item.label}
-                            {item.articleSlug && (
-                              <a
-                                href={`/articles/${item.articleSlug}`}
-                                style={{ marginLeft: 5, color: C.accent, fontSize: 11, textDecoration: 'none', borderBottom: `1px solid ${C.accent}44`, whiteSpace: 'nowrap' }}
-                              >
-                                Learn more →
-                              </a>
-                            )}
-                          </span>
-                        </div>
-                      ))}
-                      {group.period.additionalSteps.length > 0 && (
-                        <div style={{ marginTop: 6, paddingLeft: 4 }}>
-                          <span style={{ fontSize: 11, color: C.textLight, fontStyle: 'italic' }}>
-                            + {group.period.additionalSteps.length} additional step{group.period.additionalSteps.length > 1 ? 's' : ''} available in the full checklist PDF
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })()}
-
-        {/* ── US-24.3: Settlement Plan Handoff CTA ──────────────────────── */}
-        {isPublicMode && (() => {
-          const handleOpenPlan = () => {
-            const planData = buildActionPlanFromChecklist({ answers, checklist })
-            try {
-              const existing = localStorage.getItem('mi_action_plan')
-              if (existing) {
-                const confirmed = window.confirm('This will replace your existing plan and reset all progress. Continue?')
-                if (!confirmed) return
-              }
-              localStorage.setItem('mi_action_plan', JSON.stringify(planData))
-            } catch {
-              // ignore storage errors
-            }
-            if (onOpenSettlementPlan) {
-              onOpenSettlementPlan(planData)
-              return
-            }
-            window.location.href = '/settlement-plan'
-          }
-
-          return (
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(27,79,74,0.04), rgba(27,122,74,0.02))',
-              border: '2px solid rgba(27,122,74,0.15)',
-              borderRadius: 16,
-              padding: 24,
-              marginBottom: 14,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-                <span style={{ fontSize: 22, lineHeight: 1 }}>✅</span>
-                <div>
-                  <div style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: C.forest, marginBottom: 6 }}>
-                    Your personalized action plan is ready
-                  </div>
-                  <p style={{ fontFamily: FONT, fontSize: 13, color: C.text, margin: 0, lineHeight: 1.6 }}>
-                    We&apos;ve created a step-by-step checklist based on your situation. Track your progress as you settle in.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleOpenPlan}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 24px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg, ${C.forest}, ${C.accent})`, color: '#fff', fontFamily: FONT, fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: `0 4px 16px ${C.accent}30` }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 0L13.5 6.5L17 4L15.5 8.5L22 9L17 12L20 16L14 14L12 24L10 14L4 16L7 12L2 9L8.5 8.5L7 4L10.5 6.5Z"/></svg>
-                Open My Settlement Plan →
-              </button>
-            </div>
-          )
-        })()}
-
         {/* ── AC-8: Action Buttons ────────────────────────────────────────── */}
         {isPublicMode ? (
           publicReportPackage ? <PublicModeSaveCard reportPackage={publicReportPackage} onStartNewPlan={onStartOver} /> : null
