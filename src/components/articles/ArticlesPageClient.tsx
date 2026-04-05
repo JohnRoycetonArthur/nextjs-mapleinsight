@@ -48,11 +48,7 @@ export function ArticlesPageClient({ articles, pillarArticle }: Props) {
   const handleCategoryChange = (id: string) => {
     setActiveCategory(id);
     setSearchQuery("");
-    // Scroll to top of content area
-    if (id !== "all") {
-      const el = document.getElementById(`topic-${id}`);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Search change resets category to "all"
