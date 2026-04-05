@@ -42,7 +42,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function ImmigrationCostsPage() {
+export default async function ImmigrationCostsPage({
+  searchParams,
+}: {
+  searchParams?: { scenario?: string };
+}) {
   const article = await getArticleBySlug(PILLAR_SLUG);
   if (!article || !article.isPillar) return notFound();
 
@@ -96,7 +100,11 @@ export default async function ImmigrationCostsPage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
         />
       )}
-      <PillarArticlePage article={article} readingTime={readingTime} />
+      <PillarArticlePage
+        article={article}
+        readingTime={readingTime}
+        initialScenario={searchParams?.scenario ?? null}
+      />
     </>
   );
 }

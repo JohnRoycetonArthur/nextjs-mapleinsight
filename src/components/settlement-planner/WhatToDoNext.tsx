@@ -37,11 +37,20 @@ const ChevDown = ({ open }: { open: boolean }) => (
 const NEXT_STEPS = [
   'Compare your current savings against the estimated landing costs above — how far are you from the safe target?',
   'Review the cost breakdown and identify areas where you could reduce expenses (e.g., shared housing, a more affordable city).',
-  'Work through your first-90-days checklist below — start ticking items off before you even land.',
   'If you have questions about immigration pathways or proof-of-funds requirements, consider consulting a Registered Canadian Immigration Consultant (RCIC).',
 ]
 
-export function WhatToDoNext() {
+const MapleLeafIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill={C.white} aria-hidden="true">
+    <path d="M12 0L13.5 6.5L17 4L15.5 8.5L22 9L17 12L20 16L14 14L12 24L10 14L4 16L7 12L2 9L8.5 8.5L7 4L10.5 6.5Z" />
+  </svg>
+)
+
+interface Props {
+  onOpenSettlementPlan?: () => void
+}
+
+export function WhatToDoNext({ onOpenSettlementPlan }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -110,6 +119,42 @@ export function WhatToDoNext() {
               <span style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>{tip}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {onOpenSettlementPlan && (
+        <div style={{
+          marginTop: 18,
+          paddingTop: 18,
+          borderTop: `1px solid ${C.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 700, color: C.forest, marginBottom: 3 }}>
+              Your personalized action plan is ready
+            </div>
+            <p style={{ fontFamily: FONT, fontSize: 13, color: C.text, margin: 0, lineHeight: 1.5 }}>
+              Step-by-step checklist based on your situation — track your progress as you settle in.
+            </p>
+          </div>
+          <button
+            onClick={onOpenSettlementPlan}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '12px 22px', borderRadius: 100, border: 'none',
+              background: `linear-gradient(135deg, ${C.forest}, ${C.accent})`,
+              color: C.white, fontFamily: FONT, fontSize: 14, fontWeight: 700,
+              cursor: 'pointer', boxShadow: '0 4px 16px rgba(27,122,74,0.3)',
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}
+          >
+            <MapleLeafIcon />
+            Open My Settlement Plan →
+          </button>
         </div>
       )}
     </div>

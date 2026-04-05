@@ -148,6 +148,7 @@ function PlanSection({ scenarioType }: { scenarioType: string | null }) {
       furnishing: p.furnishing,
       childcare: p.childcare,
       car: p.car,
+      ...(p.studyPermit !== undefined ? { studyPermit: p.studyPermit } : {}),
     };
 
     updateAnswers(patch);

@@ -1,10 +1,16 @@
 "use client";
 
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArticleFull } from "@/sanity/queries";
-import { SettlementSessionProvider } from "@/components/settlement-planner/SettlementSessionContext";
+import {
+  SettlementSessionProvider,
+  useSettlementSession,
+  type WizardAnswers,
+} from "@/components/settlement-planner/SettlementSessionContext";
 import { WizardShell } from "@/components/settlement-planner/wizard/WizardShell";
+import { getScenarioByType } from "@/lib/scenarios";
+import { trackEvent } from "@/lib/analytics";
 import {
   Analytics,
   ArrowRightAlt,
@@ -375,19 +381,316 @@ function FAQItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean
   );
 }
 
+// ─── Scenario pre-fill banner ─────────────────────────────────────────────────
+
+function ScenarioPrefillBanner({
+  persona,
+  destination,
+  onDismiss,
+}: {
+  persona: string;
+  destination: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        background: "#1B7A4A0A",
+        border: "1px solid #1B7A4A22",
+        borderLeft: "4px solid #1B7A4A",
+        borderRadius: "0 12px 12px 0",
+        padding: "14px 18px",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 12,
+        marginBottom: 20,
+        fontFamily: font,
+        animation: "bannerSlideIn 0.4s ease-out",
+      }}
+    >
+      <style>{`
+        @keyframes bannerSlideIn {
+          from { opacity: 0; transform: translateX(-12px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#1B4F4A", marginBottom: 3 }}>
+          Adjust these numbers based on your scenario to get your cost for settlement in Canada.
+        </div>
+        <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55 }}>
+          These defaults are based on {persona} moving to {destination} — every field is editable.
+        </div>
+      </div>
+      <button
+        onClick={onDismiss}
+        aria-label="Dismiss pre-fill banner"
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 4,
+          fontSize: 18,
+          color: "#9CA3AF",
+          lineHeight: 1,
+          flexShrink: 0,
+          borderRadius: 4,
+          transition: "color 0.2s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "#1B4F4A"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "#9CA3AF"; }}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
+// ─── Scenario conflict dialog ─────────────────────────────────────────────────
+
+function ScenarioConflictDialog({
+  incomingPersona,
+  incomingDestination,
+  onStartFresh,
+  onKeepExisting,
+}: {
+  incomingPersona: string;
+  incomingDestination: string;
+  onStartFresh: () => void;
+  onKeepExisting: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="conflict-dialog-title"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 300,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+        background: "rgba(15, 61, 58, 0.6)",
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <div
+        style={{
+          background: "#FFFFFF",
+          borderRadius: 20,
+          padding: "32px 28px",
+          maxWidth: 440,
+          width: "100%",
+          boxShadow: "0 24px 80px rgba(15,61,58,0.24)",
+          fontFamily: font,
+        }}
+      >
+        {/* Icon */}
+        <div style={{
+          width: 48, height: 48, borderRadius: 14,
+          background: "#1B7A4A15",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: 20,
+        }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#1B7A4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+
+        <h2
+          id="conflict-dialog-title"
+          style={{
+            fontFamily: serif,
+            fontSize: 20,
+            fontWeight: 700,
+            color: "#1B4F4A",
+            margin: "0 0 10px",
+            lineHeight: 1.25,
+          }}
+        >
+          You have a saved plan
+        </h2>
+        <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6, margin: "0 0 24px" }}>
+          You already have a settlement plan in progress. Do you want to start
+          fresh with the <strong style={{ color: "#1B4F4A" }}>{incomingPersona}</strong> scenario
+          moving to <strong style={{ color: "#1B4F4A" }}>{incomingDestination}</strong>, or keep
+          your existing plan?
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button
+            onClick={onStartFresh}
+            style={{
+              padding: "13px 20px",
+              borderRadius: 12,
+              background: "linear-gradient(135deg, #1B4F4A, #1B7A4A)",
+              color: "#FFFFFF",
+              fontSize: 14,
+              fontWeight: 700,
+              fontFamily: font,
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            <span>Start fresh with {incomingPersona}</span>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+          <button
+            onClick={onKeepExisting}
+            style={{
+              padding: "13px 20px",
+              borderRadius: 12,
+              background: "none",
+              color: "#1B4F4A",
+              fontSize: 14,
+              fontWeight: 600,
+              fontFamily: font,
+              border: "1.5px solid #E5E7EB",
+              cursor: "pointer",
+              textAlign: "center",
+            }}
+          >
+            Keep my existing plan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Scenario prefill applier (must be inside SettlementSessionProvider) ──────
+
+function buildPrefillPatch(scenarioType: string): Partial<WizardAnswers> | null {
+  const scenario = getScenarioByType(scenarioType);
+  if (!scenario) return null;
+  const p = scenario.prefill;
+  return {
+    adults: p.adults,
+    children: p.children,
+    arrival: p.arrival,
+    pathway: p.pathway,
+    feesPaid: p.feesPaid,
+    biometricsDone: p.biometricsDone,
+    city: p.city,
+    province: p.province,
+    jobStatus: p.jobStatus,
+    income: p.income,
+    savings: p.savings,
+    obligations: p.obligations,
+    savingsCapacity: p.savingsCapacity,
+    housing: p.housing,
+    furnishing: p.furnishing,
+    childcare: p.childcare,
+    car: p.car,
+    ...(p.studyPermit !== undefined ? { studyPermit: p.studyPermit } : {}),
+  };
+}
+
+function ScenarioPrefillApplier({
+  scenarioType,
+  onPrefilled,
+}: {
+  scenarioType: string;
+  onPrefilled: () => void;
+}) {
+  const { session, isRestored, updateAnswers, clearSession } = useSettlementSession();
+  const appliedRef = useRef(false);
+  const pendingPatchRef = useRef<Partial<WizardAnswers> | null>(null);
+  const [showConflict, setShowConflict] = useState(false);
+
+  const scenario = getScenarioByType(scenarioType);
+
+  // On restoration: either apply immediately (fresh session) or prompt (existing session)
+  useEffect(() => {
+    if (!isRestored || appliedRef.current) return;
+    appliedRef.current = true;
+
+    if (!scenario) return;
+
+    if (Object.keys(session.answers).length > 0) {
+      // Existing session detected — ask the user
+      setShowConflict(true);
+      return;
+    }
+
+    // Fresh session — apply immediately
+    const patch = buildPrefillPatch(scenarioType);
+    if (!patch) return;
+    updateAnswers(patch);
+    onPrefilled();
+    trackEvent("planner_start", { scenario_type: scenarioType, prefilled: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRestored]);
+
+  // After clearSession(), session.answers becomes {} — then apply the pending patch
+  useEffect(() => {
+    if (!pendingPatchRef.current || !isRestored) return;
+    if (Object.keys(session.answers).length > 0) return;
+
+    const patch = pendingPatchRef.current;
+    pendingPatchRef.current = null;
+    updateAnswers(patch);
+    onPrefilled();
+    trackEvent("planner_start", { scenario_type: scenarioType, prefilled: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.answers, isRestored]);
+
+  const handleStartFresh = () => {
+    const patch = buildPrefillPatch(scenarioType);
+    if (!patch) return;
+    pendingPatchRef.current = patch;
+    clearSession();
+    setShowConflict(false);
+  };
+
+  const handleKeepExisting = () => {
+    setShowConflict(false);
+  };
+
+  if (!showConflict || !scenario) return null;
+
+  return (
+    <ScenarioConflictDialog
+      incomingPersona={scenario.persona}
+      incomingDestination={scenario.destination}
+      onStartFresh={handleStartFresh}
+      onKeepExisting={handleKeepExisting}
+    />
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────────
 
 interface Props {
   article: ArticleFull;
   readingTime: number;
+  initialScenario?: string | null;
 }
 
-export function PillarArticlePage({ article, readingTime }: Props) {
+export function PillarArticlePage({ article, readingTime, initialScenario = null }: Props) {
+  const validScenario = initialScenario && !!getScenarioByType(initialScenario) ? initialScenario : null;
+
   const [scrollPct, setScrollPct] = useState(0);
   const [activeSection, setActiveSection] = useState("quick-answer");
   const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
-  const [wizardStarted, setWizardStarted] = useState(false);
-  const [plannerExpanded, setPlannerExpanded] = useState(false);
+  const [wizardStarted, setWizardStarted] = useState(!!validScenario);
+  const [plannerExpanded, setPlannerExpanded] = useState(!!validScenario);
+  const [prefillBannerDismissed, setPrefillBannerDismissed] = useState(false);
+  const [prefillApplied, setPrefillApplied] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -396,6 +699,16 @@ export function PillarArticlePage({ article, readingTime }: Props) {
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Auto-scroll to planner section when arriving via scenario card
+  useEffect(() => {
+    if (!validScenario) return;
+    const el = document.getElementById("your-plan");
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -694,6 +1007,7 @@ export function PillarArticlePage({ article, readingTime }: Props) {
             boxShadow: plannerExpanded ? "0 24px 80px rgba(15,61,58,0.24)" : "0 4px 24px rgba(27,79,74,0.06)",
             position: plannerExpanded ? "fixed" : "relative",
             inset: plannerExpanded ? 0 : undefined,
+            paddingTop: plannerExpanded ? "env(safe-area-inset-top, 0px)" : undefined,
             zIndex: plannerExpanded ? 220 : undefined,
             display: "flex",
             flexDirection: "column",
@@ -740,7 +1054,7 @@ export function PillarArticlePage({ article, readingTime }: Props) {
               )}
             </div>
 
-            <div style={{ padding: plannerExpanded ? (isMobile ? "16px" : "24px") : "24px", flex: 1, overflowY: plannerExpanded ? "auto" : "visible" }}>
+            <div style={{ padding: plannerExpanded ? (isMobile ? "16px" : "24px") : "24px", flex: 1, overflowY: plannerExpanded ? "scroll" : "visible", height: plannerExpanded ? 0 : undefined, WebkitOverflowScrolling: plannerExpanded ? "touch" : undefined, overscrollBehavior: plannerExpanded ? "contain" : undefined }}>
               {!wizardStarted ? (
                 <div style={{ textAlign: "center", padding: "32px 0" }}>
                   <div style={{ width: 80, height: 80, borderRadius: 20, background: `linear-gradient(135deg, ${C.accent}15, ${C.blue}10)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
@@ -768,6 +1082,22 @@ export function PillarArticlePage({ article, readingTime }: Props) {
                 </div>
               ) : (
                 <SettlementSessionProvider slug="pillar-article" mode="public">
+                  {validScenario && (
+                    <ScenarioPrefillApplier
+                      scenarioType={validScenario}
+                      onPrefilled={() => setPrefillApplied(true)}
+                    />
+                  )}
+                  {prefillApplied && !prefillBannerDismissed && (() => {
+                    const sc = getScenarioByType(validScenario!);
+                    return sc ? (
+                      <ScenarioPrefillBanner
+                        persona={sc.persona}
+                        destination={sc.destination}
+                        onDismiss={() => setPrefillBannerDismissed(true)}
+                      />
+                    ) : null;
+                  })()}
                   <WizardShell
                     scrollTargetId="settlement-planner-widget-header"
                     frameTargetId="settlement-planner-widget"

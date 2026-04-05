@@ -52,6 +52,13 @@ export interface PrefillData {
   furnishing: string;
   childcare: boolean;
   car: boolean;
+  // Study permit sub-form (only set for study_permit pathway)
+  studyPermit?: {
+    programLevel: string;
+    tuitionAmount: number;
+    gicStatus: string;
+    scholarshipAmount: number;
+  } | null;
 }
 
 export interface Scenario {
@@ -205,6 +212,12 @@ export const SCENARIOS: Scenario[] = [
       furnishing: 'minimal',
       childcare: false,
       car: false,
+      studyPermit: {
+        programLevel: 'undergraduate',
+        tuitionAmount: 39500,
+        gicStatus: 'planning',
+        scholarshipAmount: 0,
+      },
     },
   },
 
