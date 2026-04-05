@@ -51,6 +51,7 @@ import type { DataSource } from '@/lib/settlement-engine/types'
 import { CURRENCY_SYMBOLS, type SupportedCurrency } from '@/lib/settlement-engine/currency'
 import { PublicModeSaveCard } from './PublicModeSaveCard'
 import { WhatToDoNext } from './WhatToDoNext'
+import { buildActionPlanFromChecklist, type ActionPlan } from '@/lib/settlement-engine/action-plan'
 import {
   trackPlannerReportExit,
   trackPlannerReportScrollDepth,
@@ -285,11 +286,12 @@ function MetricTile({ label, value, sub, color, isMobile, explainerId, openExpla
 interface Props {
   consultant?: ConsultantBranding | null
   onStartOver?: () => void
+  onOpenSettlementPlan?: (plan: ActionPlan) => void
 }
 
 // ─── ResultsDashboard ─────────────────────────────────────────────────────────
 
-export function ResultsDashboard({ consultant, onStartOver }: Props) {
+export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan }: Props) {
   const { session }  = useSettlementSession()
   const { answers }  = session
   const mode = usePlannerMode()
@@ -1457,38 +1459,7 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
         {/* ── US-24.3: Settlement Plan Handoff CTA ──────────────────────── */}
         {isPublicMode && (() => {
           const handleOpenPlan = () => {
-            const now = new Date().toISOString()
-            const phaseMap: Record<string, 'pre-arrival' | 'first-week' | 'first-30' | 'first-90'> = {
-              'Pre-Arrival': 'pre-arrival', 'preArrival': 'pre-arrival',
-              'First Week':  'first-week',  'firstWeek':  'first-week',
-              'First 30 Days': 'first-30',  'first30':    'first-30',
-              'First 90 Days': 'first-90',  'first90':    'first-90',
-            }
-            const allItems = [
-              ...checklist.preArrival.items.map(i => ({ ...i, period: 'pre-arrival' as const })),
-              ...checklist.firstWeek.items.map(i => ({ ...i,  period: 'first-week' as const })),
-              ...checklist.first30.items.map(i => ({ ...i,    period: 'first-30' as const })),
-              ...checklist.first90.items.map(i => ({ ...i,    period: 'first-90' as const })),
-            ]
-            const planData = {
-              schemaVersion: 1 as const,
-              createdAt: now,
-              updatedAt: now,
-              pathway: answers.pathway ?? '',
-              city: answers.city ?? '',
-              province: answers.province ?? 'ON',
-              familySize: (answers.adults ?? 1) + (answers.children ?? 0),
-              tasks: allItems.map((item, idx) => ({
-                id: `task-${idx}`,
-                phase: (phaseMap[item.period] ?? item.period) as 'pre-arrival' | 'first-week' | 'first-30' | 'first-90',
-                title: item.label,
-                description: null as string | null,
-                whyItMatters: null as string | null,
-                priority: item.priority <= 2 ? 'high' as const : item.priority <= 5 ? 'medium' as const : 'low' as const,
-                articleSlug: item.articleSlug ?? null,
-                completed: false,
-              })),
-            }
+            const planData = buildActionPlanFromChecklist({ answers, checklist })
             try {
               const existing = localStorage.getItem('mi_action_plan')
               if (existing) {
@@ -1498,6 +1469,10 @@ export function ResultsDashboard({ consultant, onStartOver }: Props) {
               localStorage.setItem('mi_action_plan', JSON.stringify(planData))
             } catch {
               // ignore storage errors
+            }
+            if (onOpenSettlementPlan) {
+              onOpenSettlementPlan(planData)
+              return
             }
             window.location.href = '/settlement-plan'
           }

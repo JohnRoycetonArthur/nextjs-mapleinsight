@@ -194,6 +194,7 @@ export interface SettlementSessionContextValue {
   setStep:               (step: number) => void
   clearSession:          () => void
   clearStalePathwayToast: () => void
+  persistNow:            () => void
 }
 
 const SettlementSessionContext = createContext<SettlementSessionContextValue | null>(null)
@@ -311,6 +312,11 @@ export function SettlementSessionProvider({
     })
   }, [mode])
 
+  const persistNow = useCallback(() => {
+    if (!storageAvailable) return
+    persistSession(session)
+  }, [session, storageAvailable])
+
   return (
     <SettlementSessionContext.Provider
       value={{
@@ -324,6 +330,7 @@ export function SettlementSessionProvider({
         setStep,
         clearSession,
         clearStalePathwayToast,
+        persistNow,
       }}
     >
       {children}

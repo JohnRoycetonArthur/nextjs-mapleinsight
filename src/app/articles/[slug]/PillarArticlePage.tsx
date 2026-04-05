@@ -9,12 +9,14 @@ import {
   Analytics,
   ArrowRightAlt,
   Checklist,
+  Close,
   Description,
   Explore,
   FamilyGroup,
   Gavel,
   Groups,
   HomeWork,
+  OpenInFull,
   Payments,
   QueryStats,
   Savings,
@@ -385,6 +387,7 @@ export function PillarArticlePage({ article, readingTime }: Props) {
   const [activeSection, setActiveSection] = useState("quick-answer");
   const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
   const [wizardStarted, setWizardStarted] = useState(false);
+  const [plannerExpanded, setPlannerExpanded] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -410,6 +413,17 @@ export function PillarArticlePage({ article, readingTime }: Props) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!plannerExpanded) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [plannerExpanded]);
 
   const faqItems = article.faqItems ?? [];
   const toggleFaq = (i: number) => setFaqOpen((p) => ({ ...p, [i]: !p[i] }));
@@ -671,19 +685,62 @@ export function PillarArticlePage({ article, readingTime }: Props) {
           </p>
 
           {/* ── Tool embed ── */}
-          <div id="settlement-planner-widget" style={{ margin: "40px 0", borderRadius: 16, border: `2px solid ${C.accent}25`, background: C.white, overflow: "hidden", boxShadow: "0 4px 24px rgba(27,79,74,0.06)" }}>
-            <div id="settlement-planner-widget-header" style={{ padding: "20px 24px", background: `linear-gradient(135deg, ${C.accent}08, ${C.accent}03)`, borderBottom: `1px solid ${C.accent}15`, display: "flex", alignItems: "center", gap: 12 }}>
+          <div id="settlement-planner-widget" style={{
+            margin: plannerExpanded ? 0 : "40px 0",
+            borderRadius: plannerExpanded ? 0 : 16,
+            border: `2px solid ${C.accent}25`,
+            background: C.white,
+            overflow: "hidden",
+            boxShadow: plannerExpanded ? "0 24px 80px rgba(15,61,58,0.24)" : "0 4px 24px rgba(27,79,74,0.06)",
+            position: plannerExpanded ? "fixed" : "relative",
+            inset: plannerExpanded ? 0 : undefined,
+            zIndex: plannerExpanded ? 220 : undefined,
+            display: "flex",
+            flexDirection: "column",
+          }}>
+            <div id="settlement-planner-widget-header" style={{
+              padding: "20px 24px",
+              background: `linear-gradient(135deg, ${C.accent}08, ${C.accent}03)`,
+              borderBottom: `1px solid ${C.accent}15`,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              position: plannerExpanded ? "sticky" : "relative",
+              top: 0,
+              zIndex: 2,
+            }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${C.accent}15`, display: "flex", alignItems: "center", justifyContent: "center", color: C.accent }}>
                 <BarChartIcon />
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: serif, fontSize: 17, fontWeight: 400, color: C.forest, lineHeight: 1.3 }}>Settlement Planner</div>
                 <div style={{ fontFamily: font, fontSize: 13, color: C.gray, marginTop: 2 }}>Answer 6 quick questions to get your personalized plan</div>
               </div>
               <Pill color={C.accent} small>Interactive</Pill>
+              {wizardStarted && (
+                <button
+                  type="button"
+                  onClick={() => setPlannerExpanded((current) => !current)}
+                  aria-label={plannerExpanded ? "Close fullscreen planner" : "Expand planner"}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    border: `1px solid ${plannerExpanded ? `${C.red}25` : `${C.accent}20`}`,
+                    background: plannerExpanded ? `${C.red}10` : `${C.accent}10`,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  {plannerExpanded ? <Close size={20} color={C.red} /> : <OpenInFull size={18} color={C.accent} />}
+                </button>
+              )}
             </div>
 
-            <div style={{ padding: "24px" }}>
+            <div style={{ padding: plannerExpanded ? (isMobile ? "16px" : "24px") : "24px", flex: 1, overflowY: plannerExpanded ? "auto" : "visible" }}>
               {!wizardStarted ? (
                 <div style={{ textAlign: "center", padding: "32px 0" }}>
                   <div style={{ width: 80, height: 80, borderRadius: 20, background: `linear-gradient(135deg, ${C.accent}15, ${C.blue}10)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
@@ -693,7 +750,7 @@ export function PillarArticlePage({ article, readingTime }: Props) {
                   <p style={{ fontFamily: font, fontSize: 15, color: C.gray, margin: "0 0 24px", maxWidth: 420, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>
                     No signup required. No AI guesses. Just real data from IRCC, CMHC, and CRA tailored to your situation.
                   </p>
-                  <button onClick={() => setWizardStarted(true)} style={{
+                  <button onClick={() => { setWizardStarted(true); setPlannerExpanded(true); }} style={{
                     padding: "14px 36px", borderRadius: 100,
                     background: `linear-gradient(135deg, ${C.forest}, ${C.accent})`,
                     color: C.white, fontFamily: font, fontSize: 16, fontWeight: 700,
@@ -711,7 +768,11 @@ export function PillarArticlePage({ article, readingTime }: Props) {
                 </div>
               ) : (
                 <SettlementSessionProvider slug="pillar-article" mode="public">
-                  <WizardShell scrollTargetId="settlement-planner-widget-header" frameTargetId="settlement-planner-widget" />
+                  <WizardShell
+                    scrollTargetId="settlement-planner-widget-header"
+                    frameTargetId="settlement-planner-widget"
+                    publicResultsHref="/settlement-plan?view=report"
+                  />
                 </SettlementSessionProvider>
               )}
             </div>

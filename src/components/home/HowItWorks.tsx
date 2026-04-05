@@ -93,7 +93,7 @@ export function HowItWorks({ isMobile }: { isMobile: boolean }) {
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           gap: isMobile ? 24 : 0,
-          alignItems: 'flex-start',
+          alignItems: isMobile ? 'center' : 'flex-start',
           maxWidth: 780, margin: '0 auto',
         }}>
           {STEPS.map((step, i) => (
@@ -104,6 +104,7 @@ export function HowItWorks({ isMobile }: { isMobile: boolean }) {
                 flex: 1, display: 'flex', flexDirection: 'column',
                 alignItems: 'center', textAlign: 'center',
                 position: 'relative',
+                width: isMobile ? '100%' : undefined,
               }}
             >
               {/* Connector line between steps (desktop) */}

@@ -7,6 +7,7 @@ import { HowItWorks } from './HowItWorks';
 import { PlatformPillars } from './PlatformPillars';
 import { ExploreByTopic } from './ExploreByTopic';
 import { SocialProof } from './SocialProof';
+import { ScenarioHeroCards } from './ScenarioHeroCards';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -145,7 +146,7 @@ export function HomepageFunnel() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
-      <HeroSection isMobile={isMobile} />
+      <ScenarioHeroCards />
       <HowItWorks isMobile={isMobile} />
       <PlatformPillars isMobile={isMobile} />
       <ExploreByTopic isMobile={isMobile} />

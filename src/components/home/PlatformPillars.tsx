@@ -46,7 +46,13 @@ const PILLARS = [
   },
 ];
 
-function PillarCard({ pillar }: { pillar: typeof PILLARS[number] }) {
+function PillarCard({
+  pillar,
+  isMobile,
+}: {
+  pillar: typeof PILLARS[number];
+  isMobile: boolean;
+}) {
   const [hov, setHov] = useState(false);
   const { Icon } = pillar;
   return (
@@ -60,6 +66,7 @@ function PillarCard({ pillar }: { pillar: typeof PILLARS[number] }) {
         transition: 'all 0.25s',
         boxShadow: hov ? `0 8px 28px ${pillar.color}12` : '0 1px 4px rgba(0,0,0,0.03)',
         transform: hov ? 'translateY(-4px)' : 'translateY(0)',
+        textAlign: isMobile ? 'center' : 'left',
       }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -74,6 +81,8 @@ function PillarCard({ pillar }: { pillar: typeof PILLARS[number] }) {
         width: 44, height: 44, borderRadius: 12, background: pillar.lightBg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 16,
+        marginLeft: isMobile ? 'auto' : 0,
+        marginRight: isMobile ? 'auto' : 0,
       }}>
         <Icon size={22} color={pillar.color} />
       </div>
@@ -83,7 +92,11 @@ function PillarCard({ pillar }: { pillar: typeof PILLARS[number] }) {
       <p style={{ fontFamily: font, fontSize: 13, color: C.gray, margin: '0 0 16px', lineHeight: 1.6 }}>
         {pillar.desc}
       </p>
-      <span style={{ fontFamily: font, fontSize: 13, fontWeight: 600, color: pillar.color, display: 'flex', alignItems: 'center', gap: 4 }}>
+      <span style={{
+        fontFamily: font, fontSize: 13, fontWeight: 600, color: pillar.color,
+        display: 'flex', alignItems: 'center', gap: 4,
+        justifyContent: isMobile ? 'center' : 'flex-start',
+      }}>
         {pillar.cta}
       </span>
     </Link>
@@ -107,7 +120,7 @@ export function PlatformPillars({ isMobile }: { isMobile: boolean }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
-          {PILLARS.map((p) => <PillarCard key={p.href} pillar={p} />)}
+          {PILLARS.map((p) => <PillarCard key={p.href} pillar={p} isMobile={isMobile} />)}
         </div>
       </div>
     </section>

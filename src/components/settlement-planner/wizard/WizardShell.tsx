@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import {
   usePlannerMode,
   useSettlementSession,
@@ -116,13 +117,15 @@ interface Props {
   onComplete?:    (answers: WizardAnswers) => void
   scrollTargetId?: string
   frameTargetId?: string
+  publicResultsHref?: string
 }
 
-export function WizardShell({ consultant, onComplete, scrollTargetId, frameTargetId }: Props) {
-  const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession, stalePathwayToast, clearStalePathwayToast } = useSettlementSession()
+export function WizardShell({ consultant, onComplete, scrollTargetId, frameTargetId, publicResultsHref }: Props) {
+  const { session, consultant: sessionConsultant, updateAnswers, setStep, clearSession, stalePathwayToast, clearStalePathwayToast, persistNow } = useSettlementSession()
   const { currentStep, answers } = session
   const mode = usePlannerMode()
   const isPublicMode = mode === 'public'
+  const router = useRouter()
 
   const [isMobile,    setIsMobile]    = useState(false)
   const [completed,   setCompleted]   = useState<Set<number>>(new Set())
@@ -269,7 +272,12 @@ export function WizardShell({ consultant, onComplete, scrollTargetId, frameTarge
         destination: answers.city ?? null,
         pathway: answers.pathway ?? null,
       })
+      persistNow()
       onComplete?.(answers)
+      if (isPublicMode && publicResultsHref) {
+        router.push(publicResultsHref)
+        return
+      }
       setShowResults(true)
       return
     }
@@ -280,7 +288,7 @@ export function WizardShell({ consultant, onComplete, scrollTargetId, frameTarge
     })
     setStep(currentStep + 1)
     scrollToPlannerTop()
-  }, [answers, currentStep, mode, onComplete, scrollToPlannerTop, setStep])
+  }, [answers, currentStep, isPublicMode, mode, onComplete, persistNow, publicResultsHref, router, scrollToPlannerTop, setStep])
 
   const goBack = useCallback(() => {
     setErrors({})

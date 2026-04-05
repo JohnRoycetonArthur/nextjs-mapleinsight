@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   AirplaneTicket,
   Analytics,
@@ -28,30 +28,11 @@ import {
   TrendingUp,
   WorkspacePremium,
 } from '@material-symbols-svg/react'
+import { ResultsDashboard } from '@/components/settlement-planner/ResultsDashboard'
+import { SettlementSessionProvider } from '@/components/settlement-planner/SettlementSessionContext'
+import { type ActionPlan, type ActionPlanTask } from '@/lib/settlement-engine/action-plan'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ActionPlanTask {
-  id: string
-  phase: 'pre-arrival' | 'first-week' | 'first-30' | 'first-90'
-  title: string
-  description: string | null
-  whyItMatters: string | null
-  priority: 'high' | 'medium' | 'low'
-  articleSlug: string | null
-  completed: boolean
-}
-
-interface ActionPlan {
-  schemaVersion: 1
-  createdAt: string
-  updatedAt: string
-  pathway: string
-  city: string
-  province: string
-  familySize: number
-  tasks: ActionPlanTask[]
-}
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -355,7 +336,17 @@ function Confetti() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function SettlementPlanPage() {
+interface ActionPlanPageContentProps {
+  initialPlan?: ActionPlan | null
+  reportAvailable?: boolean
+  onViewFullReport?: () => void
+}
+
+function ActionPlanPageContent({
+  initialPlan = null,
+  reportAvailable = false,
+  onViewFullReport,
+}: ActionPlanPageContentProps) {
   const router = useRouter()
   const [plan, setPlan] = useState<ActionPlan | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -367,6 +358,15 @@ export default function SettlementPlanPage() {
 
   // ── Load from localStorage ──
   useEffect(() => {
+    if (initialPlan) {
+      setPlan(initialPlan)
+      const total = initialPlan.tasks.length
+      const done = initialPlan.tasks.filter(t => t.completed).length
+      prevPctRef.current = total > 0 ? Math.round((done / total) * 100) : 0
+      setLoaded(true)
+      return
+    }
+
     try {
       const raw = localStorage.getItem('mi_action_plan')
       if (raw) {
@@ -382,7 +382,7 @@ export default function SettlementPlanPage() {
       // private browsing or corrupted data — show empty state
     }
     setLoaded(true)
-  }, [])
+  }, [initialPlan])
 
   // ── Derived values ──
   const tasks = plan?.tasks ?? []
@@ -760,12 +760,12 @@ export default function SettlementPlanPage() {
                 { icon: '📲', label: 'Save to Phone', desc: 'Add to your home screen', action: () => alert('Open your browser menu and tap "Add to Home Screen"') },
                 { icon: '📧', label: 'Email My Plan', desc: 'Coming soon — save the link', action: () => alert('Coming soon — save the link for now.') },
               ].map((item, i) => (
-                <button key={i} onClick={item.action} style={{ padding: '14px 12px', borderRadius: 10, border: `1px solid ${C.border}`, background: `${C.lightGray}60`, cursor: 'pointer', textAlign: 'left', fontFamily: FONT, transition: 'background .2s, border-color .2s', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <button key={i} onClick={item.label === 'View Full Report' && reportAvailable && onViewFullReport ? onViewFullReport : item.action} style={{ padding: '14px 12px', borderRadius: 10, border: `1px solid ${C.border}`, background: `${C.lightGray}60`, cursor: 'pointer', textAlign: 'left', fontFamily: FONT, transition: 'background .2s, border-color .2s', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <ToolTileIcon label={item.label} />
                     <span style={{ fontSize: 13, fontWeight: 600, color: C.textDark }}>{item.label}</span>
                   </div>
-                  <span style={{ fontSize: 11, color: C.textLight, paddingLeft: 22 }}>{item.desc}</span>
+                  <span style={{ fontSize: 11, color: C.textLight, paddingLeft: 22 }}>{item.label === 'View Full Report' && reportAvailable ? 'Flip back to your report' : item.desc}</span>
                 </button>
               ))}
             </div>
@@ -817,6 +817,75 @@ export default function SettlementPlanPage() {
       `}</style>
     </div>
   )
+}
+
+function getFlipFaceStyle(isActive: boolean, restingRotation: number) {
+  return {
+    width: '100%',
+    position: isActive ? 'relative' as const : 'absolute' as const,
+    inset: isActive ? undefined : 0,
+    backfaceVisibility: 'hidden' as const,
+    transformStyle: 'preserve-3d' as const,
+    transform: isActive ? 'rotateY(0deg)' : `rotateY(${restingRotation}deg)`,
+    opacity: isActive ? 1 : 0,
+    pointerEvents: isActive ? 'auto' as const : 'none' as const,
+    transition: 'transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.28s ease',
+  }
+}
+
+function ReportPlanFlipExperience() {
+  const searchParams = useSearchParams()
+  const startsInReport = searchParams.get('view') === 'report'
+  const [activeView, setActiveView] = useState<'report' | 'plan'>(startsInReport ? 'report' : 'plan')
+  const [plan, setPlan] = useState<ActionPlan | null>(null)
+
+  useEffect(() => {
+    if (startsInReport) {
+      setActiveView('report')
+    }
+  }, [startsInReport])
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  const handleOpenSettlementPlan = useCallback((nextPlan: ActionPlan) => {
+    setPlan(nextPlan)
+    setActiveView('plan')
+    scrollToTop()
+  }, [scrollToTop])
+
+  const handleViewFullReport = useCallback(() => {
+    setActiveView('report')
+    scrollToTop()
+  }, [scrollToTop])
+
+  if (!startsInReport) {
+    return <ActionPlanPageContent />
+  }
+
+  return (
+    <SettlementSessionProvider slug="pillar-article" mode="public">
+      <div style={{ background: C.bg, minHeight: '100vh', perspective: 1800 }}>
+        <div style={{ position: 'relative' }}>
+          <div aria-hidden={activeView !== 'report'} style={getFlipFaceStyle(activeView === 'report', -180)}>
+            <ResultsDashboard onOpenSettlementPlan={handleOpenSettlementPlan} />
+          </div>
+          <div aria-hidden={activeView !== 'plan'} style={getFlipFaceStyle(activeView === 'plan', 180)}>
+            <ActionPlanPageContent
+              initialPlan={plan}
+              reportAvailable
+              onViewFullReport={handleViewFullReport}
+            />
+          </div>
+        </div>
+      </div>
+    </SettlementSessionProvider>
+  )
+}
+
+export default function SettlementPlanPage() {
+  return <ReportPlanFlipExperience />
 }
 
 
