@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Scenario } from '@/lib/scenarios';
 import { trackEvent } from '@/lib/analytics';
 import { ScenarioCarousel } from './ScenarioCarousel';
+import { GoldenGrid } from './GoldenGrid';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -13,7 +14,9 @@ const C = {
   gold: '#B8860B',
   red: '#C41E3A',
   white: '#FFFFFF',
-  textLight: 'rgba(255,255,255,0.45)',
+  textFaint: 'rgba(255,255,255,0.35)',
+  textMid: 'rgba(255,255,255,0.55)',
+  textLight: 'rgba(255,255,255,0.65)',
 };
 
 const font = "var(--font-dm-sans, 'DM Sans', Helvetica, sans-serif)";
@@ -38,9 +41,17 @@ function ArrowRightIcon({ size = 14, color = 'currentColor' }: { size?: number; 
   );
 }
 
+function CheckIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
 function ShieldCheckIcon({ size = 13 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       <path d="M9 12l2 2 4-4" />
     </svg>
@@ -49,27 +60,34 @@ function ShieldCheckIcon({ size = 13 }: { size?: number }) {
 
 function ClockIcon({ size = 13 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
     </svg>
   );
 }
 
-function LockIcon({ size = 13 }: { size?: number }) {
+function UserIcon({ size = 13 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }
 
-// ─── Credibility bar items ────────────────────────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const TRUST_PROOF_POINTS = [
+  { icon: <CheckIcon size={11} />, text: 'Based on IRCC & CMHC data' },
+  { icon: <CheckIcon size={11} />, text: 'No signup required' },
+  { icon: <CheckIcon size={11} />, text: 'Personalized to your situation' },
+] as const;
 
 const CREDIBILITY_ITEMS = [
   { icon: <ShieldCheckIcon size={13} />, text: 'IRCC fees (Apr 2026) + CMHC rents (Oct 2025)' },
   { icon: <ClockIcon size={13} />, text: 'FCAC buffer guidance' },
-  { icon: <LockIcon size={13} />, text: 'No personal data collected' },
+  { icon: <UserIcon size={13} />, text: 'No personal data collected' },
 ] as const;
 
 // ─── ScenarioHeroCards ────────────────────────────────────────────────────────
@@ -125,18 +143,25 @@ export function ScenarioHeroCards() {
         }
         .scenario-scroll::-webkit-scrollbar { display: none; }
         .scenario-card:focus-visible { outline: 2px solid #1B7A4A; outline-offset: 2px; }
+        .hero-cta-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 28px rgba(0,0,0,0.28) !important;
+        }
       `}</style>
 
       <header
         ref={sectionRef}
         style={{
           background: 'linear-gradient(165deg, #0F3D3A 0%, #1B5E58 35%, #1B7A4A 100%)',
-          padding: isMobile ? '40px 0 36px' : '64px 0 56px',
+          padding: isMobile ? '40px 0 40px' : '60px 0 52px',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        {/* Background effects */}
+        {/* Golden checkerboard grid — base decorative layer */}
+        <GoldenGrid />
+
+        {/* Radial glow overlays */}
         <div
           aria-hidden="true"
           style={{
@@ -145,18 +170,6 @@ export function ScenarioHeroCards() {
             background:
               'radial-gradient(ellipse at 20% 50%, rgba(27,122,74,0.15) 0%, transparent 60%),' +
               'radial-gradient(ellipse at 80% 20%, rgba(184,134,11,0.08) 0%, transparent 50%)',
-            pointerEvents: 'none',
-          }}
-        />
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),' +
-              'linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
             pointerEvents: 'none',
           }}
         />
@@ -170,73 +183,160 @@ export function ScenarioHeroCards() {
             zIndex: 1,
           }}
         >
-          {/* Badge */}
-          <div style={{ textAlign: 'center', marginBottom: isMobile ? 28 : 40 }}>
+          {/* ── 1. Badge ── */}
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? 24 : 32 }}>
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 600,
-                color: 'rgba(255,255,255,0.5)',
+                color: C.textMid,
                 textTransform: 'uppercase',
                 letterSpacing: 1.5,
-                marginBottom: 12,
+                marginBottom: 14,
                 fontFamily: font,
               }}
             >
-              <MapleLeafIcon size={12} color="rgba(196,30,58,0.7)" />
+              <MapleLeafIcon size={11} color="rgba(196,30,58,0.7)" />
               Settlement Cost Explorer
             </div>
 
-            {/* Headline */}
+            {/* ── 2. Headline ── */}
             <h1
               style={{
                 fontFamily: serif,
-                fontSize: isMobile ? 28 : 42,
+                fontSize: isMobile ? 27 : 40,
                 fontWeight: 700,
                 color: C.white,
-                margin: '0 0 12px',
-                lineHeight: 1.15,
+                margin: '0 0 14px',
+                lineHeight: 1.18,
                 letterSpacing: -0.5,
-                maxWidth: 700,
+                maxWidth: 680,
                 marginLeft: 'auto',
                 marginRight: 'auto',
               }}
             >
-              How much money you need to move to Canada —{' '}
-              <span style={{ color: C.gold }}>based on real data</span>
+              Planning to move to Canada?{' '}
+              <span style={{ color: C.gold }}>See your real cost before you decide.</span>
             </h1>
 
-            {/* Subheadline */}
+            {/* ── 3. Subtext ── */}
             <p
               style={{
-                fontSize: isMobile ? 15 : 17,
-                color: 'rgba(255,255,255,0.65)',
-                margin: '0 auto',
-                maxWidth: 560,
+                fontSize: isMobile ? 15 : 16,
+                color: C.textLight,
+                margin: '0 auto 8px',
+                maxWidth: 520,
                 lineHeight: 1.65,
                 fontFamily: font,
               }}
             >
-              Source-backed cost patterns from IRCC, CMHC, and official benchmarks.
-              <br />
-              Choose your situation to see your exact cost breakdown.
+              Source-backed estimates from IRCC, CMHC, and official benchmarks —
+              personalized to your pathway, destination, and household.
             </p>
+
+            {/* ── 4. Reassurance line ── */}
+            <p
+              style={{
+                fontSize: 13,
+                color: C.textMid,
+                margin: '0 auto 28px',
+                fontFamily: font,
+                fontWeight: 500,
+                letterSpacing: 0.1,
+              }}
+            >
+              Takes 60 seconds — no signup required.
+            </p>
+
+            {/* ── 5. Primary CTA ── */}
+            <a
+              href="/immigration-costs#your-plan"
+              className="hero-cta-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 9,
+                background: C.white,
+                color: C.forest,
+                fontSize: isMobile ? 15 : 16,
+                fontWeight: 700,
+                fontFamily: font,
+                padding: isMobile ? '14px 28px' : '16px 36px',
+                borderRadius: 14,
+                textDecoration: 'none',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <MapleLeafIcon size={15} color={C.forest} />
+              Calculate My Cost
+              <ArrowRightIcon size={14} color={C.forest} />
+            </a>
           </div>
 
-          {/* Scenario cards */}
-          <ScenarioCarousel onCardClick={handleCardClick} />
-
-          {/* Credibility bar */}
+          {/* ── 6. Trust proof points ── */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 16,
-              marginTop: isMobile ? 20 : 28,
+              gap: isMobile ? 12 : 20,
+              marginBottom: isMobile ? 14 : 18,
+              flexWrap: 'wrap',
+            }}
+          >
+            {TRUST_PROOF_POINTS.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.72)',
+                  fontFamily: font,
+                  fontWeight: 500,
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 20,
+                  padding: '5px 12px',
+                }}
+              >
+                <span style={{ color: '#6EE7B7', flexShrink: 0 }}>{item.icon}</span>
+                {item.text}
+              </div>
+            ))}
+          </div>
+
+          {/* ── 7. Scenario context line ── */}
+          <p
+            style={{
+              textAlign: 'center',
+              fontSize: 12,
+              color: C.textMid,
+              fontFamily: font,
+              margin: '0 auto 16px',
+              maxWidth: 500,
+              lineHeight: 1.5,
+            }}
+          >
+            Choose a scenario below or start fresh — your plan will be personalized to your situation.
+          </p>
+
+          {/* ── 8. Scenario cards ── */}
+          <ScenarioCarousel onCardClick={handleCardClick} />
+
+          {/* ── 9. Credibility strip ── */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: isMobile ? 12 : 20,
+              marginTop: isMobile ? 18 : 24,
               flexWrap: 'wrap',
             }}
           >
@@ -248,7 +348,7 @@ export function ScenarioHeroCards() {
                   alignItems: 'center',
                   gap: 5,
                   fontSize: 11,
-                  color: C.textLight,
+                  color: C.textFaint,
                   fontFamily: font,
                   fontWeight: 500,
                 }}
@@ -257,50 +357,6 @@ export function ScenarioHeroCards() {
                 <span>{item.text}</span>
               </div>
             ))}
-          </div>
-
-          {/* Primary CTA */}
-          <div style={{ textAlign: 'center', marginTop: isMobile ? 24 : 32 }}>
-            <a
-              href="/immigration-costs#your-plan"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: C.white,
-                color: C.forest,
-                fontSize: 15,
-                fontWeight: 700,
-                fontFamily: font,
-                padding: '14px 32px',
-                borderRadius: 14,
-                textDecoration: 'none',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
-              }}
-            >
-              <MapleLeafIcon size={16} color={C.forest} />
-              Start My Free Settlement Plan
-              <ArrowRightIcon size={14} color={C.forest} />
-            </a>
-            <div
-              style={{
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.35)',
-                marginTop: 10,
-                fontFamily: font,
-              }}
-            >
-              No signup required — takes about 8 minutes
-            </div>
           </div>
         </div>
       </header>
