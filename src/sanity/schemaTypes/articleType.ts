@@ -498,6 +498,22 @@ export const articleType = defineType({
       ],
       validation: (Rule) => Rule.max(10),
     }),
+    // ─── Review ───
+    defineField({
+      name: 'reviewedBy',
+      title: 'Reviewed By',
+      type: 'reference',
+      group: 'content',
+      to: [{type: 'contributor'}],
+      description: 'Explicit reviewer assignment. If empty, frontend falls back to category match.',
+    }),
+    defineField({
+      name: 'reviewDate',
+      title: 'Last Reviewed',
+      type: 'date',
+      group: 'content',
+      description: 'Drives the "Reviewed [date]" badge and contributes to E-E-A-T freshness signals.',
+    }),
     // ─── Status ───
     defineField({
       name: 'status',

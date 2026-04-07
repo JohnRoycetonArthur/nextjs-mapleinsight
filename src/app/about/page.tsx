@@ -1,18 +1,109 @@
-import { Container } from "@/components/Container";
-import { FounderBio } from "@/components/FounderBio";
+import type { Metadata } from 'next'
+import { client } from '@/sanity/lib/client'
+import type { ContributorPublic } from '@/lib/types/contributor'
+import { AboutHero } from '@/components/about/AboutHero'
+import { MissionStory } from '@/components/about/MissionStory'
+import { ContributorsSection } from '@/components/about/ContributorsSection'
+import { MethodologySection } from '@/components/about/MethodologySection'
+import { TrustPillars } from '@/components/about/TrustPillars'
+import { CommunitySection } from '@/components/about/CommunitySection'
+import { AboutCTA } from '@/components/about/AboutCTA'
 
-export const metadata = { title: "About", description: "About Maple Insight Canada." };
+export const revalidate = 3600
 
-export default function AboutPage() {
+export const metadata: Metadata = {
+  title: 'About Maple Insight — Built for newcomers, reviewed by experts',
+  description:
+    'Maple Insight provides financial planning tools for newcomers to Canada. All tax and financial content is reviewed by qualified Canadian professionals.',
+  openGraph: {
+    title: 'About Maple Insight — Built for newcomers, reviewed by experts',
+    description:
+      'Maple Insight provides financial planning tools for newcomers to Canada. All tax and financial content is reviewed by qualified Canadian professionals.',
+    url: 'https://mapleinsight.ca/about',
+    siteName: 'Maple Insight Canada',
+    locale: 'en_CA',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://mapleinsight.ca/about',
+  },
+}
+
+const CONTRIBUTORS_QUERY = `
+  *[_type == "contributor" && status == "active"] | order(displayOrder asc, name asc) {
+    name,
+    "slug": slug.current,
+    "photoUrl": photo.asset->url,
+    title,
+    company,
+    shortBio,
+    credentials,
+    "categoryNames": categories[]->title,
+    location,
+    activeSince,
+    linkedin
+  }
+`
+
+async function getContributors(): Promise<ContributorPublic[]> {
+  const result = await client.fetch<ContributorPublic[]>(CONTRIBUTORS_QUERY)
+  return result ?? []
+}
+
+export default async function AboutPage() {
+  const contributors = await getContributors()
+
+  // JSON-LD Organization schema with contributor members (AC-6, E-E-A-T)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Maple Insight Canada',
+    url: 'https://mapleinsight.ca',
+    logo: 'https://mapleinsight.ca/brand-mark.svg',
+    description:
+      'Maple Insight provides financial planning tools and guides for newcomers to Canada, reviewed by qualified Canadian professionals.',
+    sameAs: [
+      'https://www.reddit.com/r/MapleInsight',
+      'https://www.youtube.com/@MapleInsight',
+      'https://www.linkedin.com/company/maple-insight',
+    ],
+    member: contributors.map((c) => ({
+      '@type': 'Person',
+      name: c.name,
+      jobTitle: c.title,
+      ...(c.company ? { worksFor: { '@type': 'Organization', name: c.company } } : {}),
+      ...(c.linkedin ? { sameAs: c.linkedin } : {}),
+    })),
+  }
+
   return (
-    <Container>
-      <div className="py-12">
-        <h1 className="text-2xl font-semibold text-ink-900 md:text-3xl">About Maple Insight Canada</h1>
-        <p className="mt-4 max-w-3xl leading-relaxed text-ink-700">
-          Maple Insight Canada is a Canada-focused resource designed to help newcomers navigate financial and everyday decisions with confidence. Moving to a new country often means dealing with unfamiliar systems — from banking and taxes to government processes and financial planning. Maple Insight Canada aims to simplify these topics through practical guides, clear explanations, and easy-to-use calculators that break complex choices into understandable trade-offs. Wherever possible, we reference official Canadian sources so readers can verify information and make informed decisions as they build their lives in Canada.
-        </p>
-        <FounderBio showAboutLink={false} />
-      </div>
-    </Container>
-  );
+    <>
+      {/* JSON-LD — AC-6 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* Section 1 — Hero */}
+      <AboutHero />
+
+      {/* Section 2 — Why We Exist */}
+      <MissionStory />
+
+      {/* Section 3 — Reviewed by Experts (hidden when no active contributors — AC-2, AC-3) */}
+      <ContributorsSection contributors={contributors} />
+
+      {/* Section 4 — How We Build Our Estimates (AC-4) */}
+      <MethodologySection />
+
+      {/* Section 5 — Trust Pillars (forest-green background) */}
+      <TrustPillars />
+
+      {/* Section 6 — Community */}
+      <CommunitySection />
+
+      {/* Section 7 — CTA → /settlement-planner (AC-10) */}
+      <AboutCTA />
+    </>
+  )
 }
