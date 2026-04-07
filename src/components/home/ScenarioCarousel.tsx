@@ -46,6 +46,8 @@ export function ScenarioCarousel({ onCardClick }: ScenarioCarouselProps) {
   const [isTablet, setIsTablet] = useState(false);
   const [activeCard, setActiveCard] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartIndexRef = useRef(0);
 
   useEffect(() => {
     const check = () => {
@@ -73,6 +75,20 @@ export function ScenarioCarousel({ onCardClick }: ScenarioCarouselProps) {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [isMobile]);
 
+  const scrollToCard = (index: number) => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const cards = Array.from(container.children) as HTMLElement[];
+    const target = cards[index];
+    if (!target) return;
+    target.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    });
+    setActiveCard(index);
+  };
+
   if (isMobile) {
     return (
       <div>
@@ -92,6 +108,31 @@ export function ScenarioCarousel({ onCardClick }: ScenarioCarouselProps) {
             paddingLeft: 20,
             paddingRight: 60,
             paddingBottom: 4,
+          }}
+          onTouchStart={(event) => {
+            touchStartXRef.current = event.touches[0]?.clientX ?? null;
+            touchStartIndexRef.current = activeCard;
+          }}
+          onTouchEnd={(event) => {
+            const startX = touchStartXRef.current;
+            const endX = event.changedTouches[0]?.clientX ?? null;
+            touchStartXRef.current = null;
+            if (startX == null || endX == null) return;
+
+            const deltaX = startX - endX;
+            const swipeThreshold = 32;
+
+            if (Math.abs(deltaX) < swipeThreshold) {
+              scrollToCard(touchStartIndexRef.current);
+              return;
+            }
+
+            const direction = deltaX > 0 ? 1 : -1;
+            const nextIndex = Math.max(
+              0,
+              Math.min(ORDERED_SCENARIOS.length - 1, touchStartIndexRef.current + direction),
+            );
+            scrollToCard(nextIndex);
           }}
         >
           {ORDERED_SCENARIOS.map((s, i) => (

@@ -10,10 +10,11 @@ const serif = "var(--font-dm-serif, 'DM Serif Display', Georgia, serif)";
 const COMMUNITY = [
   {
     name: 'Reddit',
-    handle: 'r/MapleInsight',
+    handle: 'u/SettlementInsights',
     desc: 'Newcomer Q&A, weekly cost-of-living threads',
     color: '#FF4500',
-    href: '#',
+    href: 'https://www.reddit.com/user/SettlementInsights/',
+    external: true,
   },
   {
     name: 'YouTube',
@@ -21,13 +22,15 @@ const COMMUNITY = [
     desc: 'Walkthroughs and pathway explainers',
     color: '#FF0000',
     href: '#',
+    external: false,
   },
   {
     name: 'LinkedIn',
-    handle: 'Maple Insight',
+    handle: 'Maple Insight Canada',
     desc: 'Policy updates and methodology notes',
     color: '#0A66C2',
-    href: '#',
+    href: 'https://www.linkedin.com/company/maple-insight-canada/about/',
+    external: true,
   },
 ];
 
@@ -63,6 +66,7 @@ export function CommunitySection() {
             <a
               key={p.name}
               href={p.href}
+              {...(p.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               style={{
                 background: C.white,
                 border: `1px solid ${C.border}`,

@@ -113,6 +113,7 @@ export function ScenarioCard({ scenario, onClick, index, isMobile = false }: Sce
         minWidth: isMobile ? 268 : 'auto',
         maxWidth: isMobile ? 288 : 'none',
         scrollSnapAlign: isMobile ? 'center' : 'none',
+        scrollSnapStop: isMobile ? 'always' : 'normal',
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',

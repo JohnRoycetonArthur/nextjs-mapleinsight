@@ -63,7 +63,7 @@ export function ContributorsSection({ contributors }: Props) {
         {/* Reviewer CTA */}
         <div style={{ textAlign: 'center', marginTop: 28, fontSize: 13, color: '#9CA3AF' }}>
           Want to contribute as a reviewer?{' '}
-          <a href="/contact" style={{ color: C.blue, fontWeight: 600, textDecoration: 'none' }}>
+          <a href="mailto:john@mapleinsight.ca" style={{ color: C.blue, fontWeight: 600, textDecoration: 'none' }}>
             Get in touch →
           </a>
         </div>

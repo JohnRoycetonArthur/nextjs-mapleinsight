@@ -74,10 +74,15 @@ export function MethodologySection() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 26 }}>
-          <a href="#" style={{
-            fontSize: 14, fontWeight: 600, color: C.blue, textDecoration: 'none',
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-          }}>
+          <a
+            href="/maple-insight-methodology-v1.0.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: 14, fontWeight: 600, color: C.blue, textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}
+          >
             Read the full methodology →
           </a>
         </div>
