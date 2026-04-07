@@ -5,6 +5,12 @@ import { SCENARIOS } from '@/lib/scenarios';
 import type { Scenario } from '@/lib/scenarios';
 import { ScenarioCard } from './ScenarioCard';
 
+// Display order: student → skilled professional → work permit → family
+const DISPLAY_ORDER = ['student_toronto', 'professional_ee', 'worker_calgary', 'family_pnp'];
+const ORDERED_SCENARIOS = DISPLAY_ORDER.map(
+  (type) => SCENARIOS.find((s) => s.type === type)!,
+);
+
 // ─── Dot indicators ───────────────────────────────────────────────────────────
 
 function DotIndicators({ count, activeIndex }: { count: number; activeIndex: number }) {
@@ -61,7 +67,7 @@ export function ScenarioCarousel({ onCardClick }: ScenarioCarouselProps) {
       const cardWidth = (container.firstChild as HTMLElement)?.offsetWidth || 300;
       const gap = 16;
       const index = Math.round(scrollLeft / (cardWidth + gap));
-      setActiveCard(Math.min(index, SCENARIOS.length - 1));
+      setActiveCard(Math.min(index, ORDERED_SCENARIOS.length - 1));
     };
     container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
@@ -88,7 +94,7 @@ export function ScenarioCarousel({ onCardClick }: ScenarioCarouselProps) {
             paddingBottom: 4,
           }}
         >
-          {SCENARIOS.map((s, i) => (
+          {ORDERED_SCENARIOS.map((s, i) => (
             <ScenarioCard
               key={s.type}
               scenario={s}
@@ -104,7 +110,7 @@ export function ScenarioCarousel({ onCardClick }: ScenarioCarouselProps) {
   }
 
   const gridColumns = isTablet ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)';
-  const maxWidth = isTablet ? 640 : 1200;
+  const maxWidth = isTablet ? 640 : 1160;
 
   return (
     <div
@@ -119,7 +125,7 @@ export function ScenarioCarousel({ onCardClick }: ScenarioCarouselProps) {
         margin: '0 auto',
       }}
     >
-      {SCENARIOS.map((s, i) => (
+      {ORDERED_SCENARIOS.map((s, i) => (
         <ScenarioCard
           key={s.type}
           scenario={s}

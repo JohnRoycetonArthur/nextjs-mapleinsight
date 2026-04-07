@@ -96,6 +96,21 @@ export interface Scenario {
   sources: string[];
   /** All 6 wizard step values — savings/obligations/income always blank */
   prefill: PrefillData;
+  // ── Persona fields (US-1.4 photo-based hero cards) ───────────────────────────
+  /** Full persona display name (e.g. "The Okafor Family") */
+  name: string;
+  /** Short first name / family name for personalized card CTA */
+  firstName: string;
+  /** Unsplash photo URL (dev) — will be replaced with local asset path in prod */
+  photo: string;
+  /** Country of origin */
+  origin: string;
+  /** Estimated arrival date display string (e.g. "Jan 2026") */
+  arrivalDate: string;
+  /** CSS rgba string for pathway badge background on photo overlay */
+  pathwayColor: string;
+  /** Rounded recommended total for card display (e.g. 43200) */
+  displayCost: number;
 }
 
 // ─── Scenario definitions ─────────────────────────────────────────────────────
@@ -117,6 +132,13 @@ export const SCENARIOS: Scenario[] = [
     costPeriod: null,
     contextLine: 'Housing, childcare, settlement buffer included',
     studentNote: null,
+    name: 'The Okafor Family',
+    firstName: 'Okafor',
+    photo: '/images/persona-okafor.png',
+    origin: 'Nigeria',
+    arrivalDate: 'Jan 2026',
+    pathwayColor: 'rgba(27,79,74,0.88)',
+    displayCost: 29500,
     costBreakdown: {
       immigration_fees: 5890,
       licensing_credentialing: 858,
@@ -174,6 +196,13 @@ export const SCENARIOS: Scenario[] = [
     costPeriod: '/first year',
     contextLine: 'Tuition, GIC, rent, and living costs for first year',
     studentNote: 'Includes $39.5k tuition + $22.9k GIC (funds locked, not lost)',
+    name: 'Aarav Sharma',
+    firstName: 'Aarav',
+    photo: '/images/persona-aarav.png',
+    origin: 'India',
+    arrivalDate: 'Sep 2025',
+    pathwayColor: 'rgba(147,51,234,0.88)',
+    displayCost: 66700,
     costBreakdown: {
       immigration_fees: 335,
       tuition: 39500,
@@ -237,6 +266,13 @@ export const SCENARIOS: Scenario[] = [
     costPeriod: null,
     contextLine: 'Travel + initial rent + essentials',
     studentNote: null,
+    name: 'Sofia Reyes',
+    firstName: 'Sofia',
+    photo: '/images/persona-sofia.png',
+    origin: 'Philippines',
+    arrivalDate: 'May 2025',
+    pathwayColor: 'rgba(180,83,9,0.88)',
+    displayCost: 8800,
     costBreakdown: {
       immigration_fees: 340,
       licensing_credentialing: 98,
@@ -293,6 +329,13 @@ export const SCENARIOS: Scenario[] = [
     costPeriod: null,
     contextLine: 'Rent + job search buffer + settlement costs',
     studentNote: null,
+    name: 'Rahul Mehta',
+    firstName: 'Rahul',
+    photo: '/images/persona-rahul.png',
+    origin: 'India',
+    arrivalDate: 'Mar 2025',
+    pathwayColor: 'rgba(37,99,235,0.88)',
+    displayCost: 15700,
     costBreakdown: {
       immigration_fees: 1675,
       licensing_credentialing: 568,
