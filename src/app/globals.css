@@ -155,6 +155,18 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   }
 }
 
+/* ─── Mobile viewport fix ────────────────────────────────────────────────────
+   100vh on mobile Chrome/Safari equals the LARGE viewport (browser chrome hidden).
+   When the address bar is visible the usable area shrinks but the layout doesn't,
+   causing the fixed footer to be clipped. dvh = dynamic viewport height — it
+   recalculates as the browser UI appears/disappears, eliminating the jump.
+   The 100vh rule is the fallback for browsers that don't support dvh yet. */
+@supports (min-height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
 /* Visually hidden utility for screen reader text */
 .sr-only {
   position: absolute;

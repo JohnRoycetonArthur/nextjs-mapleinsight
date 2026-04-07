@@ -351,7 +351,7 @@ export function WizardShell({ consultant, onComplete, scrollTargetId, frameTarge
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: FONT, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+    <div style={{ minHeight: '100dvh', background: C.bg, fontFamily: FONT, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
 
       {/* ── Compact wizard header ──────────────────────────────────────────── */}
       {!isPublicMode && (
