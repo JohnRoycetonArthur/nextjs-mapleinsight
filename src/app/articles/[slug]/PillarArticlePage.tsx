@@ -11,6 +11,7 @@ import {
 import { WizardShell } from "@/components/settlement-planner/wizard/WizardShell";
 import { getScenarioByType } from "@/lib/scenarios";
 import { trackEvent } from "@/lib/analytics";
+import { ReviewedByBadge } from "@/components/shared/ReviewedByBadge";
 import {
   Analytics,
   ArrowRightAlt,
@@ -874,6 +875,14 @@ export function PillarArticlePage({ article, readingTime, initialScenario = null
             The Canadian government (IRCC) sets minimum proof-of-funds requirements that you <em>must</em> meet to be approved. But those minimums cover just the paperwork. The real cost of actually settling — rent deposits, transit, groceries, winter gear — is usually 30–60% higher.
           </p>
 
+          {article.reviewer && (
+            <ReviewedByBadge
+              contributor={article.reviewer}
+              reviewDate={article.reviewDate}
+              showBio
+            />
+          )}
+
           <div style={{ margin: "28px 0 36px", padding: "24px", borderRadius: 16, background: `linear-gradient(135deg, ${C.accent}06, ${C.blue}04)`, border: `1px solid ${C.accent}15` }}>
             <div style={{ fontFamily: font, fontSize: 12, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16 }}>
               Cost at a Glance (2026 CAD)
@@ -1164,6 +1173,14 @@ export function PillarArticlePage({ article, readingTime, initialScenario = null
           </div>
 
           {/* ── Footer ── */}
+          {article.reviewer && (
+            <ReviewedByBadge
+              contributor={article.reviewer}
+              reviewDate={article.reviewDate}
+              position="bottom"
+            />
+          )}
+
           <div style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid ${C.border}` }}>
             <p style={{ fontFamily: font, fontSize: 12, color: C.textLight, lineHeight: 1.7, margin: 0 }}>
               <strong style={{ color: C.gray }}>Data sources:</strong> Immigration, Refugees and Citizenship Canada (IRCC), Canada Mortgage and Housing Corporation (CMHC), Canada Revenue Agency (CRA), Employment and Social Development Canada (ESDC), Statistics Canada.

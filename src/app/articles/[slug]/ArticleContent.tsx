@@ -20,6 +20,7 @@ import { ExampleScenario } from "./ExampleScenario";
 import { FAQSection } from "./FAQSection";
 import { InlineCalculatorCTA } from "./InlineCalculatorCTA";
 import { SourcesSection } from "@/components/article/SourcesSection";
+import { ReviewedByBadge } from "@/components/shared/ReviewedByBadge";
 
 export type ArticleSection = { id: string; title: string };
 
@@ -1058,6 +1059,14 @@ export function ArticleContent({ article, sections, readingTime }: ArticleConten
             <AnswerSummaryBox summary={article.answerSummary} />
           )}
 
+          {article.reviewer && (
+            <ReviewedByBadge
+              contributor={article.reviewer}
+              reviewDate={article.reviewDate}
+              showBio
+            />
+          )}
+
           {/* Bank account article: Key Takeaways card */}
           {isBankAccount && <KeyTakeawaysCard isMobile={isMobile} />}
 
@@ -1170,6 +1179,14 @@ export function ArticleContent({ article, sections, readingTime }: ArticleConten
 
           {/* Sources & References — AC-1, AC-5 */}
           <SourcesSection sources={article.sources} />
+
+          {article.reviewer && (
+            <ReviewedByBadge
+              contributor={article.reviewer}
+              reviewDate={article.reviewDate}
+              position="bottom"
+            />
+          )}
 
           <RelatedSection isMobile={isMobile} />
         </article>

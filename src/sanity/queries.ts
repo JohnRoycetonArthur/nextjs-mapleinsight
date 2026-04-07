@@ -1,3 +1,4 @@
+import type { ContributorPublic } from "@/lib/types/contributor";
 import { client } from "./lib/client";
 
 export type ArticleSummary = {
@@ -28,6 +29,8 @@ export type ArticleFull = ArticleSummary & {
   faqItems: Array<{ question: string; answer: string; anchorSlug: string | null }> | null;
   exampleScenarios: Array<{ title: string; body: string }> | null;
   sources: ArticleSource[] | null;
+  reviewer: ContributorPublic | null;
+  reviewDate: string | null;
 };
 
 const ARTICLE_SUMMARY_FIELDS = `
@@ -77,7 +80,36 @@ export async function getArticleBySlug(slug: string): Promise<ArticleFull | null
       isPillar,
       faqItems[] { question, answer, "anchorSlug": anchorSlug.current },
       exampleScenarios[] { title, body },
-      sources[] { _key, sourceName, documentTitle, url, accessedDate }
+      sources[] { _key, sourceName, documentTitle, url, accessedDate },
+      "reviewer": select(
+        reviewedBy->status == "active" => reviewedBy{
+          name,
+          "slug": slug.current,
+          "photoUrl": photo.asset->url,
+          title,
+          company,
+          shortBio,
+          credentials,
+          "categoryNames": categories[]->title,
+          location,
+          activeSince,
+          linkedin
+        },
+        *[_type == "contributor" && status == "active" && references(^.category._ref)] | order(displayOrder asc, name asc)[0]{
+          name,
+          "slug": slug.current,
+          "photoUrl": photo.asset->url,
+          title,
+          company,
+          shortBio,
+          credentials,
+          "categoryNames": categories[]->title,
+          location,
+          activeSince,
+          linkedin
+        }
+      ),
+      reviewDate
     }`,
     { slug }
   );
