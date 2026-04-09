@@ -502,7 +502,7 @@ export function ConsultantReport({
               <div style={{ fontSize: 13, fontWeight: 700, color: C.forest, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
                 Study Permit Advisory Block
               </div>
-              {Object.values(studyPermitAdvisory).map((sub, i) => {
+              {Object.values(studyPermitAdvisory).filter((sub): sub is NonNullable<typeof sub> => sub != null).map((sub, i) => {
                 const statusColors: Record<string, { bg: string; border: string }> = {
                   compliant: { bg: '#E8F5EE', border: C.accent },
                   'at-risk': { bg: '#FDF6E3', border: C.gold   },

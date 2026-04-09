@@ -35,6 +35,12 @@ import {
 } from '@material-symbols-svg/react'
 import { C, FONT, SERIF } from '../constants'
 import type { WizardAnswers } from '../../SettlementSessionContext'
+import { STUDY_PERMIT_DEFAULTS } from '@/lib/settlement-engine/study-permit'
+
+// ─── SDS eligible countries (Sanity-backed with fallback) ──────────────────────
+// Sourced from STUDY_PERMIT_DEFAULTS which mirrors the Sanity `sdsEligibleCountries`
+// field. This list is displayed in the collapsible SDS section of the sub-form.
+const SDS_ELIGIBLE_COUNTRIES = STUDY_PERMIT_DEFAULTS.sdsEligibleCountries
 
 // ─── Design primitives ────────────────────────────────────────────────────────
 
@@ -210,6 +216,30 @@ const GIC_OPTIONS: { value: string; label: string; icon: React.ReactNode; desc: 
 
 const InfoIcon = () => <Info size={13} color="#2563EB" />
 
+// ─── Mandatory / Strongly Recommended badge pills ─────────────────────────────
+
+const MandatoryBadge = () => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center',
+    fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+    color: C.white, background: C.red,
+    borderRadius: 4, padding: '2px 7px', marginBottom: 8, whiteSpace: 'nowrap', fontFamily: FONT,
+  }}>
+    Mandatory
+  </span>
+)
+
+const StronglyRecommendedBadge = () => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center',
+    fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase',
+    color: C.white, background: C.gold,
+    borderRadius: 4, padding: '2px 7px', marginBottom: 8, whiteSpace: 'nowrap', fontFamily: FONT,
+  }}>
+    Strongly Recommended
+  </span>
+)
+
 // ─── Study permit sub-form ────────────────────────────────────────────────────
 
 type StudyPermitData = NonNullable<WizardAnswers['studyPermit']>
@@ -223,6 +253,7 @@ interface SubFormProps {
 
 function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) {
   const avgLabel = sp.programLevel ? TUITION_LABELS[sp.programLevel] : null
+  const [showCountries, setShowCountries] = useState(false)
 
   return (
     <div
@@ -245,6 +276,114 @@ function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) 
             These fields shape IRCC proof-of-funds and your upfront cost estimate.
           </div>
         </div>
+      </div>
+
+      {/* ── 0. SDS toggle ────────────────────────────────────────────────── */}
+      <div style={{
+        background: sp.isSDS ? '#FFF1F2' : C.lightGray,
+        border:     `1px solid ${sp.isSDS ? `${C.red}30` : C.border}`,
+        borderRadius: 12,
+        padding: '16px 18px',
+        marginBottom: 22,
+        transition: 'background 0.2s, border-color 0.2s',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: FONT, marginBottom: 4 }}>
+              Student Direct Stream (SDS)
+            </div>
+            <div style={{ fontSize: 12, color: C.textLight, fontFamily: FONT, lineHeight: 1.5 }}>
+              SDS is a fast-track study permit stream (~20-day processing) available to citizens of
+              select countries with IELTS ≥ 6.0 and a GIC of $22,895. Enabling this marks GIC and
+              first-year tuition as <strong style={{ color: C.red }}>mandatory</strong>.
+            </div>
+          </div>
+          {/* Inline toggle knob */}
+          <div
+            role="switch"
+            aria-checked={sp.isSDS ?? false}
+            aria-label="Enable Student Direct Stream (SDS)"
+            tabIndex={0}
+            onClick={() => {
+              onSPChange({ isSDS: !(sp.isSDS ?? false) })
+              setShowCountries(false)
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onSPChange({ isSDS: !(sp.isSDS ?? false) })
+                setShowCountries(false)
+              }
+            }}
+            style={{
+              width: 44, height: 24, borderRadius: 12, flexShrink: 0,
+              background: (sp.isSDS ?? false) ? C.red : C.border,
+              position: 'relative', cursor: 'pointer', marginTop: 2,
+              transition: 'background 0.2s',
+            }}
+          >
+            <div style={{
+              width: 20, height: 20, borderRadius: 10, background: C.white,
+              position: 'absolute', top: 2,
+              left: (sp.isSDS ?? false) ? 22 : 2,
+              transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+            }} />
+          </div>
+        </div>
+
+        {/* SDS eligible countries collapsible */}
+        {sp.isSDS && (
+          <div style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              onClick={() => setShowCountries(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                fontSize: 12, fontWeight: 600, color: C.red,
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '4px 0', fontFamily: FONT,
+              }}
+              aria-expanded={showCountries}
+            >
+              <span style={{
+                display: 'inline-block', width: 12, textAlign: 'center',
+                transform: showCountries ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s',
+              }}>▶</span>
+              {showCountries ? 'Hide' : 'Show'} SDS eligible countries ({SDS_ELIGIBLE_COUNTRIES.length})
+            </button>
+
+            <div style={{
+              maxHeight: showCountries ? '300px' : '0px',
+              overflow: 'hidden',
+              transition: 'max-height 0.3s ease-in-out',
+            }}>
+              <div style={{
+                marginTop: 10,
+                background: C.white, border: `1px solid ${C.border}`,
+                borderRadius: 10, padding: '12px 16px',
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8, fontFamily: FONT }}>
+                  IRCC SDS Eligible Countries
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr',
+                  gap: '4px 12px',
+                }}>
+                  {SDS_ELIGIBLE_COUNTRIES.map(country => (
+                    <div key={country} style={{ fontSize: 12, color: C.text, fontFamily: FONT, padding: '2px 0' }}>
+                      • {country}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: C.textLight, fontFamily: FONT, marginTop: 10, lineHeight: 1.5 }}>
+                  Source: canada.ca — Student Direct Stream. Eligibility is based on citizenship or country of residence. Verify with IRCC before applying.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 1. Program level ─────────────────────────────────────────────── */}
@@ -286,8 +425,9 @@ function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) 
 
       {/* ── 2. Annual tuition ─────────────────────────────────────────────── */}
       <div style={{ marginBottom: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <Label htmlFor="tuition-input">Annual tuition amount</Label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+          <Label htmlFor="tuition-input">First-year tuition amount</Label>
+          {sp.isSDS && <MandatoryBadge />}
           {avgLabel && (
             <span style={{
               fontSize: 11, fontWeight: 700, color: C.purple,
@@ -309,19 +449,27 @@ function StudyPermitSubForm({ sp, onSPChange, isMobile, errors }: SubFormProps) 
 
       {/* ── 3. GIC status ─────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 22 }}>
-        <Label>Guaranteed Investment Certificate (GIC) status</Label>
-        {/* What is a GIC? */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+          <Label>Guaranteed Investment Certificate (GIC)</Label>
+          {sp.isSDS ? <MandatoryBadge /> : <StronglyRecommendedBadge />}
+        </div>
+        {/* What is a GIC? — SDS-aware */}
         <div style={{
           display: 'flex', alignItems: 'flex-start', gap: 8,
-          background: '#F0F4FF', border: `1px solid ${C.blue}20`,
+          background: sp.isSDS ? '#FFF1F2' : '#F0F4FF',
+          border: `1px solid ${sp.isSDS ? `${C.red}25` : `${C.blue}20`}`,
           borderRadius: 8, padding: '10px 14px', marginBottom: 12,
           fontSize: 12, color: C.gray, fontFamily: FONT, lineHeight: 1.5,
         }}>
-          <span style={{ color: C.blue, marginTop: 1 }}><InfoIcon /></span>
+          <span style={{ color: sp.isSDS ? C.red : C.blue, marginTop: 1 }}><InfoIcon /></span>
           <span>
             A <strong style={{ color: C.text }}>GIC (Guaranteed Investment Certificate)</strong> is a
-            Canadian bank deposit required by IRCC for many study permit applicants. Funds are held for
-            12 months and then released monthly for living expenses. The current minimum is{' '}
+            Canadian bank deposit{' '}
+            {sp.isSDS
+              ? <><strong style={{ color: C.red }}>required by IRCC for SDS applicants</strong>. It is not optional — your application will be rejected without it.</>
+              : 'required by IRCC for most study permit applicants. Funds are held for 12 months and released monthly for living expenses.'
+            }{' '}
+            The current minimum is{' '}
             <strong style={{ color: C.text }}>$22,895 CAD</strong>.
           </span>
         </div>

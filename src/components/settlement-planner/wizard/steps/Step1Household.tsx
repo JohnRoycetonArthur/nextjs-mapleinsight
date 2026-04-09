@@ -153,7 +153,7 @@ export function Step1Household({ data, onChange, errors }: Props) {
 
       {/* ── Children ──────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 28 }}>
-        <Label htmlFor="stepper-children">Number of children</Label>
+        <Label htmlFor="stepper-children">Number of children / dependents</Label>
         <Stepper
           id="stepper-children"
           value={data.children ?? 0}
@@ -163,6 +163,9 @@ export function Step1Household({ data, onChange, errors }: Props) {
           color={C.accent}
           label="number of children"
         />
+        <p style={{ fontSize: 12, color: C.textLight, margin: '6px 0 0', fontFamily: FONT, lineHeight: 1.5 }}>
+          IRCC counts <strong>all</strong> dependents — including a spouse and children who are <em>not</em> accompanying you to Canada.
+        </p>
       </div>
 
       {/* ── Arrival window ────────────────────────────────────────────────── */}

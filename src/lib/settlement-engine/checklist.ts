@@ -45,6 +45,7 @@ export interface ChecklistInputs {
   income?:         number          // monthly net income — used for TFSA/RRSP conditional (AC-3)
   savings?:        number          // liquid savings    — used for TFSA/RRSP conditional (AC-3)
   jobOfferExempt?: boolean         // US-2.2: FSW/FST applicant is exempt from proof-of-funds
+  isSDS?:          boolean         // US-2.5: applicant is on the Student Direct Stream
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -130,7 +131,7 @@ export function generateChecklist(
   inputs: ChecklistInputs,
   risks:  Risk[],
 ): Checklist {
-  const { pathway, province, city, gicStatus, jobOfferExempt } = inputs
+  const { pathway, province, city, gicStatus, jobOfferExempt, isSDS } = inputs
   const cityLow     = city.toLowerCase()
   const cityName    = CITY_LABELS[cityLow] ?? city.charAt(0).toUpperCase() + city.slice(1)
   const healthPlan  = PROVINCE_HEALTH_PLAN[province] ?? 'provincial health card'
@@ -302,6 +303,19 @@ export function generateChecklist(
     const noProvCoverage = spHealthEntry ? !spHealthEntry.hasProvincialCoverage : true
 
     // Pre-Arrival (study permit)
+
+    // SDS-specific mandatory requirements (US-2.5)
+    if (isSDS) {
+      preArrival.push(
+        item('sds-eligibility',
+          'Confirm your country of citizenship/residence is on the IRCC SDS eligible countries list — SDS is not available to all nationalities',
+          null, 1),
+        item('sds-language',
+          'Provide proof of language proficiency: IELTS Academic score ≥ 6.0 in all bands (or TEF Canada / CELPIP equivalent) — mandatory SDS requirement',
+          null, 1),
+      )
+    }
+
     preArrival.push(
       item('dli-letter',
         'Obtain acceptance letter from a Designated Learning Institution (DLI)',

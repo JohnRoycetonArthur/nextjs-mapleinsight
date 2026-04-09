@@ -83,6 +83,16 @@ export function getComplianceRequirement(
   }
 }
 
+// ─── Safe Recommended (US-2.3) ───────────────────────────────────────────────
+
+/**
+ * Safe Recommended = ceil(officialMinimum × 1.05 / 100) × 100
+ * Rounds up to the nearest $100 to give applicants a clean, defensible buffer.
+ */
+export function computeSafeRecommended(officialMinimum: number): number {
+  return Math.ceil((officialMinimum * 1.05) / 100) * 100
+}
+
 // ─── EE Proof-of-Funds Result (US-2.1) ───────────────────────────────────────
 
 export interface EEProofOfFundsResult {
@@ -118,7 +128,7 @@ export function computeEEProofOfFunds(
   }
   const floor = getComplianceRequirement(pathway, familySize, data)
   if (floor === null) return { amount: 0, exempt: true }
-  const safeRecommended = Math.ceil((floor * 1.05) / 100) * 100
+  const safeRecommended = computeSafeRecommended(floor)
   return { amount: floor, exempt: false, safeRecommended, buffer: safeRecommended - floor }
 }
 

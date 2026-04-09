@@ -306,6 +306,13 @@ export const immigrationFeesType = defineType({
             },
           })],
         }),
+        defineField({
+          name: 'sdsEligibleCountries',
+          title: 'SDS Eligible Countries',
+          type: 'array',
+          description: 'Countries eligible for the Student Direct Stream (SDS). Source: canada.ca/sds. Used in the wizard to render the collapsible eligibility list.',
+          of: [defineArrayMember({ type: 'string' })],
+        }),
       ],
     }),
   ],

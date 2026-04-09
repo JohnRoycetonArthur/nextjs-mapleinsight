@@ -404,6 +404,7 @@ exports[`Advisory Engine — Fixture B: Study Permit Vancouver $45K full advisor
       "status": "at-risk",
       "title": "Key Risk: Study Permit Refusal",
     },
+    "sdsEligibility": undefined,
     "tuitionCosts": {
       "content": "undergraduate program at $28,000/year. National benchmark: ~$41,746/year. Tuition is within typical range.",
       "metric": "$28,000/year",

@@ -20,7 +20,7 @@ import {
 } from '@/lib/settlement-engine/narrative'
 import { usePlannerMode, useSettlementSession } from './SettlementSessionContext'
 import { fetchCityBaseline } from '@/lib/settlement-engine/baselines'
-import { runEngine } from '@/lib/settlement-engine/calculate'
+import { runEngine, computeFamilySize } from '@/lib/settlement-engine/calculate'
 import { evaluateRisks, type RiskContext } from '@/lib/settlement-engine/risks'
 import {
   STUDY_PERMIT_DEFAULTS,
@@ -277,6 +277,188 @@ function MetricTile({ label, value, sub, color, isMobile, explainerId, openExpla
           {explainerContent}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── ProofOfFundsCard (US-2.3) ───────────────────────────────────────────────
+
+const LICO_SOURCE = 'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html'
+
+function ProofOfFundsCard({ officialMinimum, familySize, engineVersion, dataVersion, isMobile }: {
+  officialMinimum: number
+  familySize: number
+  engineVersion: string
+  dataVersion: string
+  isMobile: boolean
+}) {
+  const safeRecommended = Math.ceil((officialMinimum * 1.05) / 100) * 100
+  const buffer          = safeRecommended - officialMinimum
+  const effectiveDate   = EXPRESS_ENTRY_DEFAULTS.expressEntryEffectiveDate
+
+  return (
+    <div style={{
+      background: C.white, borderRadius: 18,
+      border: `1px solid ${C.border}`, overflow: 'hidden',
+      boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
+      marginBottom: 20,
+    }}>
+      {/* Header strip */}
+      <div style={{
+        padding: isMobile ? '14px 18px' : '18px 24px',
+        borderBottom: `1px solid ${C.border}`,
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: `${C.forest}10`, color: C.forest, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, fontFamily: FONT, letterSpacing: 0.6, textTransform: 'uppercase' }}>
+            Proof of Funds
+          </div>
+          <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 700, color: C.text, fontFamily: SERIF, marginTop: 2 }}>
+            For a household of {familySize}
+          </div>
+        </div>
+        <div style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+          padding: '5px 10px', borderRadius: 5, flexShrink: 0,
+          color: C.forest, background: `${C.accent}18`, fontFamily: FONT,
+        }}>IRCC EXPRESS ENTRY</div>
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: isMobile ? '18px' : '24px' }}>
+
+        {/* Row 1: Official Minimum */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 0', borderBottom: `1px dashed ${C.border}`,
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: FONT }}>
+                IRCC Official Minimum
+              </div>
+              <div style={{ color: C.textLight, display: 'flex', alignItems: 'center' }}
+                   title="Published on canada.ca — this is the absolute floor">
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-label="Info">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: C.textLight, fontFamily: FONT, marginTop: 3 }}>
+              The absolute floor. Being $1 under triggers refusal risk.
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
+            <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: C.text, fontFamily: SERIF, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {fmt(officialMinimum)}
+            </div>
+            <div style={{ fontSize: 10, color: C.textLight, fontFamily: FONT, marginTop: 5, letterSpacing: 0.3 }}>
+              Source: canada.ca • Effective {effectiveDate}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Safe Recommended */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 0',
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.accent, fontFamily: FONT }}>
+                Safe Recommended
+              </div>
+              <div style={{
+                fontSize: 9, fontWeight: 700, color: C.accent,
+                background: `${C.accent}14`, padding: '2px 7px', borderRadius: 4,
+                fontFamily: FONT, letterSpacing: 0.4, flexShrink: 0,
+              }}>+5% BUFFER</div>
+            </div>
+            <div style={{ fontSize: 11, color: C.textLight, fontFamily: FONT, marginTop: 3, lineHeight: 1.5 }}>
+              Applicants typically show more than the minimum to avoid rejection from currency swings or debt visibility.
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
+            <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: C.accent, fontFamily: SERIF, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {fmt(safeRecommended)}
+            </div>
+            <div style={{ fontSize: 10, color: C.accent, fontFamily: FONT, marginTop: 5, letterSpacing: 0.3, fontWeight: 600 }}>
+              + {fmt(buffer)} buffer
+            </div>
+          </div>
+        </div>
+
+        {/* Callout strip */}
+        <div style={{
+          marginTop: 10, padding: '12px 14px',
+          background: `${C.accent}08`, borderRadius: 10,
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+          border: `1px solid ${C.accent}22`,
+        }}>
+          <div style={{ color: C.accent, paddingTop: 1, flexShrink: 0 }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: 12, color: C.text, fontFamily: FONT, lineHeight: 1.55 }}>
+            Your <strong>savings gap</strong> is computed against the{' '}
+            <strong style={{ color: C.accent }}>Safe Recommended</strong> amount.
+            The IRCC minimum is the regulatory floor only.{' '}
+            <a
+              href={LICO_SOURCE}
+              target="_blank" rel="noreferrer"
+              style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}
+            >
+              View IRCC source ↗
+            </a>
+          </div>
+        </div>
+
+        {/* Family size > 7 overflow note (US-2.4) */}
+        {familySize > 7 && (
+          <div style={{
+            marginTop: 12, padding: '10px 14px',
+            background: '#FEF3C7', borderRadius: 10,
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+            color: '#D97706',
+          }}>
+            <div style={{ paddingTop: 1, flexShrink: 0 }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div style={{ fontSize: 12, fontFamily: FONT, lineHeight: 1.55 }}>
+              Family size {familySize} exceeds the published LICO table (max 7). IRCC adds{' '}
+              <strong>{fmt(EXPRESS_ENTRY_DEFAULTS.expressEntryAdditionalMember)}</strong> per additional member beyond 7 — applied automatically.
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer — version stamp (US-1.4) */}
+      <div style={{
+        padding: '10px 24px', borderTop: `1px solid ${C.border}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: C.lightGray,
+      }}>
+        <div style={{ fontSize: 10, color: C.textLight, fontFamily: FONT }}>
+          Engine v{engineVersion} • Data {dataVersion}
+        </div>
+        <div style={{ fontSize: 10, color: C.textLight, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <MapleLeaf size={9} />
+          Maple Insight
+        </div>
+      </div>
     </div>
   )
 }
@@ -545,7 +727,7 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
   const irccCompliance = useMemo(() => {
     if (!engineInput || engineInput.pathway !== 'study-permit') return null
     if (!engineInput.studyPermit) return null
-    const familySize = engineInput.household.adults + engineInput.household.children
+    const familySize = computeFamilySize(engineInput.household)
     const available  = engineInput.liquidSavings + (engineInput.studyPermit.scholarshipAmount ?? 0)
     return buildIRCCComplianceResult(
       familySize,
@@ -562,7 +744,7 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
     if (engineInput.pathway === 'study-permit') return null
     // US-2.2: job offer + work auth exemption — no compliance floor card
     if (engineInput.jobOfferExempt && (engineInput.pathway === 'express-entry-fsw' || engineInput.pathway === 'express-entry-fstp')) return null
-    const familySize = engineInput.household.adults + engineInput.household.children
+    const familySize = computeFamilySize(engineInput.household)
     return getComplianceRequirement(engineInput.pathway, familySize, EXPRESS_ENTRY_DEFAULTS)
   }, [engineInput])
 
@@ -808,17 +990,6 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
     const ratio   = irccCompliance.shortfall / irccCompliance.required
     irccStatus      = irccCompliance.compliant ? 'compliant' : ratio <= 0.1 ? 'amber' : 'deficit'
     irccBorderColor = irccStatus === 'compliant' ? C.accent : irccStatus === 'amber' ? C.gold : C.red
-  }
-
-  // ── EE/PNP compliance derived values ─────────────────────────────────────────
-  let eeStatus: 'compliant' | 'amber' | 'deficit' = 'compliant'
-  let eeBorderColor = C.accent
-
-  if (complianceRequirement !== null) {
-    const gap   = complianceRequirement - savings
-    const ratio = complianceRequirement > 0 ? gap / complianceRequirement : 0
-    eeStatus      = savings >= complianceRequirement ? 'compliant' : ratio <= 0.1 ? 'amber' : 'deficit'
-    eeBorderColor = eeStatus === 'compliant' ? C.accent : eeStatus === 'amber' ? C.gold : C.red
   }
 
   // ─── Report Package download (US-13.2) ────────────────────────────────────
@@ -1156,30 +1327,16 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
           </div>
         )}
 
-        {/* EE / PNP: IRCC Settlement Funds */}
-        {complianceRequirement !== null && (() => {
-          const eeShortfall = Math.max(0, complianceRequirement - savings)
-          const eeBg = eeStatus === 'compliant' ? '#ECFDF5' : eeStatus === 'amber' ? '#FFFBEB' : '#FEF2F2'
-          return (
-            <div style={{ borderRadius: 14, padding: isMobile ? '20px 18px' : '24px 28px', marginBottom: 20, background: eeBg, border: `2px solid ${eeBorderColor}`, textAlign: 'center' }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: eeBorderColor, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: FONT }}>
-                IRCC Financial Requirement
-              </div>
-              <div style={{ fontFamily: SERIF, fontSize: isMobile ? 24 : 30, fontWeight: 700, color: eeBorderColor, marginBottom: 6 }}>
-                {eeStatus === 'compliant' ? '✓ Meets Requirement' : eeStatus === 'amber' ? '⚠ Close to Minimum' : '✗ Below IRCC Minimum'}
-              </div>
-              <div style={{ fontSize: 13, color: C.text }}>
-                {eeStatus === 'compliant'
-                  ? `Savings of ${fmt(savings)} exceed the IRCC minimum of ${fmt(complianceRequirement)} by ${fmt(savings - complianceRequirement)}`
-                  : `You need ${fmt(eeShortfall)} more to meet the IRCC minimum of ${fmt(complianceRequirement)}`
-                }
-              </div>
-              <div style={{ fontSize: 10, color: C.textLight, marginTop: 6 }}>
-                Based on IRCC proof-of-funds table effective {EXPRESS_ENTRY_DEFAULTS.expressEntryEffectiveDate}
-              </div>
-            </div>
-          )
-        })()}
+        {/* EE / PNP: Proof of Funds — Dual Display (US-2.3) */}
+        {complianceRequirement !== null && (
+          <ProofOfFundsCard
+            officialMinimum={complianceRequirement}
+            familySize={computeFamilySize(engineInput.household)}
+            engineVersion={engineOutput.engineVersion}
+            dataVersion={engineOutput.dataVersion}
+            isMobile={isMobile}
+          />
+        )}
 
         {/* Study Permit: IRCC Proof of Funds */}
         {isStudyPermit && irccCompliance && (
