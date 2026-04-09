@@ -38,6 +38,7 @@ import { Step5Savings }     from './steps/Step5Savings'
 import { Step6Lifestyle }   from './steps/Step6Lifestyle'
 import { C, FONT, SERIF, TOTAL_STEPS, WIZARD_STEPS } from './constants'
 import { ResultsDashboard } from '../ResultsDashboard'
+import { VersionStamp } from '../VersionStamp'
 import {
   trackPlannerComplete,
   trackPlannerSeePlanClick,
@@ -547,10 +548,11 @@ export function WizardShell({ consultant, onComplete, scrollTargetId, frameTarge
           </div>
 
           {!isMobile && (
-            <div style={{ justifySelf: 'center' }}>
+            <div style={{ justifySelf: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               <span style={{ fontSize: 12, color: C.textLight, fontFamily: FONT, whiteSpace: 'nowrap' }}>
                 Step {currentStep} of {TOTAL_STEPS}
               </span>
+              <VersionStamp />
             </div>
           )}
 

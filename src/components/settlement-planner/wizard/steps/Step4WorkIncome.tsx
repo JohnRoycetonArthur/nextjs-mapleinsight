@@ -479,6 +479,51 @@ export function Step4WorkIncome({ data, onChange, errors, isMobile }: Props) {
         </div>
       )}
 
+      {/* ── Job offer + work auth exemption checkbox (US-2.2 — FSW/FST only) ── */}
+      {data.pathway === 'express_entry' &&
+       (data.expressEntry?.subClass === 'fsw' || data.expressEntry?.subClass === 'fst') && (
+        <div style={{
+          marginBottom: 24,
+          padding: '16px 18px',
+          background: data.jobOfferExempt ? '#DCFCE7' : C.lightGray,
+          border: `1px solid ${data.jobOfferExempt ? '#86EFAC' : C.border}`,
+          borderRadius: 12,
+          transition: 'background 0.2s, border-color 0.2s',
+        }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.jobOfferExempt ?? false}
+              onChange={e => onChange('jobOfferExempt', e.target.checked)}
+              style={{ marginTop: 3, width: 16, height: 16, accentColor: C.accent, cursor: 'pointer', flexShrink: 0 }}
+              aria-describedby="job-offer-exempt-helper"
+            />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: FONT, lineHeight: 1.4 }}>
+                I have a valid Canadian job offer AND authorization to work in Canada
+              </div>
+              <div
+                id="job-offer-exempt-helper"
+                style={{ fontSize: 11, color: C.textLight, fontFamily: FONT, marginTop: 4, lineHeight: 1.55 }}
+              >
+                Both conditions must be true for IRCC to exempt you from proof of funds under{' '}
+                {data.expressEntry?.subClass === 'fsw' ? 'FSW' : 'FST'}.
+                If checked, the IRCC settlement funds floor is removed from your required savings target.
+              </div>
+            </div>
+          </label>
+          {data.jobOfferExempt && (
+            <div style={{
+              marginTop: 12, padding: '10px 12px', background: '#F0FDF4',
+              borderRadius: 8, fontSize: 12, color: '#15803D', fontFamily: FONT, lineHeight: 1.5,
+            }}>
+              ✓ IRCC proof-of-funds floor removed from your required savings target.
+              Your required funds are now based on the real-world settlement model only.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Direct income input (secured / offer with start date) (AC-3) ───── */}
       {showDirectInput && (
         <div style={{ marginBottom: 24 }}>

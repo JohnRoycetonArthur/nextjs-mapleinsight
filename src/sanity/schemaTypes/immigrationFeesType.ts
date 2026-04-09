@@ -75,6 +75,53 @@ export const immigrationFeesType = defineType({
       validation: (Rule) => Rule.required(),
     }),
 
+    // ─── Fee Line Items (US-1.3) ────────────────────────────────────────────────
+    defineField({
+      name: 'feeLineItems',
+      title: 'Fee Line Items',
+      type: 'array',
+      description: 'Individual fee components with per-item source URLs and effective dates. Used to power the breakdown display and source tooltip links.',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          fields: [
+            defineField({ name: 'key',           title: 'Key (machine-readable)',    type: 'string', validation: (Rule) => Rule.required() }),
+            defineField({ name: 'label',         title: 'Label (display text)',      type: 'string', validation: (Rule) => Rule.required() }),
+            defineField({ name: 'amountCAD',     title: 'Amount (CAD)',              type: 'number', validation: (Rule) => Rule.required().min(0) }),
+            defineField({ name: 'sourceUrl',     title: 'Source URL',               type: 'url',    description: 'Direct link to the official government page showing this fee.' }),
+            defineField({ name: 'effectiveDate', title: 'Effective Date',            type: 'date'   }),
+            defineField({ name: 'notes',         title: 'Notes',                    type: 'text',   rows: 2 }),
+          ],
+          preview: {
+            select: { label: 'label', amountCAD: 'amountCAD' },
+            prepare({ label, amountCAD }) {
+              return { title: label ?? '—', subtitle: amountCAD != null ? `$${amountCAD.toLocaleString()} CAD` : '' }
+            },
+          },
+        }),
+      ],
+    }),
+    defineField({
+      name: 'biometricsFamilyCapFee',
+      title: 'Biometrics Family/Group Cap Fee ($CAD)',
+      type: 'number',
+      description: 'Maximum biometrics fee for a family or group of 2+ persons. Currently $170 (effective Nov 2024).',
+      validation: (Rule) => Rule.min(0),
+    }),
+    defineField({
+      name: 'verified',
+      title: 'Fee Data Verified',
+      type: 'boolean',
+      description: 'True when this fee schedule has been verified against current IRCC receipts or the official IRCC fees page.',
+      initialValue: false,
+    }),
+    defineField({
+      name: 'verifiedAt',
+      title: 'Verification Date',
+      type: 'date',
+      description: 'Date when fees were last verified against official sources.',
+    }),
+
     // ─── Express Entry Settlement Funds (FSWP / FSTP, effective July 7, 2025) ───────
     defineField({
       name: 'expressEntryFunds',

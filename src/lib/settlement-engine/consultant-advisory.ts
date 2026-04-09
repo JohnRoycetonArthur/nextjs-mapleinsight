@@ -557,13 +557,24 @@ export function generateProgramNotes(
     const required = complianceRequirement ?? 0
     const buffer   = input.liquidSavings - required
 
-    // CEC exemption note
+    // CEC exemption note (US-2.1)
     if (input.pathway === 'express-entry-cec') {
       notes.push({
         title:    'Proof of Funds: Exempt (CEC)',
         severity: 'positive',
         color:    C.accent,
-        content:  'This client qualifies for the CEC proof-of-funds exemption: Canadian Experience Class with a valid job offer and current work authorization. No IRCC settlement funds minimum applies. However, the client should still demonstrate sufficient funds for the landing transition period. The real-world savings target above reflects this.',
+        content:  'Canadian Experience Class applicants are unconditionally exempt from the IRCC proof-of-funds requirement. No minimum settlement funds floor applies to this application. The required funds shown above reflect the real-world settlement model only (upfront costs + monthly burn × runway buffer). The client should still demonstrate sufficient funds for the landing transition period.',
+        source:   'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html',
+      })
+    }
+
+    // Job offer exemption note (US-2.2)
+    if (input.jobOfferExempt && (input.pathway === 'express-entry-fsw' || input.pathway === 'express-entry-fstp')) {
+      notes.push({
+        title:    'Proof of Funds: Exempt (Valid Job Offer)',
+        severity: 'positive',
+        color:    C.accent,
+        content:  'Client has confirmed a valid Canadian job offer and work authorization, which exempts them from the IRCC proof-of-funds requirement under FSW/FST. The IRCC settlement funds floor has been removed from their required savings calculation. Verify the work authorization document (work permit or PGWP) before submission — IRCC requires both conditions to be satisfied. Recommend documenting the job offer letter and work authorization in the application file.',
         source:   'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html',
       })
     }
@@ -590,7 +601,7 @@ export function generateProgramNotes(
       title:    'RPRF Payment Timing',
       severity: 'info',
       color:    C.blue,
-      content:  'The Right of Permanent Residence Fee ($515 per adult) can be paid at any time before landing. Recommend paying early to avoid last-minute pressure on savings and to signal readiness to IRCC.',
+      content:  'The Right of Permanent Residence Fee ($575 per adult) can be paid at any time before landing. Recommend paying early to avoid last-minute pressure on savings and to signal readiness to IRCC.',
       source:   'https://ircc.canada.ca/english/information/fees/fees.asp',
     })
 

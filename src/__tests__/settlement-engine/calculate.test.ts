@@ -38,7 +38,7 @@ const TORONTO_INPUT: EngineInput = {
   province: 'ON',
   pathway:  'express-entry-fsw',
   fees: {
-    applicationFee:  1_365,
+    applicationFee:  950,
     biometricsFee:   85,
     biometricsPaid:  false,
   },
@@ -58,10 +58,11 @@ const TORONTO_INPUT: EngineInput = {
 describe('computeUpfront', () => {
   const result = computeUpfront(TORONTO_INPUT, TORONTO_BASELINE)
 
-  it('includes immigration fee', () => {
+  it('includes processing fee', () => {
     const item = result.breakdown.find(i => i.key === 'immigration-fee')
-    expect(item?.cad).toBe(1_365)
+    expect(item?.cad).toBe(950)
     expect(item?.source).toBe('ircc')
+    expect(item?.label).toBe('Processing fee')
   })
 
   it('includes biometrics fee when not yet paid', () => {
@@ -99,10 +100,10 @@ describe('computeUpfront', () => {
     expect(item?.cad).toBe(2_000)
   })
 
-  // U = 1365 + 85 + 515 + 1500 + 3522 + 2000 = 8987
+  // U = 950 + 85 + 575 + 1500 + 3522 + 2000 = 8632
   it('total upfront equals sum of all items', () => {
-    expect(result.total).toBe(1_365 + 85 + 515 + 1_500 + 1_761 * 2 + 2_000)
-    expect(result.total).toBe(8_987)
+    expect(result.total).toBe(950 + 85 + 575 + 1_500 + 1_761 * 2 + 2_000)
+    expect(result.total).toBe(8_632)
   })
 })
 
@@ -245,7 +246,7 @@ describe('computeMonthlyMin', () => {
 // ─── computeSafe ─────────────────────────────────────────────────────────────
 
 describe('computeSafe', () => {
-  const upfront     = 8_987
+  const upfront     = 8_632
   const monthlyMin  = 2_847
   const monthlyBreakdown = computeMonthlyMin(TORONTO_INPUT, TORONTO_BASELINE).breakdown
 
@@ -274,12 +275,12 @@ describe('computeSafe', () => {
     expect(r.monthlySafe).toBe(monthlyMin + 600)
   })
 
-  // S_safe = (8987 + 2847×6) × 1.10 = 26069 × 1.10 = 28675.9
+  // S_safe = (8632 + 2847×6) × 1.10 = 25714 × 1.10 = 28285.4
   it('S_safe = (U + M_safe × runway) × (1 + buffer)', () => {
     const r = computeSafe(TORONTO_INPUT, upfront, monthlyMin, monthlyBreakdown)
     const expected = (upfront + monthlyMin * 6) * (1 + BUFFER_PERCENT)
     expect(r.safeSavingsTarget).toBeCloseTo(expected, 2)
-    expect(r.safeSavingsTarget).toBeCloseTo(28_675.9, 1)
+    expect(r.safeSavingsTarget).toBeCloseTo(28_285.4, 1)
   })
 
   it('bufferPercent is 10%', () => {
@@ -310,20 +311,20 @@ describe('computeGap', () => {
 describe('runEngine — Toronto TC-1 scenario', () => {
   const output = runEngine(TORONTO_INPUT, TORONTO_BASELINE, 'cmhc:2025-10|ircc:2024-11')
 
-  it('produces upfront of $8,987', () => {
-    expect(output.upfront).toBe(8_987)
+  it('produces upfront of $8,632', () => {
+    expect(output.upfront).toBe(8_632)
   })
 
   it('produces monthlyMin of $2,847', () => {
     expect(output.monthlyMin).toBe(2_847)
   })
 
-  it('S_safe ≈ $28,676', () => {
-    expect(output.safeSavingsTarget).toBeCloseTo(28_675.9, 1)
+  it('S_safe ≈ $28,285', () => {
+    expect(output.safeSavingsTarget).toBeCloseTo(28_285.4, 1)
   })
 
-  it('savings gap ≈ $10,676 (18K savings)', () => {
-    expect(output.savingsGap).toBeCloseTo(28_675.9 - 18_000, 1)
+  it('savings gap ≈ $10,285 (18K savings)', () => {
+    expect(output.savingsGap).toBeCloseTo(28_285.4 - 18_000, 1)
   })
 
   it('includes engineVersion', () => {

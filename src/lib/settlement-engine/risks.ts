@@ -254,8 +254,12 @@ const studyPermitFunding: RiskRule = {
 const proofOfFundsMinimum: RiskRule = {
   id: 'proofOfFundsMinimum',
   evaluate({ input, output }): Risk | null {
-    // For study-permit this is covered more precisely by irccProofOfFundsCompliance
+    // Study-permit is covered more precisely by irccProofOfFundsCompliance
     if (input.pathway === 'study-permit') return null
+    // CEC applicants are unconditionally exempt from IRCC proof-of-funds (US-2.1)
+    if (input.pathway === 'express-entry-cec') return null
+    // FSW/FSTP applicants with a valid job offer + work authorization are exempt (US-2.2)
+    if (input.jobOfferExempt && (input.pathway === 'express-entry-fsw' || input.pathway === 'express-entry-fstp')) return null
     // Fires when savings can't even cover the upfront move-in costs
     if (input.liquidSavings >= output.upfront) return null
     const shortfall = Math.round(output.upfront - input.liquidSavings)

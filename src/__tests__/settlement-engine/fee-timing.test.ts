@@ -35,7 +35,7 @@ const EE_INPUT: EngineInput = {
   province: 'ON',
   pathway:  'express-entry-fsw',
   fees: {
-    applicationFee:  1_365,
+    applicationFee:  950,
     biometricsFee:   85,
     biometricsPaid:  false,
   },
@@ -162,16 +162,16 @@ describe('FT-2: Study Permit — timing assignment', () => {
   })
 })
 
-// ─── FT-3: RPRF amount is $515 × adults ──────────────────────────────────────
+// ─── FT-3: RPRF amount is $575 × adults (effective April 30, 2024) ───────────
 
 describe('FT-3: RPRF amount', () => {
-  it('single adult — $515', () => {
+  it('single adult — $575', () => {
     const { breakdown } = computeUpfront(EE_INPUT, TORONTO_BASELINE)
     const rprf = breakdown.find(i => i.key === 'rprf')
-    expect(rprf?.cad).toBe(515)
+    expect(rprf?.cad).toBe(575)
   })
 
-  it('two adults — $1030', () => {
+  it('two adults — $1,150', () => {
     const input = { ...EE_INPUT, household: { adults: 2, children: 0 } }
     const { breakdown } = computeUpfront(input, TORONTO_BASELINE)
     const rprf = breakdown.find(i => i.key === 'rprf')

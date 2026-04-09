@@ -16,6 +16,7 @@ export function resetWorkIncomeAnswersForPathway(
   return {
     ...answers,
     jobStatus: pathway === 'study_permit' ? 'student' : undefined,
+    jobOfferExempt: undefined,
     income: undefined,
     occupation: undefined,
     nocCode: undefined,

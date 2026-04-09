@@ -38,12 +38,13 @@ export interface Checklist {
 }
 
 export interface ChecklistInputs {
-  pathway:    string          // wizard answers.pathway
-  province:   string          // 2-letter code, e.g. 'ON'
-  city:       string          // lowercase slug, e.g. 'toronto'
-  gicStatus?: string | null   // 'planning' | 'purchased' | 'not_purchasing' | null
-  income?:    number          // monthly net income — used for TFSA/RRSP conditional (AC-3)
-  savings?:   number          // liquid savings    — used for TFSA/RRSP conditional (AC-3)
+  pathway:         string          // wizard answers.pathway
+  province:        string          // 2-letter code, e.g. 'ON'
+  city:            string          // lowercase slug, e.g. 'toronto'
+  gicStatus?:      string | null   // 'planning' | 'purchased' | 'not_purchasing' | null
+  income?:         number          // monthly net income — used for TFSA/RRSP conditional (AC-3)
+  savings?:        number          // liquid savings    — used for TFSA/RRSP conditional (AC-3)
+  jobOfferExempt?: boolean         // US-2.2: FSW/FST applicant is exempt from proof-of-funds
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -129,7 +130,7 @@ export function generateChecklist(
   inputs: ChecklistInputs,
   risks:  Risk[],
 ): Checklist {
-  const { pathway, province, city, gicStatus } = inputs
+  const { pathway, province, city, gicStatus, jobOfferExempt } = inputs
   const cityLow     = city.toLowerCase()
   const cityName    = CITY_LABELS[cityLow] ?? city.charAt(0).toUpperCase() + city.slice(1)
   const healthPlan  = PROVINCE_HEALTH_PLAN[province] ?? 'provincial health card'
@@ -225,10 +226,15 @@ export function generateChecklist(
   // ── PATHWAY-SPECIFIC: Express Entry / PNP ────────────────────────────────
 
   if (isExpressEntry(pathway) || isPNP(pathway)) {
+    // US-2.2: FSW/FST applicants with job offer + work auth exemption don't need proof-of-funds docs
+    if (!jobOfferExempt) {
+      preArrival.push(
+        item('proof-of-funds',
+          'Gather proof-of-funds documentation (6 months of bank statements)',
+          'financial-checklist-before-moving-to-canada', 2),
+      )
+    }
     preArrival.push(
-      item('proof-of-funds',
-        'Gather proof-of-funds documentation (6 months of bank statements)',
-        'financial-checklist-before-moving-to-canada', 2),
       item('copr-dates',
         'Confirm your COPR expiry date and book flights within the validity window',
         null, 3),

@@ -97,11 +97,23 @@ export function IncomePanel({ salary, occupation, city, level }: Props) {
       {/* Data sources */}
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #E5E7EB' }}>
         <div style={{
-          fontSize: 11, fontWeight: 600, color: '#9CA3AF',
-          textTransform: 'uppercase', letterSpacing: 0.5,
-          marginBottom: 6, fontFamily: "'DM Sans', Helvetica, sans-serif",
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
         }}>
-          Data Sources
+          <div style={{
+            fontSize: 11, fontWeight: 600, color: '#9CA3AF',
+            textTransform: 'uppercase', letterSpacing: 0.5,
+            fontFamily: "'DM Sans', Helvetica, sans-serif",
+          }}>
+            Data Sources
+          </div>
+          <span style={{
+            fontSize: 10, fontWeight: 700, color: '#1B7A4A',
+            background: '#D1FAE5', borderRadius: 4, padding: '1px 6px',
+            fontFamily: "'DM Sans', Helvetica, sans-serif", letterSpacing: 0.3,
+            textTransform: 'uppercase',
+          }}>
+            NOC 2021
+          </span>
         </div>
         {salary.data_sources.map((src, i) => (
           <div key={i} style={{

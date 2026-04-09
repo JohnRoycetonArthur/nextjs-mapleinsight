@@ -7,6 +7,7 @@
  */
 
 import type { CityBaseline } from './baselines'
+import type { FeeSchedule } from './fees'
 import {
   BUFFER_PERCENT,
   CAR_MONTHLY,
@@ -22,6 +23,7 @@ import {
 import {
   type ExpressEntryData,
   getComplianceRequirement,
+  computeEEProofOfFunds,
 } from './compliance'
 import {
   type StudyPermitData,
@@ -105,6 +107,7 @@ export function computeUpfront(
   input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride' | 'departureRegion' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
   baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback' | 'studentHousing' | 'cityName'>,
   studyPermitData?: StudyPermitData,
+  feeSchedule?: FeeSchedule,
 ): UpfrontResult {
   // ── Study permit delegation ──────────────────────────────────────────────
   if (input.pathway === 'study-permit' && input.studyPermit && studyPermitData) {
@@ -120,21 +123,28 @@ export function computeUpfront(
       },
       studyPermitData,
       baseline,
+      feeSchedule,
     )
   }
   const { fees, furnishingLevel, travelEstimateOverride, departureRegion, household } = input
+
+  // Resolve per-item source URLs from the fee schedule line items (US-1.3)
+  const feeUrl    = feeSchedule?.feeLineItems.find(li => li.key === 'immigration-fee')?.sourceUrl
+  const bioUrl    = feeSchedule?.feeLineItems.find(li => li.key === 'biometrics-family-cap' || li.key === 'biometrics-single')?.sourceUrl
+  const scheduleUrl = feeSchedule?.sourceUrl
 
   const items: BreakdownItem[] = []
 
   // ── Due at Submission ────────────────────────────────────────────────────
 
-  // Immigration application fee
+  // Processing fee (IRCC government application fee — RPRF is a separate line item)
   items.push({
     key:       'immigration-fee',
-    label:     'Immigration application fee',
+    label:     'Processing fee',
     cad:       fees.applicationFee,
     source:    'ircc',
     sourceKey: 'ircc-fee-schedule',
+    sourceUrl: feeUrl ?? scheduleUrl,
     timing:    'submission',
   })
 
@@ -146,6 +156,7 @@ export function computeUpfront(
       cad:       fees.biometricsFee,
       source:    'ircc',
       sourceKey: 'ircc-fee-schedule',
+      sourceUrl: bioUrl ?? scheduleUrl,
       timing:    'submission',
     })
   }
@@ -166,6 +177,7 @@ export function computeUpfront(
       cad:       rprf,
       source:    'ircc',
       sourceKey: 'ircc-fee-schedule',
+      sourceUrl: scheduleUrl,
       timing:    'pre-landing',
     })
   }
@@ -340,6 +352,7 @@ export interface SafeResult {
   complianceFloor?: number         // IRCC settlement funds (EE FSWP/FSTP/PNP)
   complianceFloorApplied?: boolean // true when complianceFloor overrode standard target
   bindingConstraint?: 'compliance' | 'real-world'
+  proofOfFundsExemption?: { exempt: true; reason: 'cec' | 'job_offer' } | { exempt: false }
 }
 
 /**
@@ -350,7 +363,7 @@ export interface SafeResult {
  * bindingConstraint indicates which drove the final safeSavingsTarget.
  */
 export function computeSafe(
-  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses' | 'customExpenses' | 'pathway' | 'province' | 'household' | 'studyPermit' | 'departureRegion'>,
+  input: Pick<EngineInput, 'jobStatus' | 'needsChildcare' | 'plansCar' | 'customMonthlyExpenses' | 'customExpenses' | 'pathway' | 'province' | 'household' | 'studyPermit' | 'departureRegion' | 'jobOfferExempt'>,
   upfront: number,
   monthlyMin: number,
   monthlyMinBreakdown: BreakdownItem[],
@@ -402,6 +415,35 @@ export function computeSafe(
       irccFloor,
       irccFloorApplied,
       bindingConstraint:   irccFloorApplied ? 'compliance' : 'real-world',
+    }
+  }
+
+  // ── CEC exemption (US-2.1): use model total only, emit exempt flag ──────
+  if (input.pathway === 'express-entry-cec') {
+    return {
+      monthlySafe,
+      safeSavingsTarget: standardTarget,
+      runwayMonths:      runway,
+      bufferPercent:     BUFFER_PERCENT,
+      breakdown,
+      bindingConstraint: 'real-world',
+      proofOfFundsExemption: { exempt: true, reason: 'cec' as const },
+    }
+  }
+
+  // ── FSW/FSTP job offer exemption (US-2.2): valid job offer + work auth ──
+  if (
+    input.jobOfferExempt &&
+    (input.pathway === 'express-entry-fsw' || input.pathway === 'express-entry-fstp')
+  ) {
+    return {
+      monthlySafe,
+      safeSavingsTarget: standardTarget,
+      runwayMonths:      runway,
+      bufferPercent:     BUFFER_PERCENT,
+      breakdown,
+      bindingConstraint: 'real-world',
+      proofOfFundsExemption: { exempt: true, reason: 'job_offer' as const },
     }
   }
 
@@ -469,8 +511,9 @@ export function runEngine(
   dataVersion: string,
   studyPermitData?: StudyPermitData,
   expressEntryData?: ExpressEntryData,
+  feeSchedule?: FeeSchedule,
 ): EngineOutput {
-  const upfrontResult  = computeUpfront(input, baseline, studyPermitData)
+  const upfrontResult  = computeUpfront(input, baseline, studyPermitData, feeSchedule)
   const monthlyResult  = computeMonthlyMin(input, baseline, studyPermitData)
   const safeResult     = computeSafe(input, upfrontResult.total, monthlyResult.total, monthlyResult.breakdown, studyPermitData, expressEntryData)
   const scholarshipAmount = input.pathway === 'study-permit' ? (input.studyPermit?.scholarshipAmount ?? 0) : 0
@@ -494,5 +537,6 @@ export function runEngine(
     complianceFloor:         safeResult.complianceFloor,
     complianceFloorApplied:  safeResult.complianceFloorApplied,
     bindingConstraint:       safeResult.bindingConstraint,
+    proofOfFundsExemption:   safeResult.proofOfFundsExemption,
   }
 }

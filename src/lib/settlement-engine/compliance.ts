@@ -83,6 +83,45 @@ export function getComplianceRequirement(
   }
 }
 
+// ─── EE Proof-of-Funds Result (US-2.1) ───────────────────────────────────────
+
+export interface EEProofOfFundsResult {
+  amount:           number
+  exempt:           boolean
+  reason?:          'cec' | 'job_offer'
+  safeRecommended?: number
+  buffer?:          number
+}
+
+/**
+ * Returns the IRCC proof-of-funds result for Express Entry and PNP pathways.
+ *
+ * CEC is unconditionally exempt (US-2.1): no minimum applies.
+ * FSW/FSTP with a valid job offer AND work authorization are exempt (US-2.2).
+ * FSW/FSTP/PNP (no exemption): returns the official minimum and a 5 % safe-recommended buffer.
+ * All other pathways (work-permit, family-sponsorship, etc.): exempt with no reason.
+ *
+ * Safe Recommended = ceil(official × 1.05 / 100) × 100
+ */
+export function computeEEProofOfFunds(
+  pathway:        ImmigrationPathway,
+  familySize:     number,
+  data?:          ExpressEntryData,
+  jobOfferExempt?: boolean,
+): EEProofOfFundsResult {
+  if (pathway === 'express-entry-cec') {
+    return { amount: 0, exempt: true, reason: 'cec' }
+  }
+  // US-2.2: FSW/FSTP applicants with a valid job offer AND work authorization are exempt
+  if (jobOfferExempt && (pathway === 'express-entry-fsw' || pathway === 'express-entry-fstp')) {
+    return { amount: 0, exempt: true, reason: 'job_offer' }
+  }
+  const floor = getComplianceRequirement(pathway, familySize, data)
+  if (floor === null) return { amount: 0, exempt: true }
+  const safeRecommended = Math.ceil((floor * 1.05) / 100) * 100
+  return { amount: floor, exempt: false, safeRecommended, buffer: safeRecommended - floor }
+}
+
 /**
  * Extract ExpressEntryData from a raw Sanity immigrationFees document.
  * Falls back to EXPRESS_ENTRY_DEFAULTS if fields are absent.

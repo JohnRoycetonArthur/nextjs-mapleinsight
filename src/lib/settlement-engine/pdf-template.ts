@@ -1463,7 +1463,7 @@ function buildClientPage1(pkg: MapleReportPackage, totalPages: number, mode: Pla
         ${renderClientGap(pkg)}
         ${renderClientRiskFlags(pkg)}
         <div class="page-footer">
-          <span>Maple Insight Settlement Planner</span>
+          <span>Maple Insight Settlement Planner · Engine&nbsp;v${esc(pkg.engineVersion)} · Data&nbsp;${esc(pkg.dataVersion)}</span>
           <span>Page 1 of ${totalPages}</span>
         </div>
       </div>
