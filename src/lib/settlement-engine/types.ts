@@ -106,6 +106,10 @@ export interface EngineInput {
   // Currency (optional — only when user selects non-CAD input currency, US-22.1)
   inputCurrency?: string   // ISO 4217 code of the savings input (e.g. 'INR')
   exchangeRate?: number    // 1 unit inputCurrency → CAD at time of entry
+
+  // Proof-of-funds job offer exemption (US-2.2 FSW/FSTP only)
+  // true when applicant confirms: valid Canadian job offer AND work authorization
+  jobOfferExempt?: boolean
 }
 
 // ─── Breakdown ────────────────────────────────────────────────────────────────
@@ -122,6 +126,7 @@ export interface BreakdownItem {
   cad: number             // amount in CAD
   source: string          // data source (e.g. "ircc", "cmhc", "constant")
   sourceKey?: string      // catalog key linking to a dataSource document (e.g. "ircc-fee-schedule")
+  sourceUrl?: string      // direct URL to the official source page for this fee (US-1.3)
   timing?: FeeTimingBucket// cash-flow timing bucket (AC-4 — US-20.4)
 }
 
@@ -158,4 +163,12 @@ export interface EngineOutput {
   complianceFloor?: number         // IRCC settlement funds requirement (EE FSWP/FSTP/PNP)
   complianceFloorApplied?: boolean // true when complianceFloor overrode the standard target
   bindingConstraint?: 'compliance' | 'real-world'  // which constraint set safeSavingsTarget
+
+  // Proof-of-funds exemption (US-2.1 CEC, US-2.2 job offer)
+  proofOfFundsExemption?: {
+    exempt: true
+    reason: 'cec' | 'job_offer'
+  } | {
+    exempt: false
+  }
 }

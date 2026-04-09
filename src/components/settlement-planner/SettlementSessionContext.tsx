@@ -43,6 +43,7 @@ export interface WizardAnswers {
 
   // Step 4 — Work & Income
   jobStatus?: string     // 'secured_30'|'offer_30_90'|'no_offer'|'student'
+  jobOfferExempt?: boolean  // US-2.2: true when FSW/FST confirms job offer + work auth (bypasses IRCC floor)
   income?: string        // raw string (e.g. "4,500") — parsed to number for engine
   // Occupation estimator (optional — only set when user uses the E9 estimator)
   occupation?: string

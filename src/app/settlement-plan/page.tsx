@@ -31,6 +31,7 @@ import {
 import { ResultsDashboard } from '@/components/settlement-planner/ResultsDashboard'
 import { SettlementSessionProvider } from '@/components/settlement-planner/SettlementSessionContext'
 import { type ActionPlan, type ActionPlanTask } from '@/lib/settlement-engine/action-plan'
+import { VersionStamp } from '@/components/settlement-planner/VersionStamp'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -789,6 +790,11 @@ function ActionPlanPageContent({
               Reset plan and start over
             </button>
           </div>
+        </div>
+
+        {/* ── Version stamp ── */}
+        <div style={{ textAlign: 'center', marginTop: 20, marginBottom: 4 }}>
+          <VersionStamp />
         </div>
       </div>
 

@@ -40,7 +40,7 @@ const EE_TORONTO_INPUT: EngineInput = {
   city:                  'toronto',
   province:              'ON',
   pathway:               'express-entry-fsw',
-  fees:                  { applicationFee: 1_365, biometricsFee: 85, biometricsPaid: false },
+  fees:                  { applicationFee: 950, biometricsFee: 85, biometricsPaid: false },
   housingType:           '1br',
   furnishingLevel:       'basic',
   household:             { adults: 1, children: 0 },
@@ -65,7 +65,7 @@ const EE_TORONTO_OUTPUT: EngineOutput = {
   upfrontBreakdown:  [],
   monthlyBreakdown:  [{ key: 'rent', label: 'Rent', cad: 1_761, source: 'CMHC' }],
   baselineFallback:  false,
-  complianceFloor:        14_690,
+  complianceFloor:        15_263,
   complianceFloorApplied: false,
   bindingConstraint:      'real-world',
 }
@@ -139,7 +139,7 @@ const eeAdvisory = generateConsultantAdvisory(
   EE_TORONTO_OUTPUT,
   0,
   eeRisks,
-  14_690,
+  15_263,
   undefined,
 )
 

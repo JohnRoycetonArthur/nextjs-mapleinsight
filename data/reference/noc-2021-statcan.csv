@@ -1,0 +1,133 @@
+# StatCan NOC 2021 Reference — unit-group codes and official titles
+# Source: Statistics Canada, National Occupational Classification 2021
+# URL: https://www23.statcan.gc.ca/imdb/p3VD.pl?Function=getVD&TVD=1322554
+# License: Open Government Licence - Canada
+# Retrieved: 2026-04-08
+#
+# WRONG CODES (included with official NOC 2021 titles so audit detects mismatches):
+#   13100 → correct code is 63100 (Insurance agents and brokers)
+#   13101 → correct code is 63101 (Real estate agents and salespersons)
+#   13102 → correct code is 63102 (Financial sales representatives)
+#   13110 → correct code is 12102 (Purchasing agents and officers)
+#   14100 → correct code is 12100 (Administrative officers)
+#   55100 → correct code is 51120 (Translators, terminologists and interpreters)
+#
+noc_code,official_title,teer_level
+10010,Financial managers,0
+11100,Financial auditors and accountants,1
+11101,Financial and investment analysts,1
+11102,Financial advisors,1
+11103,Securities agents, investment dealers and brokers,1
+11200,Human resources professionals,1
+12100,Administrative officers,2
+12102,Purchasing agents and officers,2
+12200,Accounting technicians and bookkeepers,2
+13100,Supervisors, finance and insurance office workers,3
+13101,Supervisors, library, correspondence and related information workers,3
+13102,Supervisors, mail and message distribution occupations,3
+13110,Court officers and justices of the peace,3
+14100,Administrative assistants,4
+20012,Computer and information systems managers,0
+21110,Physicists and astronomers,1
+21120,Chemists,1
+21130,Geoscientists and oceanographers,1
+21211,Data scientists,1
+21220,Cybersecurity specialists,1
+21221,Business systems specialists,1
+21222,Information systems quality assurance analysts,1
+21223,Database analysts and data administrators,1
+21224,Computer systems developers and programmers,1
+21225,Web designers and developers,1
+21226,Desktop publishers,1
+21230,Computer engineers (except software engineers and designers),1
+21231,Software engineers and designers,1
+21232,Telecommunications engineers,1
+21233,Other professional engineers,1
+21240,Meteorologists and climatologists,1
+21300,Civil engineers,1
+21301,Mechanical engineers,1
+21310,Electrical and electronics engineers,1
+21320,Chemical engineers,1
+21321,Industrial and manufacturing engineers,1
+21330,Mining engineers, metallurgical and materials engineers,1
+21410,Architects,1
+21420,Landscape architects,1
+22100,Chemical technologists and technicians,2
+22110,Biological technologists and technicians,2
+22220,Computer network and web technicians,2
+22221,User support technicians,2
+22222,Information systems testing technicians,2
+22300,Civil engineering technologists and technicians,2
+22310,Electrical and electronics engineering technologists and technicians,2
+22320,Industrial engineering and manufacturing technologists and technicians,2
+22400,Construction estimators,2
+30010,Managers in health care,0
+31100,Specialists in clinical and laboratory medicine,1
+31101,General practitioners and family physicians,1
+31110,Dentists,1
+31120,Optometrists,1
+31200,Pharmacists,1
+31201,Dietitians and nutritionists,1
+31202,Audiologists and speech-language pathologists,1
+31209,Other therapy and assessment professionals,1
+31301,Registered nurses and registered psychiatric nurses,1
+31302,Nurse practitioners,1
+32100,Dental hygienists and dental therapists,2
+32120,Medical laboratory technologists,2
+32121,Medical radiation technologists,2
+32122,Medical sonographers,2
+32200,Physiotherapy and occupational therapy assistants and aides,2
+33102,Nurse aides, orderlies and patient service associates,3
+33103,Pharmacy technical assistants and pharmacy assistants,3
+40020,School principals and administrators of elementary and secondary education,0
+41200,University professors and lecturers,1
+41210,Post-secondary teaching and research assistants,1
+41220,College and other vocational instructors,1
+41221,Secondary school teachers,1
+41222,Elementary school and kindergarten teachers,1
+41300,Social workers,1
+41301,Psychologists,1
+41302,Counsellors,1
+42200,Community and social service workers,2
+42202,Early childhood educators and assistants,2
+43100,Elementary and secondary school teacher assistants,3
+51110,Librarians,1
+51112,Technical writers and editors,1
+51120,Translators, terminologists and interpreters,1
+52110,Graphic designers and illustrators,2
+55100,Translators, terminologists and interpreters (incorrect — code implies TEER 5),5
+60010,Retail and wholesale trade managers,0
+62020,Restaurant and food service managers,2
+62021,Accommodation service managers,2
+63010,Retail salespersons and visual merchandisers,3
+63100,Insurance agents and brokers,3
+63101,Real estate agents and salespersons,3
+63102,Financial sales representatives,3
+63200,Chefs,3
+63201,Cooks,3
+64100,Food service supervisors,4
+64300,Hotel front desk clerks,4
+65100,Cashiers,5
+65101,Store shelf stockers, clerks and order fillers,5
+65200,Food counter attendants, kitchen helpers and related support occupations,5
+72010,Contractors and supervisors, pipefitting trades,2
+72011,Contractors and supervisors, carpentry trades,2
+72020,Contractors and supervisors, electrical trades and telecommunications occupations,2
+72100,Electricians (except industrial and power system),2
+72101,Industrial electricians,2
+72110,Plumbers,2
+72111,Steamfitters, pipefitters and sprinkler system installers,2
+72200,Sheet metal workers,2
+72300,Carpenters,2
+72310,Bricklayers,2
+72320,Roofers and shinglers,2
+72400,Crane operators,2
+72401,Drillers and blasters — surface mining, quarrying and construction,2
+73100,Automotive service technicians, truck and bus mechanics and mechanical repairers,3
+73200,Welders and related machine operators,3
+73300,Machinists and machining and tooling inspectors,3
+73400,Heavy equipment operators (except crane),3
+75100,Transport truck drivers,3
+75110,Bus drivers, subway operators and other transit operators,3
+75300,Aircraft pilots, flight engineers and flying instructors,2
+94100,Machine operators and related workers in metal and mineral products manufacturing,4

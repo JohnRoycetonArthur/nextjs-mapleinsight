@@ -23,6 +23,7 @@ import { EvidencePackSection } from './EvidencePackSection'
 import { generateEvidencePack } from '@/lib/settlement-engine/consultant-advisory'
 import { ScenarioBuilder } from './ScenarioBuilder'
 import { useAssumptionOverrides } from '@/hooks/useAssumptionOverrides'
+import { VersionStamp } from './VersionStamp'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
@@ -583,7 +584,8 @@ export function ConsultantReport({
         {/* ── Data footer ────────────────────────────────────────────────── */}
         <div style={{ background: C.lightGray, borderRadius: 10, padding: '14px 18px', fontSize: 11, color: C.textLight, lineHeight: 1.7 }}>
           <strong style={{ color: C.gray }}>Report Type:</strong> Consultant Intelligence Report — not for client distribution
-          <br/><strong style={{ color: C.gray }}>Engine:</strong> v{engineOutput.engineVersion} · Data: {engineOutput.dataVersion}
+          <br/><strong style={{ color: C.gray }}>Engine:</strong>{' '}
+          <VersionStamp engineVersion={engineOutput.engineVersion} dataVersion={engineOutput.dataVersion} />
           <br/><strong style={{ color: C.gray }}>Advisory Logic:</strong> All analysis is deterministic and rule-based. No AI-generated content. Scenarios use CMHC, IRCC, and provincial data.
         </div>
 

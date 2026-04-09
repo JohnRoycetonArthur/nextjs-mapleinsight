@@ -54,7 +54,7 @@ const TORONTO_BASELINE: CityBaseline = {
 const BASE_INPUT: Omit<EngineInput, 'pathway' | 'housingType'> = {
   city:     'Toronto',
   province: 'ON',
-  fees: { applicationFee: 1_365, biometricsFee: 85, biometricsPaid: false },
+  fees: { applicationFee: 950, biometricsFee: 85, biometricsPaid: false },
   furnishingLevel:       'basic',
   household:             { adults: 1, children: 0 },
   needsChildcare:        false,
@@ -71,6 +71,10 @@ const BASE_INPUT: Omit<EngineInput, 'pathway' | 'housingType'> = {
 describe('getExpressEntryFunds', () => {
   it('returns correct amount for family size 1', () => {
     expect(getExpressEntryFunds(1)).toBe(15_263)
+  })
+
+  it('returns correct amount for family size 2', () => {
+    expect(getExpressEntryFunds(2)).toBe(19_001)
   })
 
   it('returns correct amount for family size 4', () => {
@@ -282,10 +286,10 @@ describe('computeUpfront — staying-family', () => {
   })
 
   it('total does not include rent deposit or furnishing', () => {
-    // Only fees + biometrics + RPRF + travel
-    const fees    = 1_365
+    // Only fees + biometrics + RPRF + travel (no deposit, no setup — staying-family)
+    const fees    = 950
     const bio     = 85
-    const rprf    = 515
+    const rprf    = 575
     const travel  = computeOneWayFlight('south-asia', 1, 0)
     expect(result.total).toBe(fees + bio + rprf + travel)
   })

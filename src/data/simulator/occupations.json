@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "data_version": "2026.1",
+    "data_version": "2026.2",
     "source_url": "https://noc.esdc.gc.ca/Home/Welcome/af4b8c68e2f14f7baddf9a04d0a36665",
     "last_updated": "2025-11-01",
     "tax_year": 2026,
@@ -82,9 +82,9 @@
     {"noc_code": "11103", "title": "Securities Agents, Investment Dealers and Brokers", "teer_level": 1, "sector": "Finance", "synonyms": ["stockbroker", "investment dealer", "securities broker", "trader", "registered representative"]},
     {"noc_code": "11200", "title": "Human Resources Professionals", "teer_level": 1, "sector": "Finance", "synonyms": ["HR professional", "human resources generalist", "CHRL", "HR business partner", "talent acquisition"]},
     {"noc_code": "12200", "title": "Accounting Technicians and Bookkeepers", "teer_level": 2, "sector": "Finance", "synonyms": ["bookkeeper", "accounting technician", "payroll administrator", "accounts payable", "accounts receivable"]},
-    {"noc_code": "13100", "title": "Insurance Agents and Brokers", "teer_level": 3, "sector": "Finance", "synonyms": ["insurance agent", "insurance broker", "life insurance agent", "RIBO", "general insurance broker"]},
-    {"noc_code": "13101", "title": "Real Estate Agents and Salespersons", "teer_level": 3, "sector": "Finance", "synonyms": ["real estate agent", "realtor", "REALTOR", "buyer's agent", "listing agent"]},
-    {"noc_code": "13102", "title": "Financial Sales Representatives", "teer_level": 3, "sector": "Finance", "synonyms": ["bank teller", "personal banker", "financial services rep", "mortgage specialist", "banking advisor"]},
+    {"noc_code": "63100", "title": "Insurance Agents and Brokers", "teer_level": 3, "sector": "Finance", "synonyms": ["insurance agent", "insurance broker", "life insurance agent", "RIBO", "general insurance broker"]},
+    {"noc_code": "63101", "title": "Real Estate Agents and Salespersons", "teer_level": 3, "sector": "Finance", "synonyms": ["real estate agent", "realtor", "REALTOR", "buyer's agent", "listing agent"]},
+    {"noc_code": "63102", "title": "Financial Sales Representatives", "teer_level": 3, "sector": "Finance", "synonyms": ["bank teller", "personal banker", "financial services rep", "mortgage specialist", "banking advisor"]},
     {"noc_code": "40020", "title": "School Principals and Administrators of Elementary and Secondary Education", "teer_level": 0, "sector": "Education", "synonyms": ["school principal", "vice-principal", "school administrator", "head teacher"]},
     {"noc_code": "41200", "title": "University Professors and Lecturers", "teer_level": 1, "sector": "Education", "synonyms": ["professor", "university lecturer", "associate professor", "assistant professor", "PhD professor"]},
     {"noc_code": "41210", "title": "Post-Secondary Teaching and Research Assistants", "teer_level": 1, "sector": "Education", "synonyms": ["teaching assistant", "TA", "research assistant", "RA", "graduate teaching fellow"]},
@@ -112,12 +112,12 @@
     {"noc_code": "51110", "title": "Librarians", "teer_level": 1, "sector": "Other", "synonyms": ["librarian", "MLIS", "reference librarian", "public librarian", "law librarian"]},
     {"noc_code": "51112", "title": "Technical Writers and Editors", "teer_level": 1, "sector": "Other", "synonyms": ["technical writer", "documentation specialist", "content writer technical", "knowledge base writer"]},
     {"noc_code": "52110", "title": "Graphic Designers and Illustrators", "teer_level": 2, "sector": "Other", "synonyms": ["graphic designer", "designer", "visual designer", "illustrator", "brand designer", "UX designer"]},
-    {"noc_code": "55100", "title": "Translators, Terminologists and Interpreters", "teer_level": 1, "sector": "Other", "synonyms": ["translator", "interpreter", "court interpreter", "conference interpreter", "CTTIC"]},
+    {"noc_code": "51120", "title": "Translators, Terminologists and Interpreters", "teer_level": 1, "sector": "Other", "synonyms": ["translator", "interpreter", "court interpreter", "conference interpreter", "CTTIC"]},
     {"noc_code": "75100", "title": "Transport Truck Drivers", "teer_level": 3, "sector": "Transport", "synonyms": ["truck driver", "long-haul driver", "AZ driver", "DZ driver", "Class 1 driver", "transport driver"]},
     {"noc_code": "75110", "title": "Bus Drivers, Subway Operators and Other Transit Operators", "teer_level": 3, "sector": "Transport", "synonyms": ["bus driver", "transit driver", "subway operator", "city bus driver", "school bus driver"]},
     {"noc_code": "75300", "title": "Aircraft Pilots, Flight Engineers and Flying Instructors", "teer_level": 2, "sector": "Transport", "synonyms": ["pilot", "commercial pilot", "captain", "first officer", "flight instructor", "CPL"]},
-    {"noc_code": "14100", "title": "Administrative Officers", "teer_level": 2, "sector": "Other", "synonyms": ["administrative officer", "office administrator", "executive assistant", "EA", "admin coordinator"]},
-    {"noc_code": "13110", "title": "Purchasing Agents and Officers", "teer_level": 2, "sector": "Finance", "synonyms": ["procurement officer", "purchasing agent", "buyer", "supply chain specialist", "contract officer"]},
+    {"noc_code": "12100", "title": "Administrative Officers", "teer_level": 2, "sector": "Other", "synonyms": ["administrative officer", "office administrator", "executive assistant", "EA", "admin coordinator"]},
+    {"noc_code": "12102", "title": "Purchasing Agents and Officers", "teer_level": 2, "sector": "Finance", "synonyms": ["procurement officer", "purchasing agent", "buyer", "supply chain specialist", "contract officer"]},
     {"noc_code": "94100", "title": "Machine Operators and Related Workers in Metal and Mineral Products Manufacturing", "teer_level": 4, "sector": "Trades", "synonyms": ["machine operator", "press operator", "production worker", "assembly line worker", "factory worker"]}
   ]
 }

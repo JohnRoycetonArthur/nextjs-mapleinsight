@@ -1,13 +1,13 @@
 import type { FurnishingLevel, HousingType, JobStatus } from './types'
 
-// ─── Engine version ───────────────────────────────────────────────────────────
+// ─── Engine version (canonical source: version.ts) ────────────────────────────
 
-export const ENGINE_VERSION = '1.0.0'
+export { ENGINE_VERSION } from './version'
 
 // ─── RPRF ─────────────────────────────────────────────────────────────────────
 
-/** Right of Permanent Residence Fee — per adult (EE FSW / FSTP / CEC, PNP). */
-export const RPRF_PER_ADULT = 515
+/** Right of Permanent Residence Fee — per adult (EE FSW / FSTP / CEC, PNP). Effective April 30, 2024. */
+export const RPRF_PER_ADULT = 575
 
 // ─── Buffer ───────────────────────────────────────────────────────────────────
 

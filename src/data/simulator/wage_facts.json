@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "data_version": "2026.1",
+    "data_version": "2026.2",
     "source_url": "https://www.jobbank.gc.ca/wagereport/occupation/",
     "last_updated": "2026-03-14",
     "tax_year": 2026,
@@ -747,7 +747,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "national",
       "low_hourly": 21.31,
       "median_hourly": 30,
@@ -756,7 +756,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "ON",
       "low_hourly": 21.63,
       "median_hourly": 30.22,
@@ -765,7 +765,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "BC",
       "low_hourly": 21,
       "median_hourly": 30.24,
@@ -774,7 +774,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "AB",
       "low_hourly": 23.08,
       "median_hourly": 31.7,
@@ -783,7 +783,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "QC",
       "low_hourly": 23,
       "median_hourly": 30.5,
@@ -792,7 +792,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "MB",
       "low_hourly": 19.49,
       "median_hourly": 26.67,
@@ -801,7 +801,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "SK",
       "low_hourly": 17.85,
       "median_hourly": 28.85,
@@ -810,7 +810,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "NS",
       "low_hourly": 18,
       "median_hourly": 27,
@@ -819,7 +819,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "NB",
       "low_hourly": 20,
       "median_hourly": 27.18,
@@ -828,7 +828,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "NL",
       "low_hourly": 23,
       "median_hourly": 30,
@@ -837,7 +837,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13100",
+      "noc_code": "63100",
       "geo_key": "PE",
       "low_hourly": 17.33,
       "median_hourly": 28.85,
@@ -846,7 +846,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "national",
       "low_hourly": 18.46,
       "median_hourly": 31.25,
@@ -855,7 +855,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "ON",
       "low_hourly": 17.63,
       "median_hourly": 30.13,
@@ -864,7 +864,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "BC",
       "low_hourly": 19.5,
       "median_hourly": 31,
@@ -873,7 +873,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "AB",
       "low_hourly": 18.28,
       "median_hourly": 33.65,
@@ -882,7 +882,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "QC",
       "low_hourly": 22,
       "median_hourly": 34.77,
@@ -891,7 +891,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "MB",
       "low_hourly": 16.15,
       "median_hourly": 27.88,
@@ -900,7 +900,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "SK",
       "low_hourly": 15.67,
       "median_hourly": 31.87,
@@ -909,7 +909,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "NS",
       "low_hourly": 16.5,
       "median_hourly": 23.08,
@@ -918,7 +918,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "NB",
       "low_hourly": 17.32,
       "median_hourly": 25.79,
@@ -927,7 +927,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "NL",
       "low_hourly": 19.21,
       "median_hourly": 31.76,
@@ -936,7 +936,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "PE",
       "low_hourly": 17,
       "median_hourly": 28.75,
@@ -945,7 +945,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "NT",
       "low_hourly": 26.74,
       "median_hourly": 42.25,
@@ -954,7 +954,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13101",
+      "noc_code": "63101",
       "geo_key": "NU",
       "low_hourly": 36.98,
       "median_hourly": 50.92,
@@ -963,7 +963,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "national",
       "low_hourly": 19.23,
       "median_hourly": 31.5,
@@ -972,7 +972,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "ON",
       "low_hourly": 19.23,
       "median_hourly": 31.25,
@@ -981,7 +981,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "BC",
       "low_hourly": 19.23,
       "median_hourly": 33.65,
@@ -990,7 +990,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "AB",
       "low_hourly": 20,
       "median_hourly": 33,
@@ -999,7 +999,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "QC",
       "low_hourly": 20,
       "median_hourly": 31.45,
@@ -1008,7 +1008,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "MB",
       "low_hourly": 18,
       "median_hourly": 31.93,
@@ -1017,7 +1017,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "SK",
       "low_hourly": 19,
       "median_hourly": 33.65,
@@ -1026,7 +1026,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "NS",
       "low_hourly": 17.5,
       "median_hourly": 27.88,
@@ -1035,7 +1035,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "NB",
       "low_hourly": 16.85,
       "median_hourly": 25,
@@ -1044,7 +1044,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "NL",
       "low_hourly": 16,
       "median_hourly": 24.04,
@@ -1053,7 +1053,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13102",
+      "noc_code": "63102",
       "geo_key": "PE",
       "low_hourly": 18.32,
       "median_hourly": 28.85,
@@ -1062,7 +1062,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "national",
       "low_hourly": 19.23,
       "median_hourly": 26.44,
@@ -1071,7 +1071,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "ON",
       "low_hourly": 19,
       "median_hourly": 26.67,
@@ -1080,7 +1080,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "BC",
       "low_hourly": 20,
       "median_hourly": 28.5,
@@ -1089,7 +1089,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "AB",
       "low_hourly": 19.78,
       "median_hourly": 26.43,
@@ -1098,7 +1098,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "QC",
       "low_hourly": 20,
       "median_hourly": 26,
@@ -1107,7 +1107,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "MB",
       "low_hourly": 17,
       "median_hourly": 24.32,
@@ -1116,7 +1116,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "SK",
       "low_hourly": 18.2,
       "median_hourly": 25,
@@ -1125,7 +1125,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "NS",
       "low_hourly": 18.3,
       "median_hourly": 25,
@@ -1134,7 +1134,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "NB",
       "low_hourly": 17.79,
       "median_hourly": 25,
@@ -1143,7 +1143,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "NL",
       "low_hourly": 19.57,
       "median_hourly": 26.37,
@@ -1152,7 +1152,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "PE",
       "low_hourly": 16.62,
       "median_hourly": 26.67,
@@ -1161,7 +1161,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "NT",
       "low_hourly": 25,
       "median_hourly": 36,
@@ -1170,7 +1170,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "13110",
+      "noc_code": "12102",
       "geo_key": "NU",
       "low_hourly": 24.62,
       "median_hourly": 32.4,
@@ -1179,7 +1179,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "national",
       "low_hourly": 16.55,
       "median_hourly": 23.99,
@@ -1188,7 +1188,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "ON",
       "low_hourly": 17.6,
       "median_hourly": 23.08,
@@ -1197,7 +1197,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "BC",
       "low_hourly": 17.85,
       "median_hourly": 25,
@@ -1206,7 +1206,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "AB",
       "low_hourly": 15.5,
       "median_hourly": 25,
@@ -1215,7 +1215,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "QC",
       "low_hourly": 16.1,
       "median_hourly": 23.08,
@@ -1224,7 +1224,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "MB",
       "low_hourly": 16,
       "median_hourly": 22,
@@ -1233,7 +1233,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "SK",
       "low_hourly": 16.12,
       "median_hourly": 22,
@@ -1242,7 +1242,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "NS",
       "low_hourly": 16.5,
       "median_hourly": 21.99,
@@ -1251,7 +1251,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "NB",
       "low_hourly": 16.75,
       "median_hourly": 23.16,
@@ -1260,7 +1260,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "NL",
       "low_hourly": 16.55,
       "median_hourly": 23.75,
@@ -1269,7 +1269,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "PE",
       "low_hourly": 16.5,
       "median_hourly": 22.25,
@@ -1278,7 +1278,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "NT",
       "low_hourly": 20,
       "median_hourly": 29.81,
@@ -1287,7 +1287,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "14100",
+      "noc_code": "12100",
       "geo_key": "NU",
       "low_hourly": 19,
       "median_hourly": 33.38,
@@ -7686,7 +7686,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "national",
       "low_hourly": 20,
       "median_hourly": 33.95,
@@ -7695,7 +7695,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "ON",
       "low_hourly": 20,
       "median_hourly": 25.64,
@@ -7704,7 +7704,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "BC",
       "low_hourly": 21.72,
       "median_hourly": 33.55,
@@ -7713,7 +7713,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "AB",
       "low_hourly": 19.84,
       "median_hourly": 32.28,
@@ -7722,7 +7722,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "QC",
       "low_hourly": 24.62,
       "median_hourly": 36.26,
@@ -7731,7 +7731,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "MB",
       "low_hourly": 16,
       "median_hourly": 30,
@@ -7740,7 +7740,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "SK",
       "low_hourly": 21.62,
       "median_hourly": 33.53,
@@ -7749,7 +7749,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "NS",
       "low_hourly": 16.5,
       "median_hourly": 30,
@@ -7758,7 +7758,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "NB",
       "low_hourly": 16,
       "median_hourly": 30,
@@ -7767,7 +7767,7 @@
       "ref_period": "2023-2024"
     },
     {
-      "noc_code": "55100",
+      "noc_code": "51120",
       "geo_key": "NU",
       "low_hourly": 31.48,
       "median_hourly": 48.77,

@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, settlement-planner]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: NOC 2021 parity audit
+        run: node scripts/audit-noc-parity.mjs
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  # ── IRCC Floor Guard ────────────────────────────────────────────────────────
+  # US-1.5 — Final line of defense for IRCC proof-of-funds data integrity.
+  #
+  # This job runs ONLY the irccFloor regression suite and is intentionally
+  # separate from lint-and-test so that a floor violation is surfaced as a
+  # clearly named, blocking check in the GitHub PR status panel.
+  #
+  # Rule: no displayed required-funds figure may fall below the applicable
+  # IRCC floor for any pathway × family size (1–10).
+  # Pathways: express-entry-fsw, express-entry-fstp, pnp, study-permit (ON/QC).
+  # Exempt: express-entry-cec, work-permit, family-sponsorship.
+  #
+  # Failure messages include pathway, family size, expected floor, actual amount,
+  # and dataVersion so that any regression is immediately actionable.
+  ircc-floor-guard:
+    name: IRCC Floor Guard (US-1.5)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: IRCC floor regression test
+        run: npm test -- --testPathPatterns=irccFloor --forceExit

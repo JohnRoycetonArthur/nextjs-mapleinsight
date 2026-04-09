@@ -16,6 +16,7 @@ import {
   computeRoundTripFlight,
   rentFromBaseline,
 } from './constants'
+import type { FeeSchedule } from './fees'
 import type { BreakdownItem, EngineInput, StudyPermitInputs } from './types'
 
 /** Normalize a city name to a Sanity catalog key fragment (e.g. "Montréal" → "montreal"). */
@@ -322,22 +323,35 @@ export function computeStudyPermitUpfront(
   input: StudyPermitUpfrontInput,
   data: StudyPermitData,
   baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback' | 'cityName'>,
+  feeSchedule?: FeeSchedule,
 ): { total: number; breakdown: BreakdownItem[] } {
   const { studyPermit, household, province } = input
   const familySize = household.adults + household.children
   const items: BreakdownItem[] = []
 
+  // Resolve per-item source URLs from fee schedule (US-1.3)
+  const scheduleUrl  = feeSchedule?.sourceUrl
+  const permitUrl    = feeSchedule?.feeLineItems.find(li => li.key === 'permit-fee')?.sourceUrl      ?? scheduleUrl
+  const bioUrl       = feeSchedule?.feeLineItems.find(li => li.key === 'biometrics-family-cap' || li.key === 'biometrics-single')?.sourceUrl ?? scheduleUrl
+  const medicalUrl   = feeSchedule?.feeLineItems.find(li => li.key === 'medical-exam')?.sourceUrl   ?? scheduleUrl
+
+  // Resolve amounts from fee schedule, fall back to known constants
+  const permitFee    = feeSchedule?.applicationFee       ?? 150
+  const bioPerPerson = feeSchedule?.biometricsPerPerson  ?? 85
+  const bioFamilyCap = feeSchedule?.biometricsFamilyCap  ?? 170
+  const medicalPerPerson = feeSchedule?.medicalExamPerPerson ?? 250
+
   // ── 1. Immigration fees — Due at Submission ──────────────────────────────
   if (!studyPermit.feesPaid) {
-    items.push({ key: 'permit-fee', label: 'Study permit application fee', cad: 150, source: 'ircc', sourceKey: 'ircc-study-permit-fees', timing: 'submission' })
+    items.push({ key: 'permit-fee', label: 'Study permit application fee', cad: permitFee, source: 'ircc', sourceKey: 'ircc-study-permit-fees', sourceUrl: permitUrl, timing: 'submission' })
 
     if (!studyPermit.biometricsDone) {
-      const bioFee = familySize >= 2 ? 170 : 85
-      items.push({ key: 'biometrics', label: `Biometrics fee (${familySize >= 2 ? 'family' : 'individual'})`, cad: bioFee, source: 'ircc', sourceKey: 'ircc-study-permit-fees', timing: 'submission' })
+      const bioFee = familySize >= 2 ? bioFamilyCap : bioPerPerson
+      items.push({ key: 'biometrics', label: `Biometrics fee (${familySize >= 2 ? 'family' : 'individual'})`, cad: bioFee, source: 'ircc', sourceKey: 'ircc-study-permit-fees', sourceUrl: bioUrl, timing: 'submission' })
     }
 
-    const medical = familySize * 250
-    items.push({ key: 'medical-exam', label: `Medical exam (${familySize} person${familySize > 1 ? 's' : ''} × $250)`, cad: medical, source: 'ircc', sourceKey: 'ircc-study-permit-fees', timing: 'submission' })
+    const medical = familySize * medicalPerPerson
+    items.push({ key: 'medical-exam', label: `Medical exam (${familySize} person${familySize > 1 ? 's' : ''} × $${medicalPerPerson})`, cad: medical, source: 'ircc', sourceKey: 'ircc-study-permit-fees', sourceUrl: medicalUrl, timing: 'submission' })
   }
 
   // ── 2. Tuition (first year) — Pre-Arrival Setup ───────────────────────────

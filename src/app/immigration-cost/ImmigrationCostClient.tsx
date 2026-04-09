@@ -11,6 +11,7 @@ import { WizardShell } from '@/components/settlement-planner/wizard/WizardShell'
 import { getScenarioByType } from '@/lib/scenarios';
 import type { Scenario } from '@/lib/scenarios';
 import { trackEvent } from '@/lib/analytics';
+import { VersionStamp } from '@/components/settlement-planner/VersionStamp';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -387,6 +388,11 @@ export function ImmigrationCostClient() {
         <SettlementSessionProvider slug="immigration-cost" mode="public">
           <PlanSection scenarioType={scenarioType} />
         </SettlementSessionProvider>
+
+        {/* Version stamp — exposed on every page showing modelled figures (US-1.4) */}
+        <div style={{ textAlign: 'center', marginTop: 24, paddingBottom: 8 }}>
+          <VersionStamp />
+        </div>
       </section>
     </div>
   );

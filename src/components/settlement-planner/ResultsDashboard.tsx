@@ -46,8 +46,10 @@ import { generateChecklist } from '@/lib/settlement-engine/checklist'
 import { SendToConsultantModal } from './SendToConsultantModal'
 import { SourceBadge } from './SourceBadge'
 import { DataFreshnessBar } from './DataFreshnessBar'
+import { VersionStamp } from './VersionStamp'
 import { fetchDataSources } from '@/lib/settlement-engine/sources'
 import type { DataSource } from '@/lib/settlement-engine/types'
+import { getFeeSchedule, computeBiometricsFee } from '@/lib/settlement-engine/fees'
 import { CURRENCY_SYMBOLS, type SupportedCurrency } from '@/lib/settlement-engine/currency'
 import { PublicModeSaveCard } from './PublicModeSaveCard'
 import { WhatToDoNext } from './WhatToDoNext'
@@ -93,11 +95,9 @@ function mapPathway(
     case 'family':        return 'family-sponsorship'
     case 'express_entry': {
       const sub = expressEntry?.subClass ?? 'fsw'
-      if (sub === 'cec' && expressEntry?.hasJobOffer && expressEntry?.isWorkAuthorized) {
-        return 'express-entry-cec'   // proof-of-funds exempt
-      }
+      if (sub === 'cec') return 'express-entry-cec'    // CEC always exempt (US-2.1)
       if (sub === 'fst') return 'express-entry-fstp'
-      return 'express-entry-fsw'     // fsw, unsure, or CEC without full exemption criteria
+      return 'express-entry-fsw'
     }
     default: return 'express-entry-fsw'
   }
@@ -450,11 +450,14 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
       province: answers.province ?? 'ON',
       pathway,
       departureRegion: answers.departureRegion,
-      fees: {
-        applicationFee: isStudy ? 150 : pathway === 'express-entry-fsw' ? 1_365 : 1_050,
-        biometricsFee:  adults >= 2 ? 170 : 85,
-        biometricsPaid: bioDone,
-      },
+      fees: (() => {
+        const sched = getFeeSchedule(pathway)
+        return {
+          applicationFee: sched.applicationFee,
+          biometricsFee:  computeBiometricsFee(sched, { adults, children: answers.children ?? 0 }),
+          biometricsPaid: bioDone,
+        }
+      })(),
       housingType:           mapHousing(answers.housing),
       furnishingLevel:       mapFurnishing(answers.furnishing),
       household:             { adults, children: answers.children ?? 0 },
@@ -475,6 +478,7 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
       customExpenses:        answers.customExpenses ?? [],
       jobStatus:             mapJobStatus(answers.jobStatus),
       studyPermit:           studyPermitInput,
+      jobOfferExempt:        answers.jobOfferExempt ?? false,
     }
   }, [baseline, answers])
 
@@ -483,11 +487,14 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
     if (!engineInput || !baseline) return null
     const dataVersion = `cmhc:${baseline.dataVersion}|ircc:2026-q1`
     const isStudy     = engineInput.pathway === 'study-permit'
+    const feeSchedule = getFeeSchedule(engineInput.pathway)
     return runEngine(
       engineInput,
       baseline,
       dataVersion,
       isStudy ? STUDY_PERMIT_DEFAULTS : undefined,
+      undefined,
+      feeSchedule,
     )
   }, [engineInput, baseline])
 
@@ -553,6 +560,8 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
   const complianceRequirement = useMemo(() => {
     if (!engineInput) return null
     if (engineInput.pathway === 'study-permit') return null
+    // US-2.2: job offer + work auth exemption — no compliance floor card
+    if (engineInput.jobOfferExempt && (engineInput.pathway === 'express-entry-fsw' || engineInput.pathway === 'express-entry-fstp')) return null
     const familySize = engineInput.household.adults + engineInput.household.children
     return getComplianceRequirement(engineInput.pathway, familySize, EXPRESS_ENTRY_DEFAULTS)
   }, [engineInput])
@@ -778,12 +787,13 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
 
   const checklist = generateChecklist(
     {
-      pathway:   answers.pathway  ?? '',
-      province:  answers.province ?? 'ON',
-      city:      answers.city     ?? 'toronto',
-      gicStatus: answers.studyPermit?.gicStatus ?? null,
-      income:    narrativeData?.monthlyIncome ?? 0,
-      savings:   engineInput.liquidSavings,
+      pathway:        answers.pathway  ?? '',
+      province:       answers.province ?? 'ON',
+      city:           answers.city     ?? 'toronto',
+      gicStatus:      answers.studyPermit?.gicStatus ?? null,
+      income:         narrativeData?.monthlyIncome ?? 0,
+      savings:        engineInput.liquidSavings,
+      jobOfferExempt: answers.jobOfferExempt ?? false,
     },
     topRisks,
   )
@@ -976,20 +986,172 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
 
         {/* ── 1. Compliance Status Card — visually dominant ─────────────── */}
 
-        {/* EE CEC: Proof of Funds Exempt */}
-        {answers.pathway === 'express_entry' && engineInput?.pathway === 'express-entry-cec' && (
-          <div style={{ borderRadius: 14, padding: isMobile ? '20px 18px' : '24px 28px', marginBottom: 20, background: '#ECFDF5', border: `2px solid ${C.accent}`, textAlign: 'center' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: C.accent, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: FONT }}>
-              IRCC Financial Requirement
+        {/* EE CEC: Proof of Funds Exempt (US-2.1) */}
+        {engineInput?.pathway === 'express-entry-cec' && engineOutput && (
+          <div style={{
+            background: C.white, borderRadius: 18,
+            border: `1px solid ${C.border}`, overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
+            marginBottom: 20,
+          }}>
+            {/* Header strip */}
+            <div style={{
+              padding: isMobile ? '14px 18px' : '18px 24px',
+              borderBottom: `1px solid ${C.border}`,
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: '#DCFCE7', color: '#15803D', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, fontFamily: FONT, letterSpacing: 0.6, textTransform: 'uppercase' }}>
+                  Proof of Funds
+                </div>
+                <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 700, color: C.text, fontFamily: SERIF, marginTop: 2 }}>
+                  Not required
+                </div>
+              </div>
+              <div style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+                padding: '5px 10px', borderRadius: 5, flexShrink: 0,
+                color: '#15803D', background: '#DCFCE7', fontFamily: FONT,
+              }}>CEC EXEMPT</div>
             </div>
-            <div style={{ fontFamily: SERIF, fontSize: isMobile ? 24 : 30, fontWeight: 700, color: C.accent, marginBottom: 6 }}>
-              ✓ Proof of Funds: Exempt
+            {/* Body */}
+            <div style={{ padding: isMobile ? '18px' : '24px' }}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: 16, background: '#DCFCE7', borderRadius: 12,
+                color: '#15803D', marginBottom: 14,
+              }}>
+                <div style={{ paddingTop: 2, flexShrink: 0 }}>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                </div>
+                <div style={{ fontSize: 13, fontFamily: FONT, lineHeight: 1.6 }}>
+                  <strong>IRCC does not require proof of funds for Canadian Experience Class applicants.</strong>{' '}
+                  Your existing Canadian work experience and in-country status satisfy the settlement-readiness requirement.
+                  The IRCC floor has been removed from your required-funds calculation.
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: C.textLight, fontFamily: FONT, lineHeight: 1.6 }}>
+                Your required settlement funds are calculated from the real-world model only (upfront costs + monthly
+                burn × runway months + 10 % buffer).{' '}
+                <a
+                  href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html"
+                  target="_blank" rel="noreferrer"
+                  style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}
+                >
+                  IRCC source ↗
+                </a>
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: C.text }}>
-              CEC applicants with a valid job offer and current work authorization are exempt from the proof-of-funds requirement.
+            {/* Footer — version stamp */}
+            <div style={{
+              padding: '10px 24px', borderTop: `1px solid ${C.border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: C.lightGray,
+            }}>
+              <div style={{ fontSize: 10, color: C.textLight, fontFamily: FONT }}>
+                Engine v{engineOutput.engineVersion} • Data {engineOutput.dataVersion}
+              </div>
+              <div style={{ fontSize: 10, color: C.textLight, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapleLeaf size={9} />
+                Maple Insight
+              </div>
             </div>
-            <div style={{ fontSize: 10, color: C.textLight, marginTop: 6 }}>
-              Source: IRCC — Express Entry CEC eligibility criteria
+          </div>
+        )}
+
+        {/* EE FSW/FST: Proof of Funds Exempt via Job Offer (US-2.2) */}
+        {engineInput?.jobOfferExempt &&
+         (engineInput.pathway === 'express-entry-fsw' || engineInput.pathway === 'express-entry-fstp') &&
+         engineOutput && (
+          <div style={{
+            background: C.white, borderRadius: 18,
+            border: `1px solid ${C.border}`, overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
+            marginBottom: 20,
+          }}>
+            {/* Header strip */}
+            <div style={{
+              padding: isMobile ? '14px 18px' : '18px 24px',
+              borderBottom: `1px solid ${C.border}`,
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: '#DCFCE7', color: '#15803D', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, fontFamily: FONT, letterSpacing: 0.6, textTransform: 'uppercase' }}>
+                  Proof of Funds
+                </div>
+                <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 700, color: C.text, fontFamily: SERIF, marginTop: 2 }}>
+                  Not required
+                </div>
+              </div>
+              <div style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: 0.5,
+                padding: '5px 10px', borderRadius: 5, flexShrink: 0,
+                color: '#15803D', background: '#DCFCE7', fontFamily: FONT,
+              }}>JOB OFFER EXEMPT</div>
+            </div>
+            {/* Body */}
+            <div style={{ padding: isMobile ? '18px' : '24px' }}>
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: 16, background: '#DCFCE7', borderRadius: 12,
+                color: '#15803D', marginBottom: 14,
+              }}>
+                <div style={{ paddingTop: 2, flexShrink: 0 }}>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                </div>
+                <div style={{ fontSize: 13, fontFamily: FONT, lineHeight: 1.6 }}>
+                  <strong>Applicants with a valid Canadian job offer and work authorization are exempt from proof of funds.</strong>{' '}
+                  Your consultant will need to verify your work authorization document before submission.
+                  The IRCC floor has been removed from your required-funds calculation.
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: C.textLight, fontFamily: FONT, lineHeight: 1.6 }}>
+                Your required settlement funds are calculated from the real-world model only (upfront costs + monthly
+                burn × runway months + 10 % buffer).{' '}
+                <a
+                  href="https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html"
+                  target="_blank" rel="noreferrer"
+                  style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}
+                >
+                  IRCC source ↗
+                </a>
+              </div>
+            </div>
+            {/* Footer — version stamp */}
+            <div style={{
+              padding: '10px 24px', borderTop: `1px solid ${C.border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: C.lightGray,
+            }}>
+              <div style={{ fontSize: 10, color: C.textLight, fontFamily: FONT }}>
+                Engine v{engineOutput.engineVersion} • Data {engineOutput.dataVersion}
+              </div>
+              <div style={{ fontSize: 10, color: C.textLight, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapleLeaf size={9} />
+                Maple Insight
+              </div>
             </div>
           </div>
         )}
@@ -1180,9 +1342,28 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
 
           const hasTimingData = engineOutput.upfrontBreakdown.some(it => it.timing)
 
+          // ── Fee trust badge (US-1.3) ──────────────────────────────────
+          const pathwayFeeSchedule = engineInput ? getFeeSchedule(engineInput.pathway) : null
+
           return (
             <div style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: isMobile ? '18px 16px' : '22px 26px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-              <h2 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: '0 0 14px' }}>Cost Breakdown</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <h2 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest, margin: 0 }}>Cost Breakdown</h2>
+                {pathwayFeeSchedule?.verified && (
+                  <span
+                    title={`Fee data verified against official IRCC sources on ${pathwayFeeSchedule.verifiedAt}`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      fontSize: 10, fontWeight: 700, color: '#1B7A4A',
+                      background: '#D1FAE5', borderRadius: 20,
+                      padding: '2px 8px', letterSpacing: 0.3,
+                      fontFamily: FONT, whiteSpace: 'nowrap',
+                    }}
+                  >
+                    ✓ Fees verified
+                  </span>
+                )}
+              </div>
 
               {/* ── Upfront costs split by timing ─────────────────────────── */}
               <div style={{ marginBottom: 18 }}>
@@ -1209,6 +1390,19 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
                                   ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} fallbackSource={it.source} />
                                   : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
                                 }
+                                {it.sourceUrl && (
+                                  <a
+                                    href={it.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Official source for ${it.label}`}
+                                    style={{ display: 'inline-flex', alignItems: 'center', color: C.gray, lineHeight: 1 }}
+                                  >
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                  </a>
+                                )}
                               </div>
                               <span style={{ fontSize: 13, fontWeight: 600, color: C.forest, whiteSpace: 'nowrap' }}>{fmt(it.cad)}</span>
                             </div>
@@ -1238,6 +1432,13 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
                             ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} fallbackSource={it.source} />
                             : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
                           }
+                          {it.sourceUrl && (
+                            <a href={it.sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={`Official source for ${it.label}`} style={{ display: 'inline-flex', alignItems: 'center', color: C.gray, lineHeight: 1 }}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                              </svg>
+                            </a>
+                          )}
                         </div>
                         <span style={{ fontSize: 13, fontWeight: 600, color: C.forest, whiteSpace: 'nowrap' }}>{fmt(it.cad)}</span>
                       </div>
@@ -1453,7 +1654,8 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
         <div style={{ background: C.lightGray, borderRadius: 10, padding: '14px 18px', fontSize: 11, color: C.textLight, lineHeight: 1.6 }}>
           <strong style={{ color: C.gray }}>Data Sources:</strong> Rent data from CMHC ({baseline.effectiveDate.slice(0, 7)}). Immigration fees from IRCC. Income estimates from Job Bank via NOC wage data. Items marked &quot;Estimate&quot; are conservative baselines.
           <br />
-          <strong style={{ color: C.gray }}>Engine:</strong> v{engineOutput.engineVersion} · Data: {engineOutput.dataVersion}
+          <strong style={{ color: C.gray }}>Engine:</strong>{' '}
+          <VersionStamp engineVersion={engineOutput.engineVersion} dataVersion={engineOutput.dataVersion} />
           <br />
           <strong style={{ color: C.gray }}>Disclaimer:</strong>{' '}
           {isPublicMode

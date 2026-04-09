@@ -44,6 +44,7 @@ export interface ReportResults {
   bindingConstraint?:      EngineOutput['bindingConstraint']
   irccCompliance?:         IRCCComplianceResult
   complianceRequirement?:  number
+  proofOfFundsExemption?:  EngineOutput['proofOfFundsExemption']
 }
 
 /** Overridden assumptions captured when a consultant adjusts defaults (US-21.2). */
@@ -116,6 +117,7 @@ export function generateReportPackage(params: GenerateReportParams): MapleReport
   if (engineOutput.complianceFloor   !== undefined) results.complianceFloor   = engineOutput.complianceFloor
   if (engineOutput.complianceFloorApplied !== undefined) results.complianceFloorApplied = engineOutput.complianceFloorApplied
   if (engineOutput.bindingConstraint !== undefined) results.bindingConstraint = engineOutput.bindingConstraint
+  if (engineOutput.proofOfFundsExemption !== undefined) results.proofOfFundsExemption = engineOutput.proofOfFundsExemption
   if (irccCompliance)        results.irccCompliance        = irccCompliance
   if (complianceRequirement) results.complianceRequirement = complianceRequirement
 

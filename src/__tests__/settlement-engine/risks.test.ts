@@ -201,6 +201,14 @@ describe('proofOfFundsMinimum', () => {
       { upfront: 10_000 },
     ))).toBeNull()
   })
+
+  it('does not fire when savings exactly equal upfront (boundary)', () => {
+    // Boundary: liquidSavings === upfront — rule uses strict less-than so this is safe
+    expect(proofOfFundsMinimum.evaluate(ctx(
+      { pathway: 'express-entry-fsw', liquidSavings: 8_000 },
+      { upfront: 8_000 },
+    ))).toBeNull()
+  })
 })
 
 // ─── Rule 6: largeSavingsGap ──────────────────────────────────────────────────

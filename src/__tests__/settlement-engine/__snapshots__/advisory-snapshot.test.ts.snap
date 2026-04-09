@@ -38,7 +38,7 @@ exports[`Advisory Engine — Fixture A: EE Toronto $18K no job full advisory out
     ],
     "talkingPoints": [
       "Address the $14,460 gap: lead with Strategies 1 & 2 as a package (combined impact: ~$21,612).",
-      "Confirm proof-of-funds compliance is met. Remind client that funds must remain accessible and documented through landing — do not use these funds before the COPR or permit is stamped.",
+      "Proof of funds is a critical concern: IRCC requires $15,263 for this pathway.",
       "Discuss the pre-arrival job search — the highest-impact action (see Scenario 4: Secure role at $72,000/year).",
       "Present Scenario 1: Destination: Winnipeg as a Plan B — see Scenario Analysis for gap-reduction detail.",
       "Run the Newcomer Budget Calculator together to build a month-by-month cash flow plan for the first 6 months — this gives the client a concrete financial roadmap to take away.",
@@ -46,15 +46,15 @@ exports[`Advisory Engine — Fixture A: EE Toronto $18K no job full advisory out
   },
   "programNotes": [
     {
-      "color": "#1B7A4A",
-      "content": "IRCC requires $14,690 for this pathway. Client's $18,000 exceeds this by $3,310. After estimated application fees (~$2,583), the effective buffer drops to ~$727. Funds must remain accessible and documented through landing.",
-      "severity": "positive",
+      "color": "#B8860B",
+      "content": "IRCC requires $15,263 for this pathway. Client's $18,000 exceeds this by $2,737. After estimated application fees (~$2,583), the effective buffer drops to ~$154. Funds must remain accessible and documented through landing.",
+      "severity": "warning",
       "source": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/documents/proof-funds.html",
-      "title": "Proof of Funds: Compliant",
+      "title": "Proof of Funds: Compliant but Thin",
     },
     {
       "color": "#2563EB",
-      "content": "The Right of Permanent Residence Fee ($515 per adult) can be paid at any time before landing. Recommend paying early to avoid last-minute pressure on savings and to signal readiness to IRCC.",
+      "content": "The Right of Permanent Residence Fee ($575 per adult) can be paid at any time before landing. Recommend paying early to avoid last-minute pressure on savings and to signal readiness to IRCC.",
       "severity": "info",
       "source": "https://ircc.canada.ca/english/information/fees/fees.asp",
       "title": "RPRF Payment Timing",
@@ -209,7 +209,7 @@ exports[`Advisory Engine — Fixture A: EE Toronto $18K no job full advisory out
 }
 `;
 
-exports[`Advisory Engine — Fixture A: EE Toronto $18K no job word count — records baseline for deduplication comparison 1`] = `871`;
+exports[`Advisory Engine — Fixture A: EE Toronto $18K no job word count — records baseline for deduplication comparison 1`] = `856`;
 
 exports[`Advisory Engine — Fixture B: Study Permit Vancouver $45K full advisory output matches snapshot 1`] = `
 {
