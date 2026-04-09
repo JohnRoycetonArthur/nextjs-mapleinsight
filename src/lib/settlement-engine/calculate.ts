@@ -24,6 +24,7 @@ import {
   type ExpressEntryData,
   getComplianceRequirement,
   computeEEProofOfFunds,
+  computeSafeRecommended,
 } from './compliance'
 import {
   type StudyPermitData,
@@ -38,6 +39,17 @@ import {
   type CustomExpense,
   type DefaultExpenseKey,
 } from './defaults'
+
+// ─── computeFamilySize ────────────────────────────────────────────────────────
+
+/**
+ * Returns the IRCC family size for a household.
+ * IRCC counts ALL adults + ALL dependents, including non-accompanying members.
+ * This value drives the proof-of-funds lookup and overflow note (US-2.4).
+ */
+export function computeFamilySize(household: { adults: number; children: number }): number {
+  return household.adults + household.children
+}
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -447,13 +459,17 @@ export function computeSafe(
     }
   }
 
-  // ── Express Entry / PNP compliance floor ────────────────────────────────
+  // ── Express Entry / PNP compliance floor (US-2.3) ───────────────────────
+  // safeSavingsTarget uses safeRecommended (official × 1.05) so the savings gap
+  // is computed against the real-world buffer target, not the bare regulatory floor.
+  // complianceFloor retains the official minimum for display and floor-check tests.
   const complianceFloor = getComplianceRequirement(input.pathway, familySize, expressEntryData)
   if (complianceFloor !== null) {
-    const complianceFloorApplied = complianceFloor > standardTarget
+    const safeRecommended      = computeSafeRecommended(complianceFloor)
+    const complianceFloorApplied = safeRecommended > standardTarget
     return {
       monthlySafe,
-      safeSavingsTarget:       complianceFloorApplied ? complianceFloor : standardTarget,
+      safeSavingsTarget:       complianceFloorApplied ? safeRecommended : standardTarget,
       runwayMonths:            runway,
       bufferPercent:           BUFFER_PERCENT,
       breakdown,

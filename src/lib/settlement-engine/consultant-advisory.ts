@@ -82,11 +82,13 @@ export interface StudyPermitAdvisorySubsection {
 }
 
 export interface StudyPermitAdvisory {
-  proofOfFunds:   StudyPermitAdvisorySubsection
-  tuitionCosts:   StudyPermitAdvisorySubsection
-  healthCoverage: StudyPermitAdvisorySubsection
-  partTimeIncome: StudyPermitAdvisorySubsection
-  refusalRisk:    StudyPermitAdvisorySubsection
+  proofOfFunds:    StudyPermitAdvisorySubsection
+  tuitionCosts:    StudyPermitAdvisorySubsection
+  healthCoverage:  StudyPermitAdvisorySubsection
+  partTimeIncome:  StudyPermitAdvisorySubsection
+  refusalRisk:     StudyPermitAdvisorySubsection
+  /** Present only when studyPermit.isSDS === true (US-2.5). */
+  sdsEligibility?: StudyPermitAdvisorySubsection
 }
 
 export interface RedFlag {
@@ -846,7 +848,25 @@ export function generateStudyPermitAdvisory(
       : `${refusalFactors.length} refusal risk factor${refusalFactors.length > 1 ? 's' : ''} identified: ${refusalFactors.map((f, i) => `(${i + 1}) ${f}`).join('; ')}. Each must be resolved before application submission.`,
   }
 
-  return { proofOfFunds, tuitionCosts, healthCoverage, partTimeIncome, refusalRisk }
+  // ── 6. SDS Eligibility (only when isSDS = true) ──────────────────────────
+  const sdsEligibility: StudyPermitAdvisorySubsection | undefined = sp.isSDS
+    ? {
+        title:  'SDS Eligibility & Requirements',
+        status: 'at-risk',
+        metric: '~20-day processing',
+        content: `Client has selected Student Direct Stream (SDS). Confirm all mandatory SDS criteria before submission: `
+          + `(1) Citizenship or country of residence is on the IRCC SDS eligible list (13 countries as of 2025). `
+          + `(2) IELTS Academic score ≥ 6.0 in all four bands — or TEF Canada / CELPIP General equivalent. `
+          + `(3) Unconditional letter of acceptance from a Designated Learning Institution (DLI). `
+          + `(4) GIC of ${fmt(data.gicMinimum)} is mandatory — not optional for SDS. `
+          + `(5) Medical exam completed with an IRCC-approved panel physician. `
+          + `(6) Up-to-date valid passport for the full intended study period. `
+          + `GIC status: ${sp.gicStatus === 'purchased' ? 'purchased ✓' : sp.gicStatus === 'planning' ? 'planning to purchase' : 'NOT purchasing — this will disqualify the SDS application'}. `
+          + `If all criteria are met, IRCC targets ~20-day processing. If any criterion is missing, the application reverts to the standard stream.`,
+      }
+    : undefined
+
+  return { proofOfFunds, tuitionCosts, healthCoverage, partTimeIncome, refusalRisk, sdsEligibility }
 }
 
 // ─── Section 5: generateMeetingGuide ─────────────────────────────────────────

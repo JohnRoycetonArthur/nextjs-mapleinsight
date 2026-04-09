@@ -67,6 +67,8 @@ export interface StudyPermitData {
     estimatedHourlyRateHigh: number
   }
   provincialMinWages: Array<{ provinceCode: string; hourlyRate: number }>
+  /** IRCC Student Direct Stream (SDS) eligible countries. Source: canada.ca/sds */
+  sdsEligibleCountries:        string[]
 }
 
 export interface IRCCComplianceResult {
@@ -151,6 +153,23 @@ export const STUDY_PERMIT_DEFAULTS: StudyPermitData = {
     { provinceCode: 'PE', hourlyRate: 15.40 },
     { provinceCode: 'NL', hourlyRate: 15.60 },
   ],
+  // SDS eligible countries — source: canada.ca Student Direct Stream (effective 2025).
+  // Manageable via Sanity Studio; this list is the hardcoded fallback.
+  sdsEligibleCountries: [
+    'Antigua and Barbuda',
+    'Brazil',
+    'China',
+    'Colombia',
+    'Costa Rica',
+    'India',
+    'Morocco',
+    'Pakistan',
+    'Peru',
+    'Philippines',
+    'Senegal',
+    'Trinidad and Tobago',
+    'Vietnam',
+  ],
 }
 
 // ─── fetchStudyPermitData ─────────────────────────────────────────────────────
@@ -173,6 +192,7 @@ export function fetchStudyPermitData(doc: Record<string, any> | null | undefined
     healthInsuranceByProvince:    doc.studyPermitData.healthInsuranceByProvince    ?? STUDY_PERMIT_DEFAULTS.healthInsuranceByProvince,
     studentWorkRights:            doc.studyPermitData.studentWorkRights            ?? STUDY_PERMIT_DEFAULTS.studentWorkRights,
     provincialMinWages:           doc.studyPermitData.provincialMinWages           ?? STUDY_PERMIT_DEFAULTS.provincialMinWages,
+    sdsEligibleCountries:         doc.studyPermitData.sdsEligibleCountries         ?? STUDY_PERMIT_DEFAULTS.sdsEligibleCountries,
   }
 }
 
