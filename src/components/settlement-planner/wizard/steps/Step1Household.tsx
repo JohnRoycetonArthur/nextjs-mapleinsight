@@ -10,6 +10,7 @@
 
 import { useState } from 'react'
 import { C, FONT, SERIF } from '../constants'
+import { CountrySearch } from '../CountrySearch'
 import type { WizardAnswers } from '../../SettlementSessionContext'
 
 // ─── Departure region options ─────────────────────────────────────────────────
@@ -121,6 +122,8 @@ export function Step1Household({ data, onChange, errors }: Props) {
     (touched.region || errors.departureRegion) && !data.departureRegion
       ? (errors.departureRegion ?? 'Please select where your household is travelling from.')
       : errors.departureRegion
+
+  const countryError = errors.countryOfOrigin
 
   const [selectFocused, setSelectFocused] = useState(false)
   const [regionFocused, setRegionFocused] = useState(false)
@@ -254,6 +257,33 @@ export function Step1Household({ data, onChange, errors }: Props) {
             This helps us estimate your flight cost to Canada.
           </p>
         )}
+      </div>
+
+      {/* ── Country of origin (US-3.1) ────────────────────────────────────── */}
+      <div style={{
+        marginTop: 28, padding: 20,
+        background: `${C.accent}06`, borderRadius: 14,
+        border: `1px dashed ${C.accent}40`,
+      }}>
+        <label
+          style={{ display: 'block', fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4, fontFamily: FONT }}
+          id="country-of-origin-label"
+        >
+          Country of origin *
+        </label>
+        <p style={{ fontSize: 12, color: C.gray, fontFamily: FONT, marginBottom: 14, lineHeight: 1.5, marginTop: 0 }}>
+          Some costs (medical exam, police clearance, language tests) vary significantly by country.
+          We use this to personalize your estimate.
+        </p>
+        <CountrySearch
+          value={data.countryOfOrigin ?? ''}
+          onChange={iso => onChange('countryOfOrigin', iso)}
+          error={countryError}
+        />
+        <p style={{ fontSize: 11, color: C.textLight, fontFamily: FONT, marginTop: 14, marginBottom: 0, lineHeight: 1.55 }}>
+          Stored as an ISO-3166-1 alpha-2 code in your session. Used only to look up country-specific
+          costs — never shared.
+        </p>
       </div>
     </div>
   )
