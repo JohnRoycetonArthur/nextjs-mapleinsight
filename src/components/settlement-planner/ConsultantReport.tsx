@@ -251,6 +251,7 @@ export function ConsultantReport({
   const province     = answers.province ?? ''
   const pathwayLabel = PATHWAY_LABELS[engineInput.pathway] ?? engineInput.pathway
   const household    = `${engineInput.household.adults} adult${engineInput.household.adults !== 1 ? 's' : ''}${engineInput.household.children > 0 ? ` + ${engineInput.household.children} child${engineInput.household.children !== 1 ? 'ren' : ''}` : ''}`
+  const countryISO   = answers.countryOfOrigin ?? null
   const today        = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
@@ -309,7 +310,7 @@ export function ConsultantReport({
                 Client Profile
               </div>
               <div style={{ fontFamily: SERIF, fontSize: 20, color: C.forest }}>
-                {city}, {province} · {pathwayLabel} · {household}
+                {city}, {province} · {pathwayLabel} · {household}{countryISO ? ` · ${countryISO}` : ''}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>

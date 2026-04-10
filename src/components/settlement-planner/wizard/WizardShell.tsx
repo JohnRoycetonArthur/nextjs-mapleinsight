@@ -67,6 +67,7 @@ function validateStep(step: number, answers: WizardAnswers): StepErrors {
     case 1:
       if (!answers.arrival)         errors.arrival         = 'Please select your planned arrival window.'
       if (!answers.departureRegion) errors.departureRegion = 'Please select where your household is travelling from.'
+      if (!answers.countryOfOrigin) errors.countryOfOrigin = 'Please select your country of origin.'
       break
     case 2:
       if (!answers.pathway) errors.pathway = 'Please select your immigration pathway.'

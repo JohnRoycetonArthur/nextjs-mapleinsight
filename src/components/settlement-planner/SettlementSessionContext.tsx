@@ -31,6 +31,7 @@ export interface WizardAnswers {
   children?: number      // default 0
   arrival?: string       // 'within_30'|'1_3_months'|'3_6_months'|'6_12_months'|'12_plus'
   departureRegion?: string  // region code e.g. 'south-asia' — used for flight cost estimate
+  countryOfOrigin?: string  // ISO 3166-1 alpha-2 e.g. 'IN' — used for country-specific costs (US-3.1)
 
   // Step 2 — Immigration
   pathway?: string       // 'express_entry'|'pnp'|'study_permit'|'work_permit'|'family'
