@@ -1,6 +1,7 @@
 // ─── Data Source Catalog ──────────────────────────────────────────────────────
 
 import type { CustomExpense } from './defaults'
+import type { CountryCosts } from './fetchCountryCosts'
 
 export interface DataSource {
   key: string
@@ -110,6 +111,10 @@ export interface EngineInput {
   // Proof-of-funds job offer exemption (US-2.2 FSW/FSTP only)
   // true when applicant confirms: valid Canadian job offer AND work authorization
   jobOfferExempt?: boolean
+
+  // Country-specific pre-arrival costs (US-3.6)
+  // Resolved by fetchCountryCosts(iso) before engine run; undefined = no selection
+  countryCosts?: CountryCosts
 }
 
 // ─── Breakdown ────────────────────────────────────────────────────────────────
@@ -171,4 +176,10 @@ export interface EngineOutput {
   } | {
     exempt: false
   }
+
+  // Country costs fallback flag (US-3.6)
+  // true  = ZZ global fallback used (country not seeded → estimates)
+  // false = seeded country data used
+  // undefined = no country selected (no country cost items in breakdown)
+  countryCostsFallback?: boolean
 }

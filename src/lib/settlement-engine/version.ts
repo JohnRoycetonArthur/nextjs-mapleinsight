@@ -14,10 +14,14 @@
  *   1.0.0 → 1.1.0   US-2.1 — CEC exemption: explicit proofOfFundsExemption field on EngineOutput
  *   1.1.0 → 1.2.0   US-2.3 — Savings gap now targets safeRecommended (IRCC floor × 1.05, rounded to $100) for EE/PNP non-exempt pathways
  *   ircc:2026-04-09  US-2.5 — SDS eligible countries seeded (canada.ca/sds, 13 countries as of 2025)
+ *   schema:2026-04-10 US-3.2 — CountryCosts Sanity schema, ZZ fallback document, fetchCountryCosts()
+ *   country-costs:2026-04-10 US-3.3 — Medical exam, PCC, and language test costs seeded for top 25 countries (isSeeded=false pending review)
+ *   pcc-costs:2026-04-10   US-3.4 — PCC costs patched via dedicated country-costs-pcc.csv; isSeeded=false pending language seed
+ *   language-costs:2026-04-10 US-3.5 — Language test costs seeded for all 25 countries; isSeeded flipped to true atomically
  */
 
 /** Semver string tracking calculation-logic version. Bump on engine changes. */
-export const ENGINE_VERSION = '1.2.0'
+export const ENGINE_VERSION = '1.3.0'
 
 /** Composite of data-source effective dates. Bump when seeded data is refreshed. */
-export const DATA_VERSION = 'ircc:2026-04-09'
+export const DATA_VERSION = 'ircc:2026-04-09|schema:2026-04-10|country-costs:2026-04-10|pcc-costs:2026-04-10|language-costs:2026-04-10'
