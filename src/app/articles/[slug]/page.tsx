@@ -4,6 +4,8 @@ import { ArticleContent, ArticleSection } from "./ArticleContent";
 import { PillarArticlePage } from "./PillarArticlePage";
 import { articleSchema } from "@/lib/structured-data";
 
+export const revalidate = 300;
+
 export async function generateStaticParams() {
   const slugs = await getAllArticleSlugs();
   return slugs.map((slug) => ({ slug }));

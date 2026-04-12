@@ -6,6 +6,7 @@ import { articleSchema } from "@/lib/structured-data";
 
 const PILLAR_SLUG = "financially-ready-move-to-canada";
 const CANONICAL_URL = "https://mapleinsight.ca/immigration-costs";
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const article = await getArticleBySlug(PILLAR_SLUG);

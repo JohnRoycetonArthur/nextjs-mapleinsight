@@ -116,14 +116,52 @@ export interface UpfrontResult {
  * staying-family housingType sets deposit and furnishing to $0.
  */
 export function computeUpfront(
-  input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride' | 'departureRegion' | 'pathway' | 'province' | 'household' | 'studyPermit'>,
+  input: Pick<EngineInput, 'fees' | 'housingType' | 'furnishingLevel' | 'travelEstimateOverride' | 'departureRegion' | 'pathway' | 'province' | 'household' | 'studyPermit' | 'countryCosts'>,
   baseline: Pick<CityBaseline, 'avgRentStudio' | 'avgRent1BR' | 'avgRent2BR' | 'isFallback' | 'studentHousing' | 'cityName'>,
   studyPermitData?: StudyPermitData,
   feeSchedule?: FeeSchedule,
 ): UpfrontResult {
+  // ── Country cost helper ──────────────────────────────────────────────────
+  // Returns PCC + language-test items (and medical-exam for non-study pathways).
+  // Study permit already includes medical exam via computeStudyPermitUpfront.
+  function buildCountryCostItems(isStudy: boolean): BreakdownItem[] {
+    const cc = input.countryCosts
+    if (!cc) return []
+    const items: BreakdownItem[] = []
+    if (!isStudy) {
+      items.push({
+        key:       'medical-exam',
+        label:     'Medical exam (panel physician)',
+        cad:       cc.medicalExamCAD,
+        source:    cc.medicalExamSource ?? 'estimate',
+        sourceUrl: cc.medicalExamSourceUrl,
+        timing:    'submission',
+      })
+    }
+    if (cc.pccCAD > 0) {
+      items.push({
+        key:       'pcc',
+        label:     'Police Clearance Certificate (PCC)',
+        cad:       cc.pccCAD,
+        source:    cc.pccSource ?? 'estimate',
+        sourceUrl: cc.pccSourceUrl,
+        timing:    'submission',
+      })
+    }
+    items.push({
+      key:       'language-test',
+      label:     `${cc.languageTestProvider ?? 'Language'} test`,
+      cad:       cc.languageTestCAD,
+      source:    cc.languageTestSource ?? 'estimate',
+      sourceUrl: cc.languageTestSourceUrl,
+      timing:    'submission',
+    })
+    return items
+  }
+
   // ── Study permit delegation ──────────────────────────────────────────────
   if (input.pathway === 'study-permit' && input.studyPermit && studyPermitData) {
-    return computeStudyPermitUpfront(
+    const spResult = computeStudyPermitUpfront(
       {
         province:               input.province,
         housingType:            input.housingType,
@@ -137,6 +175,13 @@ export function computeUpfront(
       baseline,
       feeSchedule,
     )
+    const countryItems = buildCountryCostItems(true)
+    if (countryItems.length === 0) return spResult
+    const extraTotal = countryItems.reduce((s, i) => s + i.cad, 0)
+    return {
+      total:     spResult.total + extraTotal,
+      breakdown: [...spResult.breakdown, ...countryItems],
+    }
   }
   const { fees, furnishingLevel, travelEstimateOverride, departureRegion, household } = input
 
@@ -234,6 +279,10 @@ export function computeUpfront(
       timing:    'settlement',
     })
   }
+
+  // ── Country-specific pre-arrival costs ──────────────────────────────────
+  const countryItems = buildCountryCostItems(false)
+  items.push(...countryItems)
 
   const total = items.reduce((sum, item) => sum + item.cad, 0)
   return { total, breakdown: items }
@@ -535,6 +584,11 @@ export function runEngine(
   const scholarshipAmount = input.pathway === 'study-permit' ? (input.studyPermit?.scholarshipAmount ?? 0) : 0
   const gap            = computeGap(safeResult.safeSavingsTarget, input.liquidSavings, scholarshipAmount)
 
+  // US-3.6: countryCostsFallback — true when ZZ global fallback was used
+  const countryCostsFallback = input.countryCosts
+    ? input.countryCosts.iso === 'ZZ'
+    : undefined
+
   return {
     upfront:                 upfrontResult.total,
     monthlyMin:              monthlyResult.total,
@@ -554,5 +608,6 @@ export function runEngine(
     complianceFloorApplied:  safeResult.complianceFloorApplied,
     bindingConstraint:       safeResult.bindingConstraint,
     proofOfFundsExemption:   safeResult.proofOfFundsExemption,
+    countryCostsFallback,
   }
 }

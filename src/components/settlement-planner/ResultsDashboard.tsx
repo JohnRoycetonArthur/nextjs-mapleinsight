@@ -20,6 +20,8 @@ import {
 } from '@/lib/settlement-engine/narrative'
 import { usePlannerMode, useSettlementSession } from './SettlementSessionContext'
 import { fetchCityBaseline } from '@/lib/settlement-engine/baselines'
+import { fetchCountryCosts, ZZ_FALLBACK, type CountryCosts } from '@/lib/settlement-engine/fetchCountryCosts'
+import { CountrySearch } from './wizard/CountrySearch'
 import { runEngine, computeFamilySize } from '@/lib/settlement-engine/calculate'
 import { evaluateRisks, type RiskContext } from '@/lib/settlement-engine/risks'
 import {
@@ -194,7 +196,7 @@ const SEV_LABEL: Record<string, string> = { critical: 'Critical', high: 'High', 
 const SOURCE_MAP: Record<string, string> = {
   ircc: 'IRCC', cmhc: 'CMHC', constant: 'Estimate', estimate: 'Estimate',
   'user-input': 'Your input', provincial: 'Provincial', bank: 'Bank',
-  'national-average': 'National avg',
+  'national-average': 'National avg', 'country-data': 'Country data',
   'toronto-on': 'TTC', 'vancouver-bc': 'TransLink', 'calgary-ab': 'Calgary Transit',
   'montreal-qc': 'STM', 'ottawa-on': 'OC Transpo', 'halifax-ns': 'Halifax Transit',
   'winnipeg-mb': 'Winnipeg Transit',
@@ -203,6 +205,9 @@ const SOURCE_MAP: Record<string, string> = {
 function sourceLabel(s: string): string {
   return SOURCE_MAP[s] ?? s.toUpperCase()
 }
+
+/** Breakdown item keys that carry country-specific cost data (US-3.6). */
+const COUNTRY_COST_KEYS = new Set(['medical-exam', 'pcc', 'language-test'])
 
 
 // ─── SVG icons ────────────────────────────────────────────────────────────────
@@ -474,7 +479,7 @@ interface Props {
 // ─── ResultsDashboard ─────────────────────────────────────────────────────────
 
 export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan }: Props) {
-  const { session }  = useSettlementSession()
+  const { session, updateAnswers } = useSettlementSession()
   const { answers }  = session
   const mode = usePlannerMode()
   const isPublicMode = mode === 'public'
@@ -484,6 +489,8 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
   const [minLoadDone,          setMinLoadDone]          = useState(false)
   const [baseline,             setBaseline]             = useState<CityBaseline | null>(null)
   const [baselineError,        setBaselineError]        = useState(false)
+  const [countryCosts,         setCountryCosts]         = useState<CountryCosts | null>(null)
+  const [countryEditorOpen,    setCountryEditorOpen]    = useState(false)
   const [openExplainer,        setOpenExplainer]        = useState<string | null>(null)
   const [showConsultantReport, setShowConsultantReport] = useState(false)
   const [pdfLoading,           setPdfLoading]           = useState(false)
@@ -520,6 +527,15 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
       .then(b => setBaseline(b))
       .catch(() => setBaselineError(true))
   }, [answers.city])
+
+  // ── Fetch country costs (US-3.6) ─────────────────────────────────────────────
+  useEffect(() => {
+    const iso = answers.countryOfOrigin
+    if (!iso) { setCountryCosts(null); return }
+    fetchCountryCosts(iso)
+      .then(setCountryCosts)
+      .catch(() => setCountryCosts(ZZ_FALLBACK))
+  }, [answers.countryOfOrigin])
 
   // ── Fetch data source catalog ─────────────────────────────────────────────
   useEffect(() => {
@@ -661,8 +677,9 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
       jobStatus:             mapJobStatus(answers.jobStatus),
       studyPermit:           studyPermitInput,
       jobOfferExempt:        answers.jobOfferExempt ?? false,
+      countryCosts:          countryCosts ?? undefined,
     }
-  }, [baseline, answers])
+  }, [baseline, answers, countryCosts])
 
   // ── Run engine ───────────────────────────────────────────────────────────────
   const engineOutput = useMemo<EngineOutput | null>(() => {
@@ -1522,6 +1539,75 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
                 )}
               </div>
 
+              {/* ── Country of origin inline editor (US-3.6) ─────────────── */}
+              {answers.countryOfOrigin && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', background: C.lightGray, borderRadius: 10, marginBottom: 14,
+                  flexWrap: 'wrap', gap: 10,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    <span style={{ fontSize: 12, color: C.text, fontFamily: FONT }}>
+                      <strong>Country of origin:</strong>{' '}
+                      {countryCosts && countryCosts.iso !== 'ZZ' ? countryCosts.countryName : answers.countryOfOrigin}
+                    </span>
+                    {engineOutput.countryCostsFallback && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, color: '#D97706',
+                        background: '#FEF3C7', padding: '2px 7px', borderRadius: 4,
+                        fontFamily: FONT, letterSpacing: 0.3, whiteSpace: 'nowrap',
+                      }}>DATA PENDING</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCountryEditorOpen(o => !o)}
+                    style={{
+                      fontSize: 12, fontWeight: 600, color: C.accent, fontFamily: FONT,
+                      background: 'none', border: `1px solid ${C.accent}40`, borderRadius: 6,
+                      padding: '4px 10px', cursor: 'pointer',
+                    }}
+                  >
+                    {countryEditorOpen ? 'Cancel' : 'Change'}
+                  </button>
+                </div>
+              )}
+
+              {/* Expanded country selector */}
+              {countryEditorOpen && (
+                <div style={{ marginBottom: 14 }}>
+                  <CountrySearch
+                    value={answers.countryOfOrigin ?? ''}
+                    onChange={iso => {
+                      updateAnswers({ countryOfOrigin: iso })
+                      setCountryEditorOpen(false)
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Fallback amber warning strip */}
+              {engineOutput.countryCostsFallback && (
+                <div style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 8,
+                  padding: '9px 12px', background: '#FEF3C7', borderRadius: 8,
+                  color: '#D97706', fontSize: 12, fontFamily: FONT, marginBottom: 14, lineHeight: 1.5,
+                }}>
+                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ paddingTop: 1, flexShrink: 0 }}>
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <span>
+                    <strong>Country data pending.</strong> Medical exam, PCC, and language test costs are using conservative Canadian newcomer averages.
+                    Your actual costs may differ — update when exact figures are known.
+                  </span>
+                </div>
+              )}
+
               {/* ── Upfront costs split by timing ─────────────────────────── */}
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 6 }}>
@@ -1543,6 +1629,9 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 14px', borderBottom: i < group.items.length - 1 ? `1px solid ${C.lightGray}` : 'none', background: C.white }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
                                 <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
+                                {engineOutput.countryCostsFallback && COUNTRY_COST_KEYS.has(it.key) && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: '#D97706', background: '#FEF3C7', padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap', fontFamily: FONT }}>ESTIMATE</span>
+                                )}
                                 {it.sourceKey
                                   ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} fallbackSource={it.source} />
                                   : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>
@@ -1585,6 +1674,9 @@ export function ResultsDashboard({ consultant, onStartOver, onOpenSettlementPlan
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < engineOutput.upfrontBreakdown.length - 1 ? `1px solid ${C.lightGray}` : 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
                           <span style={{ fontSize: 13, color: C.text }}>{displayLabel(it)}</span>
+                          {engineOutput.countryCostsFallback && COUNTRY_COST_KEYS.has(it.key) && (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: '#D97706', background: '#FEF3C7', padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap', fontFamily: FONT }}>ESTIMATE</span>
+                          )}
                           {it.sourceKey
                             ? <SourceBadge sourceKey={it.sourceKey} sources={dataSources} fallbackSource={it.source} />
                             : <span style={{ fontSize: 10, color: C.textLight, background: C.lightGray, padding: '1px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{sourceLabel(it.source)}</span>

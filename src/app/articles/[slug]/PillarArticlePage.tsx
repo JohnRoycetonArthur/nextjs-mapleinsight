@@ -67,13 +67,14 @@ const TOC_SECTIONS = [
 ];
 
 const IRCC_FUNDS = [
-  { members: 1, amount: 14690 },
-  { members: 2, amount: 18288 },
-  { members: 3, amount: 22483 },
-  { members: 4, amount: 27315 },
-  { members: 5, amount: 30980 },
-  { members: 6, amount: 34924 },
-  { members: 7, amount: 38892 },
+  // Keep in sync with the 2025 IRCC proof-of-funds table used by the settlement engine.
+  { members: 1, amount: 15263 },
+  { members: 2, amount: 19001 },
+  { members: 3, amount: 23360 },
+  { members: 4, amount: 28362 },
+  { members: 5, amount: 32168 },
+  { members: 6, amount: 36280 },
+  { members: 7, amount: 40392 },
 ];
 
 const PATHWAY_DATA = [

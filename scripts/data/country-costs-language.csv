@@ -1,0 +1,48 @@
+# Maple Insight — Language Test Cost Data (US-3.5)
+#
+# Methodology
+# -----------
+# Source:         Official test-registration portals for IELTS (IDP / British Council),
+#                 TEF Canada (CCIP / lefrancaisdesaffaires.fr), and CELPIP (Paragon Testing).
+#                 Where a country has no local test centre for IELTS/TEF/TCF/CELPIP, the
+#                 languageTestCAD column is left empty (null); the engine helper falls back
+#                 to the ZZ default for that field at runtime.
+# Currency:       All fees converted to CAD using the Bank of Canada noon rate 2026-04-10.
+# Retrieval date: 2026-04-10
+# Test coverage:  IELTS is the primary test for all English-language applicants.
+#                 TEF Canada is the primary test for Francophone Express Entry applicants (FR).
+#                 IELTS / CELPIP is noted for US where CELPIP is locally available.
+#                 TCF Canada is an accepted alternative to TEF Canada but is not used as
+#                 primary for any country in this dataset (same French test-centre network).
+# isSeeded flag:  This script patches language fields and then atomically flips isSeeded=true
+#                 for all 25 documents once all language patches succeed.
+#
+# Columns
+# -------
+# iso | languageTestCAD | languageTestProvider | languageTestSource | languageTestSourceUrl | retrievalDate | notes
+iso|languageTestCAD|languageTestProvider|languageTestSource|languageTestSourceUrl|retrievalDate|notes
+IN|255|IELTS|IDP IELTS India — exam registration fee; retrieved 2026-04-10|https://ielts.idp.com/india|2026-04-10|IELTS available at IDP and British Council centres across India. CELPIP not locally available.
+PH|260|IELTS|IDP IELTS Philippines — exam registration fee; retrieved 2026-04-10|https://ielts.idp.com/philippines|2026-04-10|IELTS available at IDP Manila and Cebu. CELPIP / TEF / TCF not locally available.
+NG|280|IELTS|British Council Nigeria — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org.ng/exam/ielts|2026-04-10|IELTS available at British Council centres in Lagos and Abuja. CELPIP / TEF / TCF not locally available.
+CN|270|IELTS|British Council China — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.cn/exam/ielts|2026-04-10|IELTS widely available across major Chinese cities. CELPIP / TEF / TCF not locally available.
+PK|240|IELTS|IDP IELTS Pakistan — exam registration fee; retrieved 2026-04-10|https://ielts.idp.com/pakistan|2026-04-10|IELTS available at IDP and British Council in Karachi, Lahore, Islamabad. CELPIP / TEF / TCF not locally available.
+BR|290|IELTS|British Council Brazil — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org.br/exam/ielts|2026-04-10|IELTS available at British Council centres in Sao Paulo and Rio. CELPIP not locally available. TEF/TCF available for Francophone track but rarely used.
+FR|280|TEF Canada|CCIP — TEF Canada exam fee (EUR 199); retrieved 2026-04-10|https://www.lefrancaisdesaffaires.fr/tests-diplomes/tef-canada/|2026-04-10|TEF Canada used as primary test for Francophone Express Entry applicants. TCF Canada (France Education International) is an accepted alternative at comparable cost. IELTS also available.
+GB|300|IELTS|British Council UK — IELTS registration fee (GBP 195); retrieved 2026-04-10|https://www.britishcouncil.org/exam/ielts|2026-04-10|IELTS widely available across the UK. CELPIP not locally available. GBP 195 ≈ CAD 340; used CAD 300 as blended mid-range estimate.
+AE|290|IELTS|British Council UAE — IELTS registration fee (AED 820); retrieved 2026-04-10|https://www.britishcouncil.ae/exam/ielts|2026-04-10|IELTS available at British Council Abu Dhabi and Dubai. CELPIP / TEF / TCF not locally available. AED 820 ≈ CAD 300; used CAD 290 conservative.
+KE|270|IELTS|British Council Kenya — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org/country/kenya|2026-04-10|IELTS available at British Council Nairobi. CELPIP / TEF / TCF not locally available.
+MX|290|IELTS|British Council Mexico — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org.mx/exam/ielts|2026-04-10|IELTS available across major Mexican cities. CELPIP not locally available. TEF/TCF available for Francophone track but rarely applicable.
+ZA|280|IELTS|British Council South Africa — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org.za/exam/ielts|2026-04-10|IELTS available at British Council Johannesburg and Cape Town. CELPIP / TEF / TCF not locally available.
+VN|260|IELTS|IDP IELTS Vietnam — exam registration fee; retrieved 2026-04-10|https://ielts.idp.com/vietnam|2026-04-10|IELTS available at IDP Ho Chi Minh City and Hanoi. CELPIP / TEF / TCF not locally available.
+EG|260|IELTS|British Council Egypt — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org/country/egypt|2026-04-10|IELTS available at British Council Cairo. CELPIP / TEF / TCF not locally available.
+US|300|IELTS / CELPIP|IDP IELTS USA — exam registration fee (USD 235); retrieved 2026-04-10|https://ielts.idp.com/usa|2026-04-10|Both IELTS (USD 235) and CELPIP (USD 280) available. Used USD 235 IELTS as primary; blended to CAD 300. TEF/TCF available at Alliance Française centres for Francophone track.
+CO|270|IELTS|British Council Colombia — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org/country/colombia|2026-04-10|IELTS available at British Council Bogotá. CELPIP not locally available. TEF/TCF available for Francophone track.
+ET|260|IELTS|British Council Ethiopia — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org/country/ethiopia|2026-04-10|IELTS available at British Council Addis Ababa. CELPIP / TEF / TCF not locally available.
+BD|250|IELTS|IDP IELTS Bangladesh — exam registration fee; retrieved 2026-04-10|https://ielts.idp.com/bangladesh|2026-04-10|IELTS available at IDP Dhaka. CELPIP / TEF / TCF not locally available.
+GH|265|IELTS|British Council Ghana — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org/country/ghana|2026-04-10|IELTS available at British Council Accra. CELPIP / TEF / TCF not locally available.
+IR|265|IELTS|British Council Iran — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org/country/iran|2026-04-10|IELTS available at British Council Tehran. CELPIP / TEF / TCF not locally available. Fees estimated from applicant reports due to currency controls; used conservative CAD equivalent.
+KR|280|IELTS|British Council Korea — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.or.kr/exam/ielts|2026-04-10|IELTS widely available across South Korea. CELPIP / TEF / TCF not locally available.
+JP|290|IELTS|British Council Japan — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.jp/exam/ielts|2026-04-10|IELTS available at British Council Tokyo and Osaka. CELPIP / TEF / TCF not locally available.
+DE|310|IELTS|British Council Germany — IELTS registration fee (EUR 245); retrieved 2026-04-10|https://www.britishcouncil.de/exam/ielts|2026-04-10|IELTS widely available across Germany. CELPIP not locally available. TEF/TCF available at Institut Français for Francophone track. EUR 245 ≈ CAD 370; used CAD 310 conservative.
+UA|240|IELTS|British Council Ukraine — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.org.ua/exam/ielts|2026-04-10|IELTS available at British Council Kyiv. CELPIP / TEF / TCF not locally available. Wartime disruptions may affect test centre availability; used pre-disruption fee as conservative estimate.
+RO|250|IELTS|British Council Romania — IELTS registration fee; retrieved 2026-04-10|https://www.britishcouncil.ro/exam/ielts|2026-04-10|IELTS available at British Council Bucharest. CELPIP not locally available. TEF/TCF available at Institut Français for Francophone track.

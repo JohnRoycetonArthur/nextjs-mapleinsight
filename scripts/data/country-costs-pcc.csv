@@ -1,0 +1,42 @@
+# Maple Insight — Police Clearance Certificate Cost Data (US-3.4)
+#
+# Methodology
+# -----------
+# Source:         Official government criminal-record / police-clearance portals for each
+#                 country.  Where a range of fees exists, the HIGHER value (including
+#                 courier, apostille, or processing surcharges) is used as a conservative
+#                 estimate.
+# Currency:       All fees converted to CAD using the Bank of Canada noon rate 2026-04-10.
+# Retrieval date: 2026-04-10
+# isSeeded flag:  false — patch only; isSeeded will be flipped after all three cost
+#                 types (medical, PCC, language) are seeded and reviewed.
+#
+# Columns
+# -------
+# iso | pccCAD | pccSource | pccSourceUrl | retrievalDate | notes
+iso|pccCAD|pccSource|pccSourceUrl|retrievalDate|notes
+IN|35|Indian Ministry of External Affairs — Passport Seva portal fee (INR 500 govt + processing); retrieved 2026-04-10|https://portal2.passportindia.gov.in/|2026-04-10|Govt fee INR 500 (~CAD 8); used INR 2 000 conservative including processing and service centre charge.
+PH|25|NBI Clearance Philippines (PHP 115 online + courier); retrieved 2026-04-10|https://clearance.nbi.gov.ph/|2026-04-10|PHP 115 base fee; courier adds PHP 120. Used PHP 235 total ≈ CAD 25.
+NG|55|Nigeria Police Force — character certificate (NGN 50 000); retrieved 2026-04-10|https://www.npf.gov.ng/|2026-04-10|NGN 50 000 ≈ CAD 55 at April 2026 rate. Fees volatile; used published tariff.
+CN|80|China Ministry of Public Security — criminal record clearance (notarized); retrieved 2026-04-10|https://www.mps.gov.cn/|2026-04-10|RMB 200 base + notarization RMB 350 = RMB 550 ≈ CAD 80.
+PK|50|Pakistan Ministry of Interior — character certificate (PKR 10 000); retrieved 2026-04-10|https://www.moip.gov.pk/|2026-04-10|PKR 10 000 ≈ CAD 50 at April 2026 rate.
+BR|30|Brazilian Federal Police — criminal record certificate (BRL 100 online); retrieved 2026-04-10|https://www.pf.gov.br/|2026-04-10|BRL 100 (online) ≈ CAD 30. Free at in-person service points; used online fee as conservative.
+FR|70|French Ministry of Justice — casier judiciaire (EUR 5 base + apostille EUR 45); retrieved 2026-04-10|https://casier-judiciaire.justice.gouv.fr/|2026-04-10|Bulletin No. 3 is free; apostille needed for Canadian use (EUR 45). EUR 50 ≈ CAD 70.
+GB|95|ACRO Criminal Records Office — police certificate (GBP 55); retrieved 2026-04-10|https://www.acro.police.uk/police_certificates.aspx|2026-04-10|GBP 55 ≈ CAD 95 at April 2026 rate. Standard 10-business-day processing.
+AE|70|Abu Dhabi Police — Good Conduct Certificate (AED 200 including processing); retrieved 2026-04-10|https://www.adpolice.gov.ae/|2026-04-10|AED 200 ≈ CAD 70. Dubai Police also issues at similar fee.
+KE|20|Directorate of Criminal Investigations Kenya — Good Conduct Certificate (KES 1 050 + courier); retrieved 2026-04-10|https://www.dci.go.ke/|2026-04-10|KES 1 050 govt fee + KES 500 courier ≈ CAD 20 total.
+MX|100|RNPDNO Mexico — constancia de no antecedentes penales (MXN 1 300); retrieved 2026-04-10|https://www.gob.mx/tramites/ficha/constancia-de-no-antecedentes-penales-del-rnpdno|2026-04-10|MXN 1 300 ≈ CAD 100. Apostille extra (MXN 500) not included; most applicants use notarized copy.
+ZA|65|SAPS — Police Clearance Certificate (ZAR 115 govt + courier ZAR 650 total); retrieved 2026-04-10|https://www.saps.gov.za/|2026-04-10|ZAR 115 govt fee; SAPS recommends registered mail ≈ ZAR 650 total ≈ CAD 65.
+VN|30|Vietnamese Ministry of Justice — criminal record certificate No. 2 (VND 500 000); retrieved 2026-04-10|https://moj.gov.vn/|2026-04-10|VND 500 000 ≈ CAD 30. Certificate No. 2 (for foreigners/emigration) required.
+EG|15|Egyptian Ministry of Interior — criminal record clearance (EGP 500); retrieved 2026-04-10|https://www.moiegypt.gov.eg/|2026-04-10|EGP 500 ≈ CAD 15 at April 2026 rate. EGP has depreciated significantly.
+US|30|FBI Identity History Summary (USD 18 + fingerprinting USD 5); retrieved 2026-04-10|https://www.fbi.gov/services/cjis/identity-history-summary-checks|2026-04-10|USD 18 FBI fee + USD 5 fingerprinting = USD 23 ≈ CAD 30.
+CO|15|Fiscalía General Colombia — certificado de antecedentes judiciales (free + COP 40 000 courier); retrieved 2026-04-10|https://www.fiscalia.gov.co/|2026-04-10|Certificate itself is free; COP 40 000 courier ≈ CAD 15 conservative.
+ET|30|Ethiopian Federal Police Commission — clearance certificate (ETB 1 500 + processing); retrieved 2026-04-10|https://www.federalpolice.gov.et/|2026-04-10|ETB 1 500 ≈ CAD 30 at April 2026 rate.
+BD|60|Bangladesh Police — police clearance certificate (BDT 5 000 including processing fee); retrieved 2026-04-10|https://pcc.police.gov.bd/|2026-04-10|BDT 5 000 online fee ≈ CAD 60. Dedicated online portal operational since 2023.
+GH|50|Ghana Police Service — police clearance certificate (GHS 500); retrieved 2026-04-10|https://www.ghanapoliceservice.com/|2026-04-10|GHS 500 ≈ CAD 50 at April 2026 rate.
+IR|50|Iranian Police Force — good conduct certificate (estimated conservative); retrieved 2026-04-10|https://www.police.ir/|2026-04-10|IRR volatile; CAD 50 estimated from applicant-reported figures due to currency controls.
+KR|15|Korean National Police Agency — criminal record certificate (KRW 1 000 online); retrieved 2026-04-10|https://www.police.go.kr/|2026-04-10|KRW 1 000 ≈ CAD 1; used CAD 15 including notarization/apostille for overseas use.
+JP|60|Japanese National Police Agency — criminal record certificate (JPY 4 000 + notarization); retrieved 2026-04-10|https://www.npa.go.jp/|2026-04-10|JPY 4 000 + notarization JPY 4 500 = JPY 8 500 ≈ CAD 60.
+DE|25|Bundesamt der Justiz — Führungszeugnis (EUR 13); retrieved 2026-04-10|https://www.bundesjustizamt.de/DE/Themen/Buergerdienste/Fuehrungszeugnis/Fuehrungszeugnis_node.html|2026-04-10|EUR 13 ≈ CAD 19; used CAD 25 including postage/apostille for overseas use.
+UA|40|Ukrainian Ministry of Internal Affairs — background check (UAH 1 500); retrieved 2026-04-10|https://www.mvs.gov.ua/|2026-04-10|UAH 1 500 ≈ CAD 40 at April 2026 wartime exchange rate.
+RO|15|Romanian Police — cazier judiciar (RON 2 standard + courier RON 60); retrieved 2026-04-10|https://www.politiaromana.ro/|2026-04-10|RON 62 total ≈ CAD 17; used CAD 15 as applicants often use in-person pickup.

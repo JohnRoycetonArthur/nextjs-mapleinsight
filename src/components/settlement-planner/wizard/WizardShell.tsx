@@ -31,6 +31,7 @@ import type { ConsultantBranding } from '../types'
 import { DesktopStepper } from './DesktopStepper'
 import { MobileProgress } from './MobileProgress'
 import { Step1Household }  from './steps/Step1Household'
+import { LiveCostImpactPreview } from './LiveCostImpactPreview'
 import { Step2Immigration } from './steps/Step2Immigration'
 import { Step3Destination } from './steps/Step3Destination'
 import { Step4WorkIncome }  from './steps/Step4WorkIncome'
@@ -415,45 +416,64 @@ export function WizardShell({ consultant, onComplete, scrollTargetId, frameTarge
       </div>
 
       {/* ── Step content ──────────────────────────────────────────────────── */}
-      <section
-        style={{ maxWidth: 580, margin: '0 auto', padding: isMobile ? '24px 16px' : '40px 24px' }}
-        aria-label={`Step ${currentStep} of ${TOTAL_STEPS}: ${stepMeta.title}`}
-      >
-        {/* Privacy badge */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          background: '#E8F5EE', borderRadius: 7, padding: '4px 11px',
-          marginBottom: 22, fontSize: 11, color: C.accent, fontWeight: 600,
-        }}>
-          <Lock size={12} color="#1B7A4A" /> Your data stays in your browser
-        </div>
-
-        {/* Stale pathway toast — shown when a restored session had an unsupported pathway */}
-        {stalePathwayToast && currentStep === 2 && (
-          <div
-            role="status"
-            style={{
-              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12,
-              background: '#FFF7E6', border: '1px solid #F59E0B',
-              borderRadius: 10, padding: '12px 16px', marginBottom: 20,
-              fontSize: 13, color: '#92400E', fontFamily: FONT, lineHeight: 1.5,
-            }}
-          >
-            <span>Your previously selected pathway is no longer available. Please select a new pathway.</span>
-            <button
-              type="button"
-              onClick={clearStalePathwayToast}
-              aria-label="Dismiss notice"
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 16, color: '#92400E', flexShrink: 0, lineHeight: 1, padding: 0,
-              }}
-            >×</button>
+      {/* Step 1 desktop: two-column layout with Live Cost Impact right rail */}
+      {currentStep === 1 && !isMobile ? (
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px', display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)', gap: 32, alignItems: 'start' }}>
+          <section aria-label={`Step ${currentStep} of ${TOTAL_STEPS}: ${stepMeta.title}`}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: '#E8F5EE', borderRadius: 7, padding: '4px 11px',
+              marginBottom: 22, fontSize: 11, color: C.accent, fontWeight: 600,
+            }}>
+              <Lock size={12} color="#1B7A4A" /> Your data stays in your browser
+            </div>
+            {renderStep()}
+          </section>
+          <div style={{ position: 'sticky', top: 24 }}>
+            <LiveCostImpactPreview iso={answers.countryOfOrigin ?? ''} />
           </div>
-        )}
+        </div>
+      ) : (
+        <section
+          style={{ maxWidth: 580, margin: '0 auto', padding: isMobile ? '24px 16px' : '40px 24px' }}
+          aria-label={`Step ${currentStep} of ${TOTAL_STEPS}: ${stepMeta.title}`}
+        >
+          {/* Privacy badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: '#E8F5EE', borderRadius: 7, padding: '4px 11px',
+            marginBottom: 22, fontSize: 11, color: C.accent, fontWeight: 600,
+          }}>
+            <Lock size={12} color="#1B7A4A" /> Your data stays in your browser
+          </div>
 
-        {renderStep()}
-      </section>
+          {/* Stale pathway toast — shown when a restored session had an unsupported pathway */}
+          {stalePathwayToast && currentStep === 2 && (
+            <div
+              role="status"
+              style={{
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12,
+                background: '#FFF7E6', border: '1px solid #F59E0B',
+                borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+                fontSize: 13, color: '#92400E', fontFamily: FONT, lineHeight: 1.5,
+              }}
+            >
+              <span>Your previously selected pathway is no longer available. Please select a new pathway.</span>
+              <button
+                type="button"
+                onClick={clearStalePathwayToast}
+                aria-label="Dismiss notice"
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 16, color: '#92400E', flexShrink: 0, lineHeight: 1, padding: 0,
+                }}
+              >×</button>
+            </div>
+          )}
+
+          {renderStep()}
+        </section>
+      )}
 
       {/* ── Clear confirmation dialog ─────────────────────────────────────── */}
       {showClear && (
